@@ -3,6 +3,9 @@ import { NextResponse, type NextRequest } from "next/server";
 
 /** Renova a sessão e manda quem não está logado para /login. */
 export async function middleware(request: NextRequest) {
+  // arquivo de verificação de site do TikTok for Developers: /tiktok<código>.txt
+  const tk = /^\/tiktok([A-Za-z0-9]+)\.txt$/.exec(request.nextUrl.pathname);
+  if (tk) return new NextResponse(`tiktok-developers-site-verification=${tk[1]}`, { headers: { "content-type": "text/plain; charset=utf-8" } });
   let response = NextResponse.next({ request });
   const supabase = createServerClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
     cookies: {
@@ -32,5 +35,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.png|api/coletar|privacidade|termos|tiktok[^/]*\\.txt).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|logo.png|api/coletar|privacidade|termos).*)"],
 };
