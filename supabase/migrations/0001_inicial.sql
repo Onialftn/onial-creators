@@ -162,3 +162,12 @@ create policy "metas: gestor escreve" on public.metas for all to authenticated u
 create policy "pagamentos: ler os próprios" on public.pagamentos for select to authenticated using (criador_id = auth.uid() or public.e_gestor());
 create policy "pagamentos: gestor escreve" on public.pagamentos for all to authenticated using (public.e_gestor()) with check (public.e_gestor());
 -- tokens_plataforma: sem regras = bloqueado para todos no navegador (só o servidor acessa)
+
+-- ---------- permissões da API ----------
+-- Garante o acesso pela API mesmo se o projeto foi criado com "expor tabelas automaticamente" desligado.
+-- Quem pode ver o quê continua decidido pelas regras de acesso (RLS) acima.
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on public.perfis, public.contas_plataforma, public.videos, public.views_diarias,
+  public.agenda_postagem, public.dias_postagem, public.metas, public.pagamentos to authenticated;
+grant select on public.ranking_mensal to authenticated;
+revoke all on public.tokens_plataforma from anon, authenticated;
