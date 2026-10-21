@@ -12,7 +12,7 @@ export interface Perfil { contaExternaId: string; nome: string; foto: string | n
 export interface VideoRede { idExterno: string; titulo: string; url: string | null; postadoEm: string; viewsTotal?: number }
 
 const env = (k: string) => {
-  const v = process.env[k];
+  const v = process.env[k]?.trim();
   if (!v) throw new Error(`Falta a variável ${k} na Vercel.`);
   return v;
 };
