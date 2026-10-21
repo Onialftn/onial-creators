@@ -4,6 +4,8 @@ import { NOME_REDE, REDE, REDES, type Rede } from "@/lib/coleta/redes";
 import { supabaseAdmin, supabaseServidor } from "@/lib/supabase/server";
 
 /** A rede devolve o criador para cá depois que ele autoriza. */
+export const maxDuration = 60;
+
 export async function GET(request: NextRequest, { params }: { params: Promise<{ rede: string }> }) {
   const { rede: r } = await params;
   const volta = new URL("/redes", request.url);
@@ -39,7 +41,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     await admin.from("tokens_plataforma").upsert({ conta_id: conta.id, access_token: tokens.access, refresh_token: tokens.refresh, expira_em: tokens.expiraEm?.toISOString() ?? null });
     if (rede === "youtube") await admin.from("perfis").update({ foto_url: perfil.foto, canal_youtube: perfil.nome }).eq("id", user.id);
     // primeira coleta já na hora (o ponto de partida dos totais)
-    await coletarConta(conta.id).catch(() => undefined);
+    await coletarConta(conta.id, true).catch(() => undefined);
     volta.searchParams.set("ok", `${NOME_REDE[rede]} conectado: ${perfil.nome}`);
     const res = NextResponse.redirect(volta);
     res.cookies.delete(`oauth_${rede}`);

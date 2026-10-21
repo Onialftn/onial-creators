@@ -9,6 +9,8 @@ import { coletarAgora, criarCriador, fecharMes, lancarViews, marcarPago, registr
 import { LogoPlataforma } from "@/components/Icone";
 import { REDES, redeConfigurada } from "@/lib/coleta/redes";
 
+export const maxDuration = 300;
+
 export default async function PainelGestor({ searchParams }: { searchParams: Promise<{ c?: string; ok?: string; erro?: string }> }) {
   const { sb, perfil } = await usuarioAtual();
   if (perfil.papel !== "gestor") redirect("/");

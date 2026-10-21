@@ -104,7 +104,7 @@ export async function marcarPago(f: FormData) {
 
 export async function coletarAgora() {
   await gestor();
-  const r = await coletarTodas();
+  const r = await coletarTodas(true);
   const falhas = r.filter((x) => !x.ok).length;
   revalidatePath("/", "layout");
   redirect(`/gestor?ok=${encodeURIComponent(r.length === 0 ? "Nenhuma conta conectada ainda." : `Coleta feita em ${r.length} contas${falhas ? `, ${falhas} com problema` : ""}.`)}`);

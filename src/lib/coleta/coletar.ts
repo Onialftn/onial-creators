@@ -1,5 +1,5 @@
 import "server-only";
-import { hojeBrasil, somarDias } from "@/lib/datas";
+import { hojeBrasil, intervalo, mesAnterior, mesDe, primeiroDia, somarDias } from "@/lib/datas";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { viewsGanhas } from "./ganho";
 import { REDE, type Rede, type Tokens } from "./redes";
@@ -20,7 +20,8 @@ async function tokensValidos(admin: Admin, contaId: string, rede: Rede): Promise
 }
 
 /** Busca os vídeos e as views de uma conta conectada e grava as views ganhas por dia. */
-export async function coletarConta(contaId: string) {
+/** completo = busca desde o 1º dia do mês passado (ao conectar e no botão do gestor). */
+export async function coletarConta(contaId: string, completo = false) {
   const admin = supabaseAdmin();
   const { data: conta } = await admin.from("contas_plataforma").select("id, criador_id, plataforma").eq("id", contaId).single();
   if (!conta) throw new Error("Conta não encontrada");
@@ -47,10 +48,19 @@ export async function coletarConta(contaId: string) {
 
     let linhas = 0;
     if (rede === "youtube") {
-      // o YouTube Analytics entrega as views por dia, com 1 a 3 dias de atraso: relê os últimos 4 dias
-      for (let i = 1; i <= 4; i++) {
-        const dia = somarDias(hoje, -i);
-        const mapa = await REDE.youtube.viewsDoDia(tokens, dia);
+      // O YouTube Analytics entrega as views por dia, com 1 a 3 dias de atraso: relê sempre os últimos 4 dias.
+      // Ao conectar, no botão do gestor ou na primeira coleta, busca desde o 1º dia do mês passado;
+      // se ficou dias sem coletar, recupera desde o último dia gravado.
+      const { data: ultimo } = await admin.from("views_diarias").select("dia").eq("criador_id", criador).eq("plataforma", rede).order("dia", { ascending: false }).limit(1).maybeSingle();
+      const padrao = somarDias(hoje, -4);
+      const inicio = ultimo && !completo ? [somarDias(String(ultimo.dia), -3), padrao].sort()[0] : primeiroDia(mesAnterior(mesDe(hoje)));
+      const dias = intervalo(inicio, ontem);
+      // 6 dias por vez, para ser rápido sem estourar o limite da API
+      const mapas: Map<string, number>[] = [];
+      for (let i = 0; i < dias.length; i += 6) mapas.push(...(await Promise.all(dias.slice(i, i + 6).map((d) => REDE.youtube.viewsDoDia(tokens, d)))));
+      for (let i = 0; i < dias.length; i++) {
+        const dia = dias[i];
+        const mapa = mapas[i];
         const faltando = [...mapa.keys()].filter((id) => !porExterno.has(id));
         if (faltando.length) {
           const { data: ins } = await admin
@@ -90,13 +100,13 @@ export async function coletarConta(contaId: string) {
 }
 
 /** Coleta todas as contas conectadas (uma de cada vez). */
-export async function coletarTodas() {
+export async function coletarTodas(completo = false) {
   const admin = supabaseAdmin();
   const { data: contas } = await admin.from("contas_plataforma").select("id");
   const resultado: { conta: string; ok: boolean; detalhe: string }[] = [];
   for (const c of contas ?? []) {
     try {
-      const r = await coletarConta(c.id);
+      const r = await coletarConta(c.id, completo);
       resultado.push({ conta: c.id, ok: true, detalhe: `${r.rede}: ${r.videos} vídeos, ${r.linhas} registros` });
     } catch (e) {
       resultado.push({ conta: c.id, ok: false, detalhe: e instanceof Error ? e.message : String(e) });
