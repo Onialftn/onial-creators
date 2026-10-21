@@ -41,6 +41,7 @@ export default async function MinhasRedes({ searchParams }: { searchParams: Prom
                 {c?.erro && <span className="pill-warn">Com problema</span>}
               </div>
               {c && <div style={{ color: c.erro ? "var(--warn)" : "var(--muted)", fontSize: 13 }}>{c.erro ? "A coleta falhou. Conecte de novo; se continuar, avise o gestor." : quando(c.ultima_coleta)}</div>}
+              {c?.erro && <details style={{ color: "var(--muted)", fontSize: 12 }}><summary style={{ cursor: "pointer" }}>Detalhe do erro</summary><code style={{ wordBreak: "break-word" }}>{c.erro}</code></details>}
               <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>{pronta ? AJUDA[r] : "O gestor ainda está configurando essa rede. Enquanto isso, ele lança as views no painel."}</p>
               {pronta ? (
                 <a className={c ? "btn-line" : "btn-gold"} href={`/api/conectar/${r}`}>{c ? "Conectar de novo" : `Conectar ${NOME_REDE[r]}`}</a>

@@ -194,9 +194,11 @@ const ig = {
 /** Views da conta inteira do Instagram em um dia (Brasília), sem contar stories. */
 async function igViewsDoDia(t: Tokens, dia: string): Promise<number> {
   const ini = Math.floor(new Date(`${dia}T03:00:00Z`).getTime() / 1000); // 00:00 em Brasília
-  const p = new URLSearchParams({ metric: "views", period: "day", metric_type: "total_value", breakdown: "media_product_type", since: String(ini), until: String(ini + 86_400), access_token: t.access });
-  const d = await json<{ data: { name: string; total_value?: { value?: number; breakdowns?: { results?: { dimension_values: string[]; value: number }[] }[] } }[] }>(
-    await fetch(`${IG}/me/insights?${p}`), "Instagram views da conta");
+  type R = { data: { name: string; total_value?: { value?: number; breakdowns?: { results?: { dimension_values: string[]; value: number }[] }[] } }[] };
+  const pedir = (extra: Record<string, string>) =>
+    fetch(`${IG}/me/insights?${new URLSearchParams({ metric: "views", period: "day", metric_type: "total_value", since: String(ini), until: String(ini + 86_400), access_token: t.access, ...extra })}`).then((r) => json<R>(r, "Instagram views da conta"));
+  // com a divisão por tipo (para tirar os stories); se o Instagram não aceitar, pede só o total
+  const d = await pedir({ breakdown: "media_product_type" }).catch(() => pedir({}));
   const tv = d.data.find((x) => x.name === "views")?.total_value;
   const partes = tv?.breakdowns?.[0]?.results;
   if (partes?.length) return partes.filter((r) => !r.dimension_values.includes("STORY")).reduce((a, r) => a + Number(r.value), 0);

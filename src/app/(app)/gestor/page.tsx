@@ -72,7 +72,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
                   <td style={{ color: "var(--strong)", fontWeight: 600 }}>{cr.nome}</td>
                   {REDES.map((r) => {
                     const c = (contasRede ?? []).find((x) => x.criador_id === cr.id && x.plataforma === r);
-                    return <td key={r} style={{ color: !c ? "var(--muted)" : c.erro ? "var(--warn)" : "var(--ok)", fontSize: 13 }}>{!c ? "Não conectado" : c.erro ? "Com problema" : c.nome_conta}</td>;
+                    return <td key={r} style={{ color: !c ? "var(--muted)" : c.erro ? "var(--warn)" : "var(--ok)", fontSize: 13 }}>{!c ? "Não conectado" : c.erro ? <details><summary style={{ cursor: "pointer" }}>Com problema</summary><code style={{ color: "var(--muted)", fontSize: 11, wordBreak: "break-word" }}>{c.erro}</code></details> : c.nome_conta}</td>;
                   })}
                 </tr>
               ))}

@@ -136,7 +136,9 @@ export async function coletarConta(contaId: string, completo = false) {
         }
         const dias = intervalo(inicio, ontem).filter((d) => d === ontem || (completo && !temDia.has(d)) || (!completo && d >= somarDias(ontem, -3) && !temDia.has(d)));
         const totais: number[] = [];
-        for (let i = 0; i < dias.length; i += 6) totais.push(...(await Promise.all(dias.slice(i, i + 6).map((d) => REDE.instagram.viewsDoDia(tokens, d).catch(() => -1)))));
+        let falhaIg: string | undefined;
+        for (let i = 0; i < dias.length; i += 6) totais.push(...(await Promise.all(dias.slice(i, i + 6).map((d) => REDE.instagram.viewsDoDia(tokens, d).catch((e) => { falhaIg ??= e instanceof Error ? e.message : String(e); return -1; })))));
+        if (dias.length && totais.every((n) => n < 0)) throw new Error(`Views da conta do Instagram: ${falhaIg}`);
         const rows: { video_id: string; dia: string; criador_id: string; plataforma: Rede; views: number }[] = [];
         for (let i = 0; i < dias.length; i++) {
           const resto = totais[i] - (somaReels.get(dias[i]) ?? 0);
