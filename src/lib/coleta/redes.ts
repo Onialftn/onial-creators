@@ -191,5 +191,18 @@ const ig = {
   },
 };
 
-export const REDE = { youtube: yt, tiktok: tk, instagram: ig } as const;
+/** Views da conta inteira do Instagram em um dia (Brasília), sem contar stories. */
+async function igViewsDoDia(t: Tokens, dia: string): Promise<number> {
+  const ini = Math.floor(new Date(`${dia}T03:00:00Z`).getTime() / 1000); // 00:00 em Brasília
+  const p = new URLSearchParams({ metric: "views", period: "day", metric_type: "total_value", breakdown: "media_product_type", since: String(ini), until: String(ini + 86_400), access_token: t.access });
+  const d = await json<{ data: { name: string; total_value?: { value?: number; breakdowns?: { results?: { dimension_values: string[]; value: number }[] }[] } }[] }>(
+    await fetch(`${IG}/me/insights?${p}`), "Instagram views da conta");
+  const tv = d.data.find((x) => x.name === "views")?.total_value;
+  const partes = tv?.breakdowns?.[0]?.results;
+  if (partes?.length) return partes.filter((r) => !r.dimension_values.includes("STORY")).reduce((a, r) => a + Number(r.value), 0);
+  return Number(tv?.value ?? 0);
+}
+Object.assign(ig, { viewsDoDia: igViewsDoDia });
+
+export const REDE = { youtube: yt, tiktok: tk, instagram: ig as typeof ig & { viewsDoDia: typeof igViewsDoDia } } as const;
 export const NOME_REDE: Record<Rede, string> = { youtube: "YouTube", tiktok: "TikTok", instagram: "Instagram" };

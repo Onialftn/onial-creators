@@ -48,6 +48,14 @@ export async function coletarConta(contaId: string, completo = false) {
     }
 
     let linhas = 0;
+    const outros = `${OUTROS_VIDEOS}${criador}`; // registro "Outros vídeos" (id único por criador)
+    async function idOutros(postado: string) {
+      if (!porExterno.has(outros)) {
+        const { data: v } = await admin.from("videos").insert({ criador_id: criador, plataforma: rede, id_externo: outros, titulo: rede === "instagram" ? "Outros conteúdos do perfil" : "Outros vídeos do canal", url: null, postado_em: postado }).select("id, id_externo, views_total, views_total_em").single();
+        if (v) porExterno.set(outros, v);
+      }
+      return porExterno.get(outros)?.id as string | undefined;
+    }
     if (rede === "youtube") {
       // O YouTube Analytics entrega as views por dia, com 1 a 3 dias de atraso: relê sempre os últimos 4 dias.
       // Ao conectar, no botão do gestor ou na primeira coleta, busca desde o 1º dia do mês passado;
@@ -60,7 +68,6 @@ export async function coletarConta(contaId: string, completo = false) {
       const mapas: Map<string, number>[] = [];
       for (let i = 0; i < dias.length; i += 6) mapas.push(...(await Promise.all(dias.slice(i, i + 6).map((d) => REDE.youtube.viewsDoDia(tokens, d)))));
       // A lista por vídeo só traz os 200 mais vistos do dia; o resto do total do canal vai para "Outros vídeos do canal".
-      const outros = `${OUTROS_VIDEOS}${criador}`; // id único por criador (vídeos têm id_externo único por rede)
       const totais = dias.length ? await REDE.youtube.totalPorDia(tokens, dias[0], dias[dias.length - 1]) : new Map<string, number>();
 
       // Histórico do ano (aba Metas de views): antes disso, só o total do canal por dia, desde 1º de janeiro.
@@ -72,11 +79,7 @@ export async function coletarConta(contaId: string, completo = false) {
         if (janeiro < limite) {
           const antigos = await REDE.youtube.totalPorDia(tokens, janeiro, somarDias(limite, -1));
           if (antigos.size) {
-            if (!porExterno.has(outros)) {
-              const { data: v } = await admin.from("videos").insert({ criador_id: criador, plataforma: rede, id_externo: outros, titulo: "Outros vídeos do canal", url: null, postado_em: janeiro }).select("id, id_externo, views_total, views_total_em").single();
-              if (v) porExterno.set(outros, v);
-            }
-            const id = porExterno.get(outros)?.id;
+            const id = await idOutros(janeiro);
             const rows = [...antigos.entries()].filter(([, n]) => n > 0).map(([dia, views]) => ({ video_id: id, dia, criador_id: criador, plataforma: rede, views }));
             if (id && rows.length) await admin.from("views_diarias").upsert(rows);
             linhas += rows.length;
@@ -116,6 +119,33 @@ export async function coletarConta(contaId: string, completo = false) {
           linhas++;
         }
         await admin.from("videos").update({ views_total: v.viewsTotal, views_total_em: new Date().toISOString(), titulo: v.titulo, url: v.url }).eq("id", reg.id);
+      }
+
+      if (rede === "instagram") {
+        // O Instagram também informa as views da conta inteira por dia. Com isso:
+        // - dias sem nada gravado (antes de conectar) recebem o total do dia em "Outros conteúdos";
+        // - ontem: o que o total da conta tiver a mais que a soma dos reels vai para "Outros conteúdos".
+        const inicio = primeiroDia(mesAnterior(mesDe(hoje)));
+        const { data: gravados } = await admin.from("views_diarias").select("dia, video_id, views").eq("criador_id", criador).eq("plataforma", rede).gte("dia", inicio).lte("dia", ontem).limit(5000);
+        const idO = porExterno.get(outros)?.id;
+        const somaReels = new Map<string, number>();
+        const temDia = new Set<string>();
+        for (const g of gravados ?? []) {
+          temDia.add(String(g.dia));
+          if (g.video_id !== idO) somaReels.set(String(g.dia), (somaReels.get(String(g.dia)) ?? 0) + Number(g.views));
+        }
+        const dias = intervalo(inicio, ontem).filter((d) => d === ontem || (completo && !temDia.has(d)) || (!completo && d >= somarDias(ontem, -3) && !temDia.has(d)));
+        const totais: number[] = [];
+        for (let i = 0; i < dias.length; i += 6) totais.push(...(await Promise.all(dias.slice(i, i + 6).map((d) => REDE.instagram.viewsDoDia(tokens, d).catch(() => -1)))));
+        const rows: { video_id: string; dia: string; criador_id: string; plataforma: Rede; views: number }[] = [];
+        for (let i = 0; i < dias.length; i++) {
+          const resto = totais[i] - (somaReels.get(dias[i]) ?? 0);
+          if (totais[i] < 0 || resto <= 0) continue;
+          const id = await idOutros(inicio);
+          if (id) rows.push({ video_id: id, dia: dias[i], criador_id: criador, plataforma: rede, views: resto });
+        }
+        if (rows.length) await admin.from("views_diarias").upsert(rows);
+        linhas += rows.length;
       }
     }
 
