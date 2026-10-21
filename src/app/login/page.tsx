@@ -42,6 +42,7 @@ export default function Login() {
         {erro && <p role="alert" style={{ color: "var(--warn)", margin: 0, fontSize: 13 }}>{erro}</p>}
         <button className="btn-gold" type="submit" disabled={entrando} style={{ minHeight: 48, fontSize: 15 }}>{entrando ? "Entrando..." : "Entrar"}</button>
         <p style={{ color: "var(--muted)", fontSize: 12, textAlign: "center", margin: 0 }}>Esqueceu a senha? Fale com o gestor da equipe.</p>
+        <a href="/privacidade" style={{ color: "var(--muted)", fontSize: 12, textAlign: "center", textDecoration: "underline" }}>Política de Privacidade</a>
       </form>
     </div>
   );
