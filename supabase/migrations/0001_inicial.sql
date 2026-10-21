@@ -26,6 +26,11 @@ begin
 end $$;
 create trigger ao_criar_usuario after insert on auth.users for each row execute function public.novo_usuario();
 
+-- usuários criados antes deste arquivo também ganham perfil
+insert into public.perfis (id, nome)
+select id, coalesce(raw_user_meta_data ->> 'nome', split_part(email, '@', 1)) from auth.users
+on conflict (id) do nothing;
+
 -- um criador não pode se promover a gestor pelo site
 create or replace function public.proteger_papel()
 returns trigger language plpgsql security definer set search_path = public as $$
