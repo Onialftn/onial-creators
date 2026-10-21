@@ -163,6 +163,8 @@ export async function rankingDoMes(sb: SB, mes: string): Promise<LinhaRanking[]>
 
 export interface VideoTop {
   id: string;
+  /** capa do vídeo (por enquanto só YouTube) */
+  capa: string | null;
   titulo: string;
   url: string | null;
   plataforma: Plataforma;
@@ -193,7 +195,7 @@ export async function topVideos(sb: SB, criadorId: string, mes: string, limite =
   const mapa = new Map<string, VideoTop>();
   for (const r of data as { video_id: string; views: number; videos: { titulo: string; url: string | null; plataforma: Plataforma; postado_em: string; id_externo: string | null } | null }[]) {
     if (!r.videos || r.videos.id_externo?.startsWith(OUTROS_VIDEOS)) continue;
-    if (!mapa.has(r.video_id)) mapa.set(r.video_id, { id: r.video_id, titulo: r.videos.titulo, url: r.videos.url, plataforma: r.videos.plataforma, postado_em: r.videos.postado_em, views: 0 });
+    if (!mapa.has(r.video_id)) mapa.set(r.video_id, { id: r.video_id, capa: r.videos.plataforma === "youtube" && r.videos.id_externo ? `https://i.ytimg.com/vi/${r.videos.id_externo}/oardefault.jpg` : null, titulo: r.videos.titulo, url: r.videos.url, plataforma: r.videos.plataforma, postado_em: r.videos.postado_em, views: 0 });
     mapa.get(r.video_id)!.views += Number(r.views);
   }
   return [...mapa.values()].sort((a, b) => b.views - a.views).slice(0, limite);

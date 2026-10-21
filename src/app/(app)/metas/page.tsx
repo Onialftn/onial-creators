@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AvisoAtualizacao, Cabecalho, TituloCard } from "@/components/Blocos";
+import { CapaVideo } from "@/components/CapaVideo";
 import { COR_PLATAFORMA, Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { PLATAFORMAS, historicoDoAno, resumoDoMes, topVideos, ultimaColeta, usuarioAtual, type Plataforma } from "@/lib/dados";
 import { diasNoMes, hojeBrasil, mesAnterior, mesDe, nomeMes } from "@/lib/datas";
@@ -24,8 +25,7 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
   const porDia = r.meta ? Math.max(0, Math.ceil((r.meta - r.views) / restam)) : 0;
   const projecao = Math.round((r.views / Math.max(1, diaHoje)) * diasNoMes(mes));
   const C = 2 * Math.PI * 70;
-  const viral = PLATAFORMAS.map((p) => ({ p, v: top.find((t) => t.plataforma === p) })).filter((x) => x.v);
-  const campeao = viral.reduce<typeof viral[number] | null>((a, b) => (!a || b.v!.views > a.v!.views ? b : a), null);
+  const viral = top.slice(0, 3);
 
   return (
     <>
@@ -97,15 +97,21 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
         ) : (
           <div className="overflow-x-auto">
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))", minWidth: 600 }}>
-              {viral.map(({ p, v }) => (
-                <a key={p} href={v!.url ?? undefined} target="_blank" rel="noreferrer" className="card flex min-w-0 flex-col gap-3" style={{ padding: 14, ...(campeao?.p === p ? { borderColor: "#E8B014", boxShadow: "0 0 30px rgba(232,176,20,.25)" } : {}) }}>
-                  <div className="relative" style={{ aspectRatio: "16/10", borderRadius: 6, background: "linear-gradient(160deg,#2A2208,#0A0A0A 75%)" }}>
-                    {campeao?.p === p && <span className="pill absolute" style={{ left: 10, top: 10, background: "#E8B014", color: "#0A0A0A", fontSize: 11 }}><Icone nome="crown" tamanho={12} />MAIS VIRAL DO MÊS</span>}
-                    <span className="absolute" style={{ right: 10, top: 10 }}><LogoPlataforma p={p} tamanho={30} /></span>
-                    <span className="num absolute" style={{ left: 10, bottom: 8, fontSize: 24, color: "#fff" }}>{formatarNumero(v!.views)}</span>
+              {viral.map((v, i) => (
+                <a key={v.id} href={v.url ?? undefined} target="_blank" rel="noreferrer" className="card flex min-w-0 flex-col gap-3" style={{ padding: 14, ...(i === 0 ? { borderColor: "#E8B014", boxShadow: "0 0 30px rgba(232,176,20,.25)" } : {}) }}>
+                  <div className="relative overflow-hidden" style={{ aspectRatio: "4/5", borderRadius: 6, background: "linear-gradient(160deg,#2A2208,#0A0A0A 75%)" }}>
+                    {v.capa && <CapaVideo src={v.capa} alt={`Capa de ${v.titulo || "vídeo"}`} />}
+                    <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.45) 0,transparent 28%,transparent 60%,rgba(0,0,0,.8) 100%)" }} />
+                    {i === 0 ? (
+                      <span className="pill absolute" style={{ left: 10, top: 10, background: "#E8B014", color: "#0A0A0A", fontSize: 11 }}><Icone nome="crown" tamanho={12} />MAIS VIRAL DO MÊS</span>
+                    ) : (
+                      <span className="pill absolute" style={{ left: 10, top: 10, background: "rgba(10,10,10,.75)", color: "#fff", fontSize: 11 }}>{i + 1}º MAIS VIRAL</span>
+                    )}
+                    <span className="absolute" style={{ right: 10, top: 10 }}><LogoPlataforma p={v.plataforma} tamanho={30} /></span>
+                    <span className="num absolute" style={{ left: 10, bottom: 8, fontSize: 26, color: "#fff" }}>{formatarNumero(v.views)} <span style={{ fontSize: 14, opacity: 0.8 }}>views</span></span>
                   </div>
-                  <div style={{ color: "var(--strong)", fontWeight: 600, lineHeight: 1.3 }}>{v!.titulo || "Vídeo sem título"}</div>
-                  <div style={{ color: "var(--muted)", fontSize: 12 }}>Maior vídeo no {NOME_PLATAFORMA[p]}</div>
+                  <div style={{ color: "var(--strong)", fontWeight: 600, lineHeight: 1.3 }}>{v.titulo || "Vídeo sem título"}</div>
+                  <div style={{ color: "var(--muted)", fontSize: 12 }}>{NOME_PLATAFORMA[v.plataforma]} · postado em {v.postado_em.slice(8)}/{v.postado_em.slice(5, 7)}</div>
                 </a>
               ))}
             </div>
