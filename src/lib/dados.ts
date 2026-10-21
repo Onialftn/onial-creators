@@ -200,3 +200,31 @@ export async function topVideos(sb: SB, criadorId: string, mes: string, limite =
 }
 
 export { mesDe };
+
+/** Quando as views deste criador foram buscadas pela última vez (qualquer rede conectada). */
+export async function ultimaColeta(sb: SB, criadorId: string): Promise<string | null> {
+  const { data } = await sb.from("contas_plataforma").select("ultima_coleta").eq("criador_id", criadorId).not("ultima_coleta", "is", null).order("ultima_coleta", { ascending: false }).limit(1).maybeSingle();
+  return (data?.ultima_coleta as string | undefined) ?? null;
+}
+
+export interface MesHistorico { mes: string; por: Record<Plataforma, number>; total: number; meta: number | null }
+
+/** Views de cada mês de um ano (por rede) e a meta de cada mês. */
+export async function historicoDoAno(sb: SB, criadorId: string, ano: number): Promise<{ meses: MesHistorico[]; primeiroAno: number }> {
+  const [views, metas, primeiro] = await Promise.all([
+    sb.from("ranking_mensal").select("mes, plataforma, views").eq("criador_id", criadorId).gte("mes", `${ano}-01`).lte("mes", `${ano}-12`),
+    sb.from("metas").select("mes, meta_views").eq("criador_id", criadorId).gte("mes", `${ano}-01`).lte("mes", `${ano}-12`),
+    sb.from("ranking_mensal").select("mes").eq("criador_id", criadorId).order("mes").limit(1).maybeSingle(),
+  ]);
+  const meta = new Map((metas.data ?? []).map((m) => [m.mes as string, Number(m.meta_views)]));
+  const meses: MesHistorico[] = Array.from({ length: 12 }, (_, i) => {
+    const mes = `${ano}-${String(i + 1).padStart(2, "0")}`;
+    return { mes, por: { tiktok: 0, youtube: 0, instagram: 0 }, total: 0, meta: meta.get(mes) ?? null };
+  });
+  for (const r of views.data ?? []) {
+    const m = meses[Number(String(r.mes).slice(5)) - 1];
+    m.por[r.plataforma as Plataforma] += Number(r.views);
+    m.total += Number(r.views);
+  }
+  return { meses, primeiroAno: primeiro.data ? Number(String(primeiro.data.mes).slice(0, 4)) : ano };
+}

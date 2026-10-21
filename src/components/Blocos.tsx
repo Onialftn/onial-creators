@@ -1,5 +1,5 @@
 import { formatarNumero, formatarReais, inicioDaSemana as inicioDaSemanaHoje } from "@/lib/pagamento";
-import { DIAS_CURTOS, diaDaSemana } from "@/lib/datas";
+import { DIAS_CURTOS, diaDaSemana, proximaColeta, quandoFoi } from "@/lib/datas";
 import type { DiaCalendario, LinhaRanking, Plataforma, ResumoMes } from "@/lib/dados";
 import { COR_PLATAFORMA, Icone, LogoPlataforma, NOME_PLATAFORMA } from "./Icone";
 
@@ -174,6 +174,20 @@ export function EmBreve({ icone, titulo, texto, fase }: { icone: string; titulo:
         <h1 className="h1 m-0" style={{ fontSize: 40 }}>{titulo}</h1>
         <p style={{ color: "var(--muted)", lineHeight: 1.6, margin: 0 }}>{texto}</p>
       </div>
+    </div>
+  );
+}
+
+/** Linha discreta: quando as views foram atualizadas e quando atualizam de novo. */
+export function AvisoAtualizacao({ ultima }: { ultima: string | null }) {
+  return (
+    <div className="flex items-center gap-2" style={{ color: "var(--muted)", fontSize: 13 }}>
+      <span style={{ color: "var(--accent-text)", display: "flex" }}><Icone nome="reset" tamanho={15} /></span>
+      <span>
+        {ultima ? <>Views atualizadas <b style={{ color: "var(--fg)", fontWeight: 600 }}>{quandoFoi(ultima)}</b></> : "Views ainda não atualizadas"}
+        {" · "}próxima atualização <b style={{ color: "var(--fg)", fontWeight: 600 }}>{proximaColeta()}</b>
+        <span title="O YouTube libera as views com 1 a 3 dias de atraso; o site completa esses dias nas próximas atualizações."> · YouTube com até 3 dias de atraso</span>
+      </span>
     </div>
   );
 }

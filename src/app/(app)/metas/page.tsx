@@ -1,13 +1,23 @@
-import { Cabecalho, TituloCard } from "@/components/Blocos";
+import Link from "next/link";
+import { AvisoAtualizacao, Cabecalho, TituloCard } from "@/components/Blocos";
 import { COR_PLATAFORMA, Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
-import { PLATAFORMAS, resumoDoMes, topVideos, usuarioAtual, type Plataforma } from "@/lib/dados";
+import { PLATAFORMAS, historicoDoAno, resumoDoMes, topVideos, ultimaColeta, usuarioAtual, type Plataforma } from "@/lib/dados";
 import { diasNoMes, hojeBrasil, mesAnterior, mesDe, nomeMes } from "@/lib/datas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
 
-export default async function Metas() {
+export default async function Metas({ searchParams }: { searchParams: Promise<{ ano?: string }> }) {
   const { sb, perfil } = await usuarioAtual();
   const mes = mesDe(hojeBrasil());
-  const [r, anterior, top] = await Promise.all([resumoDoMes(sb, perfil.id, mes), resumoDoMes(sb, perfil.id, mesAnterior(mes)), topVideos(sb, perfil.id, mes, 50)]);
+  const anoAtual = Number(mes.slice(0, 4));
+  const pedido = Number((await searchParams).ano);
+  const ano = pedido >= 2000 && pedido <= anoAtual ? pedido : anoAtual;
+  const [r, anterior, top, ultima, hist] = await Promise.all([
+    resumoDoMes(sb, perfil.id, mes),
+    resumoDoMes(sb, perfil.id, mesAnterior(mes)),
+    topVideos(sb, perfil.id, mes, 50),
+    ultimaColeta(sb, perfil.id),
+    historicoDoAno(sb, perfil.id, ano),
+  ]);
   const diaHoje = Number(r.hoje.slice(8));
   const restam = Math.max(1, diasNoMes(mes) - diaHoje + 1);
   const pct = r.meta ? Math.min(1, r.views / r.meta) : 0;
@@ -20,6 +30,7 @@ export default async function Metas() {
   return (
     <>
       <Cabecalho icone="target" titulo="Metas de views" sub={`Seus números de TikTok, YouTube e Instagram em ${nomeMes(mes).toLowerCase()}, até hoje (dia ${diaHoje}).`} />
+      <AvisoAtualizacao ultima={ultima} />
 
       <section className="card flex flex-wrap items-center gap-7">
         <div className="relative flex-none" style={{ width: 180, height: 180 }}>
@@ -122,6 +133,62 @@ export default async function Metas() {
           </table>
         </div>
       </section>
+
+      <HistoricoAno ano={ano} anoAtual={anoAtual} mesAtual={mes} hist={hist} />
     </>
+  );
+}
+
+function HistoricoAno({ ano, anoAtual, mesAtual, hist }: { ano: number; anoAtual: number; mesAtual: string; hist: Awaited<ReturnType<typeof historicoDoAno>> }) {
+  const meses = hist.meses.filter((m) => m.mes <= mesAtual);
+  const maior = Math.max(1, ...meses.map((m) => m.total));
+  const soma = (f: (m: (typeof meses)[number]) => number) => meses.reduce((a, m) => a + f(m), 0);
+  const seta = (alvo: number, rotulo: string, ativo: boolean) =>
+    ativo ? <Link href={`/metas?ano=${alvo}#historico`} className="btn-line" style={{ minHeight: 34, padding: "0 12px" }} aria-label={`Ver ${alvo}`}>{rotulo}</Link>
+      : <span className="btn-line" aria-disabled="true" style={{ minHeight: 34, padding: "0 12px", opacity: 0.35 }}>{rotulo}</span>;
+  return (
+    <section id="historico" className="card flex flex-col gap-4">
+      <TituloCard icone="stats" direita={
+        <span className="flex items-center gap-2">
+          {seta(ano - 1, "‹", ano > hist.primeiroAno)}
+          <span className="num" style={{ fontSize: 20, color: "var(--strong)", minWidth: 52, textAlign: "center" }}>{ano}</span>
+          {seta(ano + 1, "›", ano < anoAtual)}
+        </span>
+      }>Views de cada mês</TituloCard>
+      <div className="overflow-x-auto">
+        <table className="table" style={{ minWidth: 720 }}>
+          <thead>
+            <tr><th scope="col">MÊS</th>{PLATAFORMAS.map((p) => <th key={p} scope="col">{NOME_PLATAFORMA[p].toUpperCase()}</th>)}<th scope="col">TOTAL</th><th scope="col">META</th><th scope="col">STATUS</th></tr>
+          </thead>
+          <tbody>
+            {meses.map((m) => {
+              const atual = m.mes === mesAtual;
+              const bateu = m.meta !== null && m.total >= m.meta;
+              return (
+                <tr key={m.mes} style={atual ? { background: "var(--tint)" } : undefined}>
+                  <td style={{ color: "var(--strong)", fontWeight: 600, whiteSpace: "nowrap" }}>{nomeMes(m.mes).split(" ")[0]}</td>
+                  {PLATAFORMAS.map((p) => <td key={p} className="num" style={{ fontSize: 16, color: m.por[p] ? "var(--text2)" : "var(--muted)" }}>{m.por[p] ? formatarNumero(m.por[p]) : "—"}</td>)}
+                  <td style={{ minWidth: 170 }}>
+                    <div className="num" style={{ fontSize: 17, color: "var(--strong)" }}>{m.total ? formatarNumero(m.total) : "—"}</div>
+                    <div className="bar" style={{ height: 5, marginTop: 4 }}><span style={{ width: `${(m.total / maior) * 100}%`, background: "#E8B014" }} /></div>
+                  </td>
+                  <td className="num" style={{ fontSize: 16, color: "var(--muted)" }}>{m.meta ? formatarNumero(m.meta) : "—"}</td>
+                  <td>{atual ? <span className="pill-tint">Em andamento</span> : m.meta === null ? <span style={{ color: "var(--muted)" }}>Sem meta</span> : bateu ? <span className="pill-ok"><Icone nome="check" tamanho={12} />Bateu</span> : <span className="pill-warn">Não bateu</span>}</td>
+                </tr>
+              );
+            })}
+            {meses.length > 0 && (
+              <tr>
+                <td style={{ color: "var(--accent-text)", fontWeight: 700 }}>TOTAL {ano}</td>
+                {PLATAFORMAS.map((p) => <td key={p} className="num" style={{ fontSize: 16, color: "var(--strong)" }}>{formatarNumero(soma((m) => m.por[p]))}</td>)}
+                <td className="num" style={{ fontSize: 19, color: "var(--accent-text)" }}>{formatarNumero(soma((m) => m.total))}</td>
+                <td colSpan={2} style={{ color: "var(--muted)", fontSize: 13 }}>{meses.filter((m) => m.mes !== mesAtual && m.meta !== null && m.total >= m.meta).length} meta(s) batida(s)</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      <p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>O YouTube entrega o histórico desde janeiro. TikTok e Instagram só informam o total dos vídeos, então o histórico deles começa no dia em que a conta foi conectada (ou nas views lançadas pelo gestor).</p>
+    </section>
   );
 }

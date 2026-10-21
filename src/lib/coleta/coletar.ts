@@ -62,6 +62,27 @@ export async function coletarConta(contaId: string, completo = false) {
       // A lista por vídeo só traz os 200 mais vistos do dia; o resto do total do canal vai para "Outros vídeos do canal".
       const outros = `${OUTROS_VIDEOS}${criador}`; // id único por criador (vídeos têm id_externo único por rede)
       const totais = dias.length ? await REDE.youtube.totalPorDia(tokens, dias[0], dias[dias.length - 1]) : new Map<string, number>();
+
+      // Histórico do ano (aba Metas de views): antes disso, só o total do canal por dia, desde 1º de janeiro.
+      // Preenche apenas os dias anteriores ao primeiro dia já gravado, para nunca contar duas vezes.
+      if (completo) {
+        const { data: primeiro } = await admin.from("views_diarias").select("dia").eq("criador_id", criador).eq("plataforma", rede).order("dia").limit(1).maybeSingle();
+        const limite = [primeiro ? String(primeiro.dia) : inicio, inicio].sort()[0];
+        const janeiro = `${hoje.slice(0, 4)}-01-01`;
+        if (janeiro < limite) {
+          const antigos = await REDE.youtube.totalPorDia(tokens, janeiro, somarDias(limite, -1));
+          if (antigos.size) {
+            if (!porExterno.has(outros)) {
+              const { data: v } = await admin.from("videos").insert({ criador_id: criador, plataforma: rede, id_externo: outros, titulo: "Outros vídeos do canal", url: null, postado_em: janeiro }).select("id, id_externo, views_total, views_total_em").single();
+              if (v) porExterno.set(outros, v);
+            }
+            const id = porExterno.get(outros)?.id;
+            const rows = [...antigos.entries()].filter(([, n]) => n > 0).map(([dia, views]) => ({ video_id: id, dia, criador_id: criador, plataforma: rede, views }));
+            if (id && rows.length) await admin.from("views_diarias").upsert(rows);
+            linhas += rows.length;
+          }
+        }
+      }
       for (let i = 0; i < dias.length; i++) {
         const dia = dias[i];
         const mapa = mapas[i];

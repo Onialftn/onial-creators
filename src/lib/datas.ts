@@ -45,3 +45,19 @@ export function nomeMes(mes: string): string {
 }
 export const DIAS_CURTOS = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
 export const DIAS_NOMES = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado", "Domingo"];
+
+/** "hoje às 06:12", "ontem às 06:12" ou "18/10 às 06:12" (horário de Brasília) */
+export function quandoFoi(iso: string, agora = new Date()): string {
+  const d = new Date(iso);
+  const dia = hojeBrasil(d);
+  const hoje = hojeBrasil(agora);
+  const hora = new Intl.DateTimeFormat("pt-BR", { timeZone: FUSO, hour: "2-digit", minute: "2-digit" }).format(d);
+  const quando = dia === hoje ? "hoje" : dia === somarDias(hoje, -1) ? "ontem" : `${dia.slice(8)}/${dia.slice(5, 7)}`;
+  return `${quando} às ${hora}`;
+}
+
+/** A coleta automática roda todo dia entre 6h e 7h (Brasília). */
+export function proximaColeta(agora = new Date()): string {
+  const hora = Number(new Intl.DateTimeFormat("en-GB", { timeZone: FUSO, hour: "2-digit", hourCycle: "h23" }).format(agora));
+  return hora < 6 ? "hoje entre 6h e 7h" : "amanhã entre 6h e 7h";
+}
