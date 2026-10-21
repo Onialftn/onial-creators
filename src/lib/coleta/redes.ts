@@ -102,7 +102,7 @@ const yt = {
 /* ======================= TikTok ======================= */
 const tk = {
   autorizar(redirect: string, state: string) {
-    const p = new URLSearchParams({ client_key: env("TIKTOK_CLIENT_KEY"), scope: "user.info.basic,video.list", response_type: "code", redirect_uri: redirect, state });
+    const p = new URLSearchParams({ client_key: env("TIKTOK_CLIENT_KEY"), scope: "user.info.basic,video.list", response_type: "code", redirect_uri: redirect, state, disable_auto_auth: "1" });
     return `https://www.tiktok.com/v2/auth/authorize/?${p}`;
   },
   async token(body: Record<string, string>): Promise<Tokens> {
