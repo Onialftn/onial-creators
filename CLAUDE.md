@@ -11,7 +11,7 @@ Todo o texto do site é em português do Brasil.
 - Fundo preto, destaque dourado da coroa do logo (`#E8B014`), texto claro. Modo claro e escuro com os mesmos tokens do protótipo (`--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--accent-text`, `--ok`, `--warn`...).
 - Fontes: Rajdhani (títulos, números) e Inter (texto).
 - Botão dourado sempre com texto escuro.
-- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Pagamentos), OTIMIZAÇÕES (Ideias de vídeos, Roteiros, Áudio, Avaliar vídeo, Pomodoro), EQUIPE (Ranking do mês, Meta coletiva com selo EM BREVE).
+- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Pagamentos, Minhas redes), OTIMIZAÇÕES (Ideias de vídeos, Roteiros, Áudio, Avaliar vídeo, Pomodoro), EQUIPE (Ranking do mês, Meta coletiva com selo EM BREVE).
 - No celular, o menu vira uma barra no topo.
 - A Dashboard é só para informações rápidas. Funções novas ganham aba própria, nunca entram na Dashboard.
 
@@ -45,7 +45,7 @@ perfis, contas_plataforma, videos, views_diarias, agenda_postagem, dias_postagem
 ## Integrações
 
 - YouTube Data API + YouTube Analytics API (OAuth do próprio criador): foto e nome do canal no perfil + views diárias.
-- TikTok e Instagram: na Fase 1 o gestor lança as views no painel. A integração automática é da Fase 2.
+- Coleta automática (aba Minhas redes): cada criador conecta YouTube, TikTok e Instagram (OAuth); a Vercel roda `/api/coletar` todo dia às 06:00 de Brasília. YouTube Analytics dá views por dia; TikTok e Instagram dão o total, e o ganho do dia é a diferença (`src/lib/coleta/ganho.ts`). O lançamento manual do gestor fica como reserva.
 - IA (API do Claude): roteiros, adaptação de roteiro gringo para o público brasileiro, avaliação de vídeo. Fases 2 e 3.
 
 ## Como trabalhar neste projeto

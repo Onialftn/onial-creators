@@ -5,7 +5,9 @@ import { Icone, NOME_PLATAFORMA } from "@/components/Icone";
 import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes } from "@/lib/datas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
-import { criarCriador, fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMeta } from "./acoes";
+import { coletarAgora, criarCriador, fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMeta } from "./acoes";
+import { LogoPlataforma } from "@/components/Icone";
+import { REDES, redeConfigurada } from "@/lib/coleta/redes";
 
 export default async function PainelGestor({ searchParams }: { searchParams: Promise<{ c?: string; ok?: string; erro?: string }> }) {
   const { sb, perfil } = await usuarioAtual();
@@ -23,6 +25,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
     : [{ data: null }, { data: null }];
   const dias = new Set((agenda ?? []).map((a) => a.dia_semana as number));
   const custoMes = resumos.reduce((s, r) => s + r.pagamento.totalCentavos, 0);
+  const { data: contasRede } = await sb.from("contas_plataforma").select("criador_id, plataforma, nome_conta, ultima_coleta, erro");
 
   return (
     <>
@@ -54,6 +57,28 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
             </tbody>
           </table>
         </div>
+      </section>
+
+      <section className="card flex flex-col gap-4">
+        <TituloCard icone="zap" direita={REDES.map((r) => `${NOME_PLATAFORMA[r]}: ${redeConfigurada(r) ? "configurado" : "falta configurar"}`).join(" · ")}>Redes conectadas</TituloCard>
+        <div className="overflow-x-auto">
+          <table className="table" style={{ minWidth: 560 }}>
+            <thead><tr><th scope="col">CRIADOR</th>{REDES.map((r) => <th key={r} scope="col"><span className="flex items-center gap-1.5"><LogoPlataforma p={r} tamanho={20} />{NOME_PLATAFORMA[r].toUpperCase()}</span></th>)}</tr></thead>
+            <tbody>
+              {lista.map((cr) => (
+                <tr key={cr.id}>
+                  <td style={{ color: "var(--strong)", fontWeight: 600 }}>{cr.nome}</td>
+                  {REDES.map((r) => {
+                    const c = (contasRede ?? []).find((x) => x.criador_id === cr.id && x.plataforma === r);
+                    return <td key={r} style={{ color: !c ? "var(--muted)" : c.erro ? "var(--warn)" : "var(--ok)", fontSize: 13 }}>{!c ? "Não conectado" : c.erro ? "Com problema" : c.nome_conta}</td>;
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <form action={coletarAgora}><button className="btn-line" type="submit">Coletar views agora</button></form>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>A coleta roda sozinha todo dia às 6h. Cada criador conecta as próprias contas na aba Minhas redes.</p>
       </section>
 
       {sel && rSel && (

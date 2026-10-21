@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { coletarTodas } from "@/lib/coleta/coletar";
 
 async function gestor() {
   const ctx = await usuarioAtual();
@@ -99,4 +100,12 @@ export async function marcarPago(f: FormData) {
   const criador = texto(f, "criador");
   await sb.from("pagamentos").update({ status: "pago", pago_em: new Date().toISOString() }).eq("id", texto(f, "pagamento"));
   voltar(criador, "Pagamento marcado como pago.");
+}
+
+export async function coletarAgora() {
+  await gestor();
+  const r = await coletarTodas();
+  const falhas = r.filter((x) => !x.ok).length;
+  revalidatePath("/", "layout");
+  redirect(`/gestor?ok=${encodeURIComponent(r.length === 0 ? "Nenhuma conta conectada ainda." : `Coleta feita em ${r.length} contas${falhas ? `, ${falhas} com problema` : ""}.`)}`);
 }

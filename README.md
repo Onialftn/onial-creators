@@ -10,7 +10,22 @@ Painel da equipe de conteúdo de Fortnite da Onial. Regras, telas e visual estã
 - Pomodoro (60/20, arraste da bolinha, configurações, estatísticas) e Áudio (corta silêncios e respirações, baixa o áudio limpo)
 - Ideias de vídeos, Roteiros, Avaliar vídeo e Meta coletiva aparecem como "Em breve"
 
-Ainda falta: views do YouTube automáticas (Fase 1, pedido 4) e as fases 2 e 3.
+- Coleta automática de views (aba **Minhas redes**): cada criador conecta YouTube, TikTok e Instagram; todo dia às 6h (Brasília) a Vercel roda `/api/coletar`.
+
+Ainda falta: as fases 2 e 3.
+
+## Coleta automática: variáveis extras na Vercel
+
+Rode antes `supabase/migrations/0002_coleta_automatica.sql` no SQL Editor.
+
+| Variável | De onde vem |
+| --- | --- |
+| `CRON_SECRET` | Qualquer texto longo e aleatório (a Vercel usa para chamar a coleta diária) |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google Cloud → APIs e serviços → Credenciais → ID do cliente OAuth (aplicativo da Web). Ative YouTube Data API v3 e YouTube Analytics API. URI de redirecionamento: `https://SEU-SITE/api/conectar/youtube/callback` |
+| `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` | TikTok for Developers → app com Login Kit e escopos `user.info.basic` e `video.list`. Redirect: `https://SEU-SITE/api/conectar/tiktok/callback` |
+| `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET` | Meta for Developers → app com "Instagram API with Instagram Login", escopos `instagram_business_basic` e `instagram_business_manage_insights`. Redirect: `https://SEU-SITE/api/conectar/instagram/callback`. Adicione cada criador como testador do Instagram |
+
+Uma rede sem variáveis aparece como "Em configuração" para os criadores.
 
 ## Colocar no ar
 

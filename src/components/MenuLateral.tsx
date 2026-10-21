@@ -14,6 +14,7 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
       { href: "/dias", rotulo: "Dias de postagem", icone: "cal" },
       { href: "/metas", rotulo: "Metas de views", icone: "target" },
       { href: "/pagamentos", rotulo: "Pagamentos", icone: "wallet" },
+      { href: "/redes", rotulo: "Minhas redes", icone: "zap" },
     ],
   },
   {
