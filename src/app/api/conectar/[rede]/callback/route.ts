@@ -48,6 +48,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     return res;
   } catch (e) {
     console.error("conectar", rede, e);
-    return falhar(`Não consegui conectar o ${NOME_REDE[rede]}. ${e instanceof Error && e.message.includes("canal") ? e.message : "Tente de novo ou fale com o gestor."}`);
+    const detalhe = (e instanceof Error ? e.message : String(e)).replace(/access_token=[^&\s"]+/g, "access_token=…").slice(0, 300);
+    return falhar(`Não consegui conectar o ${NOME_REDE[rede]}. ${detalhe.includes("canal") ? detalhe : `Tente de novo ou fale com o gestor. (Detalhe: ${detalhe})`}`);
   }
 }
