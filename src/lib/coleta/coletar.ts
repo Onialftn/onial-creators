@@ -1,6 +1,7 @@
 import "server-only";
 import { hojeBrasil, intervalo, mesAnterior, mesDe, primeiroDia, somarDias } from "@/lib/datas";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { OUTROS_VIDEOS } from "@/lib/dados";
 import { viewsGanhas } from "./ganho";
 import { REDE, type Rede, type Tokens } from "./redes";
 
@@ -58,14 +59,21 @@ export async function coletarConta(contaId: string, completo = false) {
       // 6 dias por vez, para ser rápido sem estourar o limite da API
       const mapas: Map<string, number>[] = [];
       for (let i = 0; i < dias.length; i += 6) mapas.push(...(await Promise.all(dias.slice(i, i + 6).map((d) => REDE.youtube.viewsDoDia(tokens, d)))));
+      // A lista por vídeo só traz os 200 mais vistos do dia; o resto do total do canal vai para "Outros vídeos do canal".
+      const outros = `${OUTROS_VIDEOS}${criador}`; // id único por criador (vídeos têm id_externo único por rede)
+      const totais = dias.length ? await REDE.youtube.totalPorDia(tokens, dias[0], dias[dias.length - 1]) : new Map<string, number>();
       for (let i = 0; i < dias.length; i++) {
         const dia = dias[i];
         const mapa = mapas[i];
+        const resto = (totais.get(dia) ?? 0) - [...mapa.values()].reduce((a, b) => a + b, 0);
+        if (resto > 0) mapa.set(outros, resto);
         const faltando = [...mapa.keys()].filter((id) => !porExterno.has(id));
         if (faltando.length) {
           const { data: ins } = await admin
             .from("videos")
-            .insert(faltando.map((id) => ({ criador_id: criador, plataforma: rede, id_externo: id, titulo: "Vídeo do YouTube", url: `https://www.youtube.com/watch?v=${id}`, postado_em: dia })))
+            .insert(faltando.map((id) => id === outros
+              ? { criador_id: criador, plataforma: rede, id_externo: id, titulo: "Outros vídeos do canal", url: null, postado_em: dias[0] }
+              : { criador_id: criador, plataforma: rede, id_externo: id, titulo: "Vídeo do YouTube", url: `https://www.youtube.com/watch?v=${id}`, postado_em: dia }))
             .select("id, id_externo, views_total, views_total_em");
           for (const v of ins ?? []) porExterno.set(v.id_externo as string, v);
         }

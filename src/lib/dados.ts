@@ -61,7 +61,8 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const semFim = fimDaSemanaDe(fim);
 
   const [views, meta, agenda, dias] = await Promise.all([
-    sb.from("views_diarias").select("plataforma, views").eq("criador_id", criadorId).gte("dia", ini).lte("dia", fim),
+    // soma pronta no banco (a leitura direta de views_diarias corta em 1.000 linhas)
+    sb.from("ranking_mensal").select("plataforma, views").eq("criador_id", criadorId).eq("mes", mes),
     sb.from("metas").select("meta_views").eq("criador_id", criadorId).eq("mes", mes).maybeSingle(),
     sb.from("agenda_postagem").select("dia_semana").eq("criador_id", criadorId),
     sb.from("dias_postagem").select("dia, postagens").eq("criador_id", criadorId).gte("dia", semIni).lte("dia", semFim),
@@ -170,16 +171,28 @@ export interface VideoTop {
 }
 
 /** Vídeos de um criador com mais views ganhas no mês. */
+/** id_externo do registro que guarda as views dos vídeos fora do top 200 do dia (YouTube) */
+export const OUTROS_VIDEOS = "__outros__";
+
 export async function topVideos(sb: SB, criadorId: string, mes: string, limite = 6): Promise<VideoTop[]> {
-  const { data } = await sb
-    .from("views_diarias")
-    .select("video_id, views, videos(titulo, url, plataforma, postado_em)")
-    .eq("criador_id", criadorId)
-    .gte("dia", primeiroDia(mes))
-    .lte("dia", ultimoDia(mes));
+  // lê em páginas de 1.000 (limite do banco por consulta)
+  const data: unknown[] = [];
+  for (let de = 0; ; de += 1000) {
+    const { data: pagina } = await sb
+      .from("views_diarias")
+      .select("video_id, views, videos(titulo, url, plataforma, postado_em, id_externo)")
+      .eq("criador_id", criadorId)
+      .gte("dia", primeiroDia(mes))
+      .lte("dia", ultimoDia(mes))
+      .order("dia")
+      .order("video_id")
+      .range(de, de + 999);
+    data.push(...(pagina ?? []));
+    if (!pagina || pagina.length < 1000) break;
+  }
   const mapa = new Map<string, VideoTop>();
-  for (const r of (data ?? []) as unknown as { video_id: string; views: number; videos: { titulo: string; url: string | null; plataforma: Plataforma; postado_em: string } | null }[]) {
-    if (!r.videos) continue;
+  for (const r of data as { video_id: string; views: number; videos: { titulo: string; url: string | null; plataforma: Plataforma; postado_em: string; id_externo: string | null } | null }[]) {
+    if (!r.videos || r.videos.id_externo?.startsWith(OUTROS_VIDEOS)) continue;
     if (!mapa.has(r.video_id)) mapa.set(r.video_id, { id: r.video_id, titulo: r.videos.titulo, url: r.videos.url, plataforma: r.videos.plataforma, postado_em: r.videos.postado_em, views: 0 });
     mapa.get(r.video_id)!.views += Number(r.views);
   }

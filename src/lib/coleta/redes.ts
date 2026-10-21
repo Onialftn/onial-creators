@@ -90,6 +90,13 @@ const yt = {
       await fetch(`https://youtubeanalytics.googleapis.com/v2/reports?${p}`, { headers: { Authorization: `Bearer ${t.access}` } }), "YouTube Analytics");
     return new Map((d.rows ?? []).map(([v, n]) => [v, Number(n)]));
   },
+  /** total de views do canal por dia (o mesmo número do YouTube Studio) */
+  async totalPorDia(t: Tokens, de: string, ate: string): Promise<Map<string, number>> {
+    const p = new URLSearchParams({ ids: "channel==MINE", startDate: de, endDate: ate, metrics: "views", dimensions: "day", sort: "day" });
+    const d = await json<{ rows?: [string, number][] }>(
+      await fetch(`https://youtubeanalytics.googleapis.com/v2/reports?${p}`, { headers: { Authorization: `Bearer ${t.access}` } }), "YouTube Analytics (total)");
+    return new Map((d.rows ?? []).map(([dia, n]) => [dia, Number(n)]));
+  },
 };
 
 /* ======================= TikTok ======================= */
