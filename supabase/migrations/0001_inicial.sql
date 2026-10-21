@@ -26,11 +26,12 @@ begin
 end $$;
 create trigger ao_criar_usuario after insert on auth.users for each row execute function public.novo_usuario();
 
--- um criador não pode se promover a gestor
+-- um criador não pode se promover a gestor pelo site
 create or replace function public.proteger_papel()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  if new.papel is distinct from old.papel and not public.e_gestor() then
+  -- pelo SQL Editor (sem usuário logado) é permitido: é assim que o primeiro gestor é definido
+  if new.papel is distinct from old.papel and auth.uid() is not null and not public.e_gestor() then
     raise exception 'Só o gestor pode mudar o papel de alguém';
   end if;
   return new;

@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Onial Creators
 
-## Getting Started
+Painel da equipe de conteúdo de Fortnite da Onial. Regras, telas e visual estão em `CLAUDE.md` e no protótipo `onial-creators.html`.
 
-First, run the development server:
+## O que já funciona (Fase 1)
+
+- Login por e-mail e senha (criador e gestor)
+- Dashboard, Dias de postagem (calendário com reposição na semana), Metas de views, Pagamentos e Ranking (só views)
+- Painel do gestor: cadastrar criador, meta individual, 5 dias de postagem, lançar views, registrar postagens, fechar o mês e marcar como pago
+- Pomodoro (60/20, arraste da bolinha, configurações, estatísticas) e Áudio (corta silêncios e respirações, baixa o áudio limpo)
+- Ideias de vídeos, Roteiros, Avaliar vídeo e Meta coletiva aparecem como "Em breve"
+
+Ainda falta: views do YouTube automáticas (Fase 1, pedido 4) e as fases 2 e 3.
+
+## Colocar no ar
+
+1. **Supabase**: crie um projeto, abra *SQL Editor*, cole o conteúdo de `supabase/migrations/0001_inicial.sql` e clique em *Run*.
+2. **Vercel**: *Add New → Project*, importe este repositório e, em *Environment Variables*, crie:
+   - `NEXT_PUBLIC_SUPABASE_URL` — Supabase → Project Settings → API → Project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` — mesma tela, chave `anon` `public`
+   - `SUPABASE_SERVICE_ROLE_KEY` — mesma tela, chave `service_role` (secreta: só aqui, nunca no código)
+3. **Primeiro gestor**: no Supabase, *Authentication → Users → Add user* com seu e-mail e senha. Depois, no *SQL Editor*:
+   ```sql
+   update public.perfis set papel = 'gestor', nome = 'Seu nome' where id = (select id from auth.users where email = 'seu@email.com');
+   ```
+4. Entre no site com esse e-mail e cadastre os criadores pelo *Painel do gestor*.
+
+## Para quem programa
 
 ```bash
+npm install
+cp .env.example .env.local   # preencha as três variáveis
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm test                     # testes das regras de pagamento
 ```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
