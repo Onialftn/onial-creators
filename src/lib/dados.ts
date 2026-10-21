@@ -1,5 +1,6 @@
 import "server-only";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { BONUS_META_CENTAVOS_POR_MIL, calcularConstancia, calcularPagamento, fimDaSemana as fimDaSemanaDe, inicioDaSemana as inicioDaSemanaDe, type DiaPostagem } from "@/lib/pagamento";
 import { diaDaSemana, hojeBrasil, intervalo, mesDe, primeiroDia, ultimoDia } from "@/lib/datas";
@@ -15,8 +16,8 @@ export interface Perfil {
   canal_youtube: string | null;
 }
 
-/** Quem está logado. Sem sessão, volta para o login. */
-export async function usuarioAtual() {
+/** Quem está logado. Sem sessão, volta para o login. (cache: layout e página reaproveitam a mesma consulta) */
+export const usuarioAtual = cache(async function usuarioAtual() {
   const sb = await supabaseServidor();
   const {
     data: { user },
@@ -25,7 +26,7 @@ export async function usuarioAtual() {
   const { data: perfil } = await sb.from("perfis").select("id, nome, papel, foto_url, canal_youtube").eq("id", user.id).single();
   if (!perfil) redirect("/login");
   return { sb, user, perfil: perfil as Perfil };
-}
+});
 
 export type StatusDia = "postado" | "reposto" | "nao_postado" | "a_repor" | "folga" | "hoje" | "a_postar";
 export interface DiaCalendario {
