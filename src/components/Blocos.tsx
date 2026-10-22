@@ -59,19 +59,37 @@ export function CardsGanho({ r }: { r: ResumoMes }) {
 }
 
 export function BarrasPlataforma({ por, total }: { por: Record<Plataforma, number>; total: number }) {
-  const mx = Math.max(1, ...Object.values(por));
+  // em ordem: a rede com mais views primeiro; a barra mostra quanto cada uma representa do total
+  const linhas = (["tiktok", "youtube", "instagram"] as Plataforma[]).map((p) => ({ p, v: por[p] })).sort((x, y) => y.v - x.v);
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-2">
       <div className="label">Views por plataforma</div>
-      {(["tiktok", "youtube", "instagram"] as Plataforma[]).map((p) => (
-        <div key={p}>
-          <div className="flex items-center justify-between gap-2">
-            <span className="flex items-center gap-2.5"><LogoPlataforma p={p} />{NOME_PLATAFORMA[p]}</span>
-            <span style={{ color: "var(--muted)" }}>{formatarNumero(por[p])} · {formatarReais(Math.round(por[p] / 2))}</span>
-          </div>
-          <div className="bar" style={{ marginTop: 8, height: 10 }}><span style={{ width: `${(por[p] / mx) * 100}%`, background: COR_PLATAFORMA[p] }} /></div>
-        </div>
-      ))}
+      <div className="overflow-x-auto">
+        <table className="table" style={{ minWidth: 480 }}>
+          <thead>
+            <tr><th scope="col">#</th><th scope="col">PLATAFORMA</th><th scope="col">VIEWS</th><th scope="col" style={{ width: "35%" }}>% DAS SUAS VIEWS</th><th scope="col">BRUTO</th></tr>
+          </thead>
+          <tbody>
+            {linhas.map(({ p, v }, i) => {
+              const pct = total ? (v / total) * 100 : 0;
+              return (
+                <tr key={p}>
+                  <td className="num" style={{ fontSize: 18, color: i === 0 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}</td>
+                  <td><span className="flex items-center gap-2.5" style={{ color: "var(--strong)", fontWeight: 600 }}><LogoPlataforma p={p} />{NOME_PLATAFORMA[p]}</span></td>
+                  <td className="num" style={{ fontSize: 18, color: "var(--strong)" }}>{formatarNumero(v)}</td>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="bar flex-1"><span style={{ width: `${pct}%`, background: COR_PLATAFORMA[p] }} /></div>
+                      <span style={{ color: "var(--muted)", fontSize: 13, minWidth: 40, textAlign: "right" }}>{Math.round(pct)}%</span>
+                    </div>
+                  </td>
+                  <td style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>{formatarReais(Math.round(v / 2))}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
       {total === 0 && <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>Nenhuma view registrada neste mês ainda.</p>}
     </div>
   );
