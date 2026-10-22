@@ -11,7 +11,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Onial Creators",
   description: "Painel da equipe de conteúdo da Onial",
-  icons: { icon: "/logo.png" },
+  icons: { icon: [{ url: "/favicon.ico?v=3", sizes: "48x48" }, { url: "/logo.png?v=3", type: "image/png" }], shortcut: "/favicon.ico?v=3", apple: "/apple-icon.png?v=3" },
 };
 
 // aplica o modo claro/escuro salvo antes da página aparecer (evita piscar)
