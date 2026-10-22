@@ -10,7 +10,6 @@ export interface RoteiroSalvo { id: string; titulo: string; mapa: string; tema: 
 
 const CHECKLIST = [
   "Confira se o nome do mapa ficou certo",
-  "Troque [código do mapa] pelo código real, se aparecer",
   "Leia em voz alta: se alguma frase soar estranha, ajuste",
   "Coloque o código do mapa na tela do vídeo",
 ];
