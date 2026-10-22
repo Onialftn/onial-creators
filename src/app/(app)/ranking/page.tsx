@@ -1,3 +1,4 @@
+import { Avatar } from "@/components/Avatar";
 import { Cabecalho } from "@/components/Blocos";
 import { Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { PLATAFORMAS, rankingDoMes, usuarioAtual, type LinhaRanking } from "@/lib/dados";
@@ -9,7 +10,7 @@ function Podio({ pos, l, altura, cor, eu }: { pos: number; l?: LinhaRanking; alt
   return (
     <div className="flex flex-col items-center gap-2.5" style={{ flex: "1 1 160px" }}>
       {pos === 1 ? <span style={{ color: "var(--accent-text)" }}><Icone nome="crown" tamanho={28} /></span> : <span style={{ height: 28 }} />}
-      <div className="flex items-center justify-center rounded-full" style={{ width: pos === 1 ? 72 : 60, height: pos === 1 ? 72 : 60, background: "var(--tint)", border: `3px solid ${cor}`, color: "var(--accent-text)" }}><Icone nome="user" tamanho={30} /></div>
+      <Avatar foto={l.foto} nome={l.nome} tamanho={pos === 1 ? 84 : 68} borda={cor} />
       <div className="text-center">
         <div style={{ color: "var(--strong)", fontWeight: 700 }}>{eu ? "Você" : l.nome}</div>
         <div className="num" style={{ fontSize: 22, color: eu ? "var(--accent-text)" : "var(--strong)" }}>{formatarNumero(l.views)}</div>
@@ -51,7 +52,7 @@ export default async function Ranking() {
                 return (
                   <tr key={l.criadorId} style={eu ? { background: "var(--tint)", boxShadow: "inset 3px 0 0 #E8B014" } : undefined}>
                     <td className="num" style={{ fontSize: 20, color: i < 3 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}</td>
-                    <td style={{ color: "var(--strong)", fontWeight: 600 }}>{eu ? `${l.nome} (você)` : l.nome}</td>
+                    <td style={{ color: "var(--strong)", fontWeight: 600 }}><span className="flex items-center gap-2.5"><Avatar foto={l.foto} nome={l.nome} tamanho={36} />{eu ? `${l.nome} (você)` : l.nome}</span></td>
                     <td className="num" style={{ fontSize: 18, color: "var(--strong)" }}>{formatarNumero(l.views)}</td>
                     {PLATAFORMAS.map((p) => <td key={p} style={{ color: "var(--text2)", fontVariantNumeric: "tabular-nums" }}>{formatarNumero(l.porPlataforma[p])}</td>)}
                   </tr>

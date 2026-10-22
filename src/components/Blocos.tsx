@@ -1,6 +1,7 @@
 import { formatarNumero, formatarReais, inicioDaSemana as inicioDaSemanaHoje } from "@/lib/pagamento";
 import { DIAS_CURTOS, diaDaSemana, proximaColeta, quandoFoi } from "@/lib/datas";
 import type { DiaCalendario, LinhaRanking, Plataforma, ResumoMes } from "@/lib/dados";
+import { Avatar } from "./Avatar";
 import { COR_PLATAFORMA, Icone, LogoPlataforma, NOME_PLATAFORMA } from "./Icone";
 
 export function Cabecalho({ icone, titulo, sub, direita }: { icone?: string; titulo: string; sub?: React.ReactNode; direita?: React.ReactNode }) {
@@ -125,7 +126,7 @@ export function RankingTabela({ linhas, meuId, limite }: { linhas: LinhaRanking[
                 <td className="num" style={{ fontSize: 20, color: i < 3 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}</td>
                 <td>
                   <span className="flex items-center gap-2.5">
-                    <span className="flex items-center justify-center rounded-full" style={{ width: 32, height: 32, background: "var(--tint)", color: "var(--accent-text)" }}><Icone nome="user" tamanho={16} /></span>
+                    <Avatar foto={l.foto} nome={l.nome} tamanho={36} />
                     <span style={{ color: "var(--strong)", fontWeight: 600 }}>{l.nome}</span>
                     {eu && <span className="pill" style={{ background: "var(--gold)", color: "#0A0A0A", fontSize: 10 }}>VOCÊ</span>}
                   </span>

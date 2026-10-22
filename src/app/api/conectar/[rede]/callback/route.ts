@@ -40,6 +40,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (error || !conta) throw new Error(error?.message ?? "sem conta");
     await admin.from("tokens_plataforma").upsert({ conta_id: conta.id, access_token: tokens.access, refresh_token: tokens.refresh, expira_em: tokens.expiraEm?.toISOString() ?? null });
     if (rede === "youtube") await admin.from("perfis").update({ foto_url: perfil.foto, canal_youtube: perfil.nome }).eq("id", user.id);
+    else if (perfil.foto) await admin.from("perfis").update({ foto_url: perfil.foto }).eq("id", user.id).is("canal_youtube", null);
     // primeira coleta já na hora (o ponto de partida dos totais)
     await coletarConta(conta.id, true).catch(() => undefined);
     volta.searchParams.set("ok", `${NOME_REDE[rede]} conectado: ${perfil.nome}`);

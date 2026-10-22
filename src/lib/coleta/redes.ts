@@ -54,13 +54,13 @@ const yt = {
     return { access: d.access_token, refresh: t.refresh, expiraEm: expira(d.expires_in) };
   },
   async perfil(t: Tokens): Promise<Perfil> {
-    const d = await json<{ items?: { id: string; snippet: { title: string; thumbnails?: { default?: { url: string } } } }[] }>(
+    const d = await json<{ items?: { id: string; snippet: { title: string; thumbnails?: { default?: { url: string }; medium?: { url: string }; high?: { url: string } } } }[] }>(
       await fetch("https://www.googleapis.com/youtube/v3/channels?part=snippet&mine=true", { headers: { Authorization: `Bearer ${t.access}` } }),
       "YouTube canal",
     );
     const c = d.items?.[0];
     if (!c) throw new Error("Essa conta Google não tem canal do YouTube.");
-    return { contaExternaId: c.id, nome: c.snippet.title, foto: c.snippet.thumbnails?.default?.url ?? null };
+    return { contaExternaId: c.id, nome: c.snippet.title, foto: c.snippet.thumbnails?.high?.url ?? c.snippet.thumbnails?.medium?.url ?? c.snippet.thumbnails?.default?.url ?? null };
   },
   /** vídeos enviados (mais recentes primeiro, até 200) */
   async videos(t: Tokens): Promise<VideoRede[]> {

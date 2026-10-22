@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Avatar } from "./Avatar";
 import { Icone } from "./Icone";
 
 type Item = { href: string; rotulo: string; icone: string; emBreve?: boolean };
@@ -37,7 +38,7 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
   { titulo: "Gestão", soGestor: true, itens: [{ href: "/gestor", rotulo: "Painel do gestor", icone: "gear" }] },
 ];
 
-export function MenuLateral({ nome, papel }: { nome: string; papel: "criador" | "gestor" }) {
+export function MenuLateral({ nome, papel, foto = null }: { nome: string; papel: "criador" | "gestor"; foto?: string | null }) {
   const rota = usePathname();
   const [claro, setClaro] = useState(false);
   useEffect(() => setClaro(document.documentElement.getAttribute("data-mode") === "light"), []);
@@ -78,9 +79,7 @@ export function MenuLateral({ nome, papel }: { nome: string; papel: "criador" | 
         <span>{claro ? "Modo escuro" : "Modo claro"}</span>
       </button>
       <div className="menu-perfil">
-        <span className="flex items-center justify-center rounded-full" style={{ width: 36, height: 36, background: "var(--tint)", color: "var(--accent-text)" }}>
-          <Icone nome="user" />
-        </span>
+        <Avatar foto={foto} nome={nome} tamanho={36} />
         <div className="min-w-0">
           <div className="truncate" style={{ color: "var(--fg)" }}>{nome}</div>
           <div style={{ color: "var(--muted)", fontSize: 12 }}>{papel === "gestor" ? "Gestor" : "Criador de conteúdo"}</div>

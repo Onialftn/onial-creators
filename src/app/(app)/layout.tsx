@@ -7,7 +7,7 @@ export default async function LayoutApp({ children }: { children: React.ReactNod
   const { perfil } = await usuarioAtual();
   return (
     <div className="app">
-      <MenuLateral nome={perfil.nome} papel={perfil.papel} />
+      <MenuLateral nome={perfil.nome} papel={perfil.papel} foto={perfil.foto_url} />
       <main className="conteudo">{children}</main>
     </div>
   );
