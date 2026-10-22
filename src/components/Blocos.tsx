@@ -99,7 +99,12 @@ export function MetaViews({ r }: { r: ResumoMes }) {
   const pct = r.meta ? Math.min(100, (r.views / r.meta) * 100) : 0;
   return (
     <section className="card flex flex-col gap-5">
-      <TituloCard icone="target" direita={r.meta ? `${formatarNumero(r.views)} / ${formatarNumero(r.meta)} · ${r.views >= r.meta ? "meta batida" : `faltam ${formatarNumero(r.meta - r.views)}`}` : "Sem meta definida"}>Meta de views</TituloCard>
+      <TituloCard icone="target" direita={r.meta ? (
+        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <span className="num" style={{ fontSize: 26, color: "var(--strong)", lineHeight: 1 }}>{formatarNumero(r.views)} <span style={{ fontSize: 18, color: "var(--text2)" }}>/ {formatarNumero(r.meta)}</span></span>
+          <span className="num" style={{ fontSize: 18, color: r.views >= r.meta ? "var(--ok)" : "var(--accent-text)" }}>{r.views >= r.meta ? "META BATIDA" : `faltam ${formatarNumero(r.meta - r.views)}`}</span>
+        </span>
+      ) : "Sem meta definida"}>Meta de views</TituloCard>
       <div className="bar" style={{ height: 14 }}><span style={{ width: `${pct}%`, background: "var(--ok)" }} /></div>
       <BarrasPlataforma por={r.viewsPorPlataforma} total={r.views} />
     </section>
