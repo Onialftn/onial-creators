@@ -27,6 +27,16 @@ Rode antes `supabase/migrations/0002_coleta_automatica.sql` no SQL Editor.
 
 Uma rede sem variáveis aparece como "Em configuração" para os criadores.
 
+## IA (Fase 2): Roteiros
+
+Rode `supabase/migrations/0003_ia_roteiros.sql` no SQL Editor e crie na Vercel:
+
+| Variável | De onde vem |
+| --- | --- |
+| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys (defina também um limite de gasto mensal em Limits) |
+
+Limites por criador por mês ficam em `src/lib/ia/uso.ts` (`LIMITE_MES`). O gestor vê o uso e o gasto no Painel do gestor.
+
 ## Colocar no ar
 
 1. **Supabase**: crie um projeto, abra *SQL Editor*, cole o conteúdo de `supabase/migrations/0001_inicial.sql` e clique em *Run*.

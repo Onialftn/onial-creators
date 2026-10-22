@@ -8,6 +8,8 @@ import { formatarNumero, formatarReais } from "@/lib/pagamento";
 import { coletarAgora, criarCriador, fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMeta } from "./acoes";
 import { LogoPlataforma } from "@/components/Icone";
 import { REDES, redeConfigurada } from "@/lib/coleta/redes";
+import { iaConfigurada } from "@/lib/ia/claude";
+import { LIMITE_MES, inicioDoMes } from "@/lib/ia/uso";
 
 export const maxDuration = 300;
 
@@ -28,6 +30,11 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
   const dias = new Set((agenda ?? []).map((a) => a.dia_semana as number));
   const custoMes = resumos.reduce((s, r) => s + r.pagamento.totalCentavos, 0);
   const { data: contasRede } = await sb.from("contas_plataforma").select("criador_id, plataforma, nome_conta, ultima_coleta, erro");
+  const { data: usoIa } = await sb.from("uso_ia").select("criador_id, tipo, custo_usd").gte("criado_em", inicioDoMes()).limit(5000);
+  const pessoasIa = [...lista, { id: perfil.id, nome: `${perfil.nome} (gestor)` }];
+  const usoDe = (id: string, tipo?: string) => (usoIa ?? []).filter((u) => u.criador_id === id && (!tipo || u.tipo === tipo));
+  const dolar = (v: number) => `US$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const custoIa = (usoIa ?? []).reduce((a, u) => a + Number(u.custo_usd), 0);
 
   return (
     <>
@@ -81,6 +88,25 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
         </div>
         <form action={coletarAgora}><button className="btn-line" type="submit">Coletar views agora</button></form>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>A coleta roda sozinha todo dia às 6h. Cada criador conecta as próprias contas na aba Minhas redes.</p>
+      </section>
+
+      <section className="card flex flex-col gap-4">
+        <TituloCard icone="bulb" direita={iaConfigurada() ? `Gasto no mês: ${dolar(custoIa)}` : "IA ainda não configurada (falta ANTHROPIC_API_KEY na Vercel)"}>Uso da IA no mês</TituloCard>
+        <div className="overflow-x-auto">
+          <table className="table" style={{ minWidth: 560 }}>
+            <thead><tr><th scope="col">PESSOA</th><th scope="col">ROTEIROS</th><th scope="col">IDEIAS</th><th scope="col">AVALIAÇÕES</th><th scope="col">GASTO</th></tr></thead>
+            <tbody>
+              {pessoasIa.map((pp) => (
+                <tr key={pp.id}>
+                  <td style={{ color: "var(--strong)", fontWeight: 600 }}>{pp.nome}</td>
+                  {(["roteiro", "ideia", "avaliacao"] as const).map((t) => <td key={t} style={{ fontVariantNumeric: "tabular-nums" }}>{usoDe(pp.id, t).length}{pp.id === perfil.id ? "" : <span style={{ color: "var(--muted)" }}> / {LIMITE_MES[t]}</span>}</td>)}
+                  <td style={{ fontVariantNumeric: "tabular-nums" }}>{dolar(usoDe(pp.id).reduce((a, u) => a + Number(u.custo_usd), 0))}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Gasto estimado pelo site. O valor cobrado de verdade aparece no console da Anthropic. Os limites zeram todo dia 1º.</p>
       </section>
 
       {sel && rSel && (
