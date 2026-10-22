@@ -4,13 +4,15 @@ import { Icone } from "./Icone";
 
 /* ---------- estado do timer: fica fora do React para continuar rodando ao trocar de aba ---------- */
 type Modo = "foco" | "pausa";
-interface Estado { modo: Modo; restante: number; rodando: boolean; duracao: Record<Modo, number> }
+/** modo = o que está na tela; ativo = o que está contando (pode ser o outro). Cada modo guarda o seu tempo. */
+interface Estado { modo: Modo; restante: Record<Modo, number>; ativo: Modo | null; duracao: Record<Modo, number> }
 const ESCALA = 3600; // anel inteiro = 60 min
-let estado: Estado = { modo: "foco", restante: 3600, rodando: false, duracao: { foco: 3600, pausa: 1200 } };
+let estado: Estado = { modo: "foco", restante: { foco: 3600, pausa: 1200 }, ativo: null, duracao: { foco: 3600, pausa: 1200 } };
 const ouvintes = new Set<() => void>();
 let relogio: ReturnType<typeof setInterval> | null = null;
 const emitir = () => ouvintes.forEach((f) => f());
 const set = (p: Partial<Estado>) => { estado = { ...estado, ...p }; emitir(); };
+const outro = (m: Modo): Modo => (m === "foco" ? "pausa" : "foco");
 
 interface Config { auto: boolean; som: boolean }
 function lerConfig(): Config { try { return { auto: false, som: true, ...JSON.parse(localStorage.getItem("onialPomoSet") || "{}") }; } catch { return { auto: false, som: true }; } }
@@ -37,24 +39,40 @@ function tocar() {
   } catch {}
 }
 function tick() {
-  if (estado.modo === "foco") somarFoco();
-  if (estado.restante <= 1) {
-    parar();
+  const m = estado.ativo;
+  if (!m) return;
+  if (m === "foco") somarFoco();
+  if (estado.restante[m] <= 1) {
+    // terminou: zera este, mostra o próximo
+    pararRelogio();
     const cfg = lerConfig();
     if (cfg.som) tocar();
-    const prox: Modo = estado.modo === "foco" ? "pausa" : "foco";
-    set({ modo: prox, restante: estado.duracao[prox] });
+    const prox = outro(m);
+    set({ ativo: null, modo: prox, restante: { ...estado.restante, [m]: estado.duracao[m], [prox]: estado.duracao[prox] } });
     if (cfg.auto) iniciar();
     return;
   }
-  set({ restante: estado.restante - 1 });
+  set({ restante: { ...estado.restante, [m]: estado.restante[m] - 1 } });
 }
-function iniciar() { if (relogio) return; relogio = setInterval(tick, 1000); set({ rodando: true }); }
-function parar() { if (relogio) clearInterval(relogio); relogio = null; set({ rodando: false }); }
-function trocarModo(m: Modo) { parar(); set({ modo: m, restante: estado.duracao[m] }); }
+function pararRelogio() { if (relogio) clearInterval(relogio); relogio = null; }
+/** Play no modo da tela. Se o outro estava contando (ou pausado no meio), ele volta ao início. */
+function iniciar() {
+  const m = estado.modo, o = outro(m);
+  const restante = estado.restante[o] !== estado.duracao[o] || estado.ativo === o ? { ...estado.restante, [o]: estado.duracao[o] } : estado.restante;
+  set({ ativo: m, restante });
+  if (!relogio) relogio = setInterval(tick, 1000);
+}
+/** Pausa o modo que está contando (o tempo dele fica guardado). */
+function parar() { pararRelogio(); set({ ativo: null }); }
+/** Só para se o modo da tela for o que está contando. */
+function pararSeNaTela() { if (estado.ativo === estado.modo) parar(); }
+/** Botões Foco/Pausa: só trocam a tela, não mexem no tempo. */
+function verModo(m: Modo) { set({ modo: m }); }
+function reiniciarTela() { pararSeNaTela(); set({ restante: { ...estado.restante, [estado.modo]: estado.duracao[estado.modo] } }); }
+function pular() { reiniciarTela(); set({ modo: outro(estado.modo) }); }
 function ajustarMinutos(min: number) {
   const m = Math.max(1, Math.min(60, Math.round(min)));
-  set({ duracao: { ...estado.duracao, [estado.modo]: m * 60 }, restante: m * 60 });
+  set({ duracao: { ...estado.duracao, [estado.modo]: m * 60 }, restante: { ...estado.restante, [estado.modo]: m * 60 } });
 }
 const useEstadoTimer = () => useSyncExternalStore((f) => { ouvintes.add(f); return () => ouvintes.delete(f); }, () => estado, () => estado);
 
@@ -72,9 +90,12 @@ export function Pomodoro() {
   useEffect(() => setCfg(lerConfig()), []);
 
   const cor = e.modo === "foco" ? OURO : AZUL;
-  const r = 96, C = 2 * Math.PI * r, frac = Math.min(1, e.restante / ESCALA);
+  const restante = e.restante[e.modo];
+  const rodando = e.ativo === e.modo;
+  const fundo = e.ativo && e.ativo !== e.modo ? e.ativo : null; // o outro modo contando em segundo plano
+  const r = 96, C = 2 * Math.PI * r, frac = Math.min(1, restante / ESCALA);
   const th = frac * 2 * Math.PI, kx = 110 + r * Math.sin(th), ky = 110 - r * Math.cos(th);
-  const mm = String(Math.floor(e.restante / 60)).padStart(2, "0"), ss = String(e.restante % 60).padStart(2, "0");
+  const fmt = (t: number) => `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
   const mudarCfg = (c: Config) => { setCfg(c); salvarConfig(c); };
 
   function angulo(ev: React.PointerEvent) {
@@ -83,8 +104,8 @@ export function Pomodoro() {
     return a < 0 ? a + 360 : a;
   }
   function inicioArraste(ev: React.PointerEvent) {
-    ev.preventDefault(); parar();
-    arraste.current = { acc: (estado.restante / 60) * 6, ang: angulo(ev) };
+    ev.preventDefault(); pararSeNaTela();
+    arraste.current = { acc: (estado.restante[estado.modo] / 60) * 6, ang: angulo(ev) };
     (ev.target as Element).setPointerCapture(ev.pointerId);
   }
   function moverArraste(ev: React.PointerEvent) {
@@ -122,9 +143,14 @@ export function Pomodoro() {
 
       <div className="relative flex rounded-xl" style={{ padding: 4, background: "var(--chip)", border: "1px solid var(--line)" }}>
         {(["foco", "pausa"] as Modo[]).map((m) => (
-          <button key={m} onClick={() => trocarModo(m)} style={{ minHeight: 40, padding: "0 26px", borderRadius: 9, background: e.modo === m ? (m === "foco" ? OURO : AZUL) : "transparent", color: e.modo === m ? "#0A0A0A" : "var(--muted)", fontWeight: e.modo === m ? 600 : 400 }}>{m === "foco" ? "Foco" : "Pausa"}</button>
+          <button key={m} onClick={() => verModo(m)} style={{ minHeight: 40, padding: "0 26px", borderRadius: 9, background: e.modo === m ? (m === "foco" ? OURO : AZUL) : "transparent", color: e.modo === m ? "#0A0A0A" : "var(--muted)", fontWeight: e.modo === m ? 600 : 400 }}>{m === "foco" ? "Foco" : "Pausa"}{e.ativo === m && e.modo !== m && <span aria-label="contando" style={{ display: "inline-block", width: 7, height: 7, borderRadius: 4, marginLeft: 7, verticalAlign: "middle", background: m === "foco" ? OURO : AZUL }} />}</button>
         ))}
       </div>
+      {fundo && (
+        <button onClick={() => verModo(fundo)} className="relative" style={{ marginTop: -8, fontSize: 13, color: "var(--muted)" }}>
+          {fundo === "foco" ? "Foco" : "Pausa"} rodando · <span style={{ color: fundo === "foco" ? "var(--accent-text)" : AZUL, fontVariantNumeric: "tabular-nums", fontWeight: 600 }}>{fmt(e.restante[fundo])}</span> · dar play aqui zera o {fundo === "foco" ? "foco" : "pausa"}
+        </button>
+      )}
 
       <div className="relative" style={{ width: 220, height: 220 }}>
         <svg ref={svg} width="220" height="220" viewBox="0 0 220 220" style={{ overflow: "visible", touchAction: "none" }} aria-hidden="true">
@@ -134,18 +160,18 @@ export function Pomodoro() {
           <circle cx={kx} cy={ky} r="11" fill="#F5F1E6" stroke="var(--line2)" strokeWidth="1" pointerEvents="none" />
         </svg>
         <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-          <div style={{ fontSize: 56, fontWeight: 300, letterSpacing: 1, color: "var(--fg)", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{mm}:{ss}</div>
+          <div style={{ fontSize: 56, fontWeight: 300, letterSpacing: 1, color: "var(--fg)", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{fmt(restante)}</div>
           <div style={{ marginTop: 10, fontSize: 12, letterSpacing: 2.5, color: "var(--muted)" }}>{e.modo === "foco" ? "FOCO" : "PAUSA"} · {Math.round(e.duracao[e.modo] / 60)} MIN</div>
         </div>
-        <input type="range" min={1} max={60} value={Math.round(e.duracao[e.modo] / 60)} onChange={(ev) => { parar(); ajustarMinutos(Number(ev.target.value)); }} aria-label="Ajustar tempo em minutos" className="sr-only" />
+        <input type="range" min={1} max={60} value={Math.round(e.duracao[e.modo] / 60)} onChange={(ev) => { pararSeNaTela(); ajustarMinutos(Number(ev.target.value)); }} aria-label="Ajustar tempo em minutos" className="sr-only" />
       </div>
 
       <div className="relative flex items-center gap-4">
-        <button style={{ ...IB, width: 48, height: 48 }} aria-label="Reiniciar" onClick={() => trocarModo(e.modo)}><Icone nome="reset" tamanho={18} /></button>
-        <button aria-label={e.rodando ? "Pausar" : "Iniciar"} onClick={() => (e.rodando ? parar() : iniciar())} className="flex items-center justify-center rounded-full" style={{ width: 68, height: 68, background: cor, color: "#0A0A0A", boxShadow: `0 0 28px ${e.modo === "foco" ? "rgba(232,176,20,.45)" : "rgba(77,163,255,.45)"}` }}>
-          {e.rodando ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14" /></svg> : <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5l12 7-12 7z" /></svg>}
+        <button style={{ ...IB, width: 48, height: 48 }} aria-label="Reiniciar" onClick={reiniciarTela}><Icone nome="reset" tamanho={18} /></button>
+        <button aria-label={rodando ? "Pausar" : "Iniciar"} onClick={() => (rodando ? parar() : iniciar())} className="flex items-center justify-center rounded-full" style={{ width: 68, height: 68, background: cor, color: "#0A0A0A", boxShadow: `0 0 28px ${e.modo === "foco" ? "rgba(232,176,20,.45)" : "rgba(77,163,255,.45)"}` }}>
+          {rodando ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14" /></svg> : <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5l12 7-12 7z" /></svg>}
         </button>
-        <button style={{ ...IB, width: 48, height: 48 }} aria-label={e.modo === "foco" ? "Pular para a pausa" : "Pular para o foco"} onClick={() => trocarModo(e.modo === "foco" ? "pausa" : "foco")}><Icone nome="timer" tamanho={18} /></button>
+        <button style={{ ...IB, width: 48, height: 48 }} aria-label={e.modo === "foco" ? "Pular para a pausa" : "Pular para o foco"} onClick={pular}><Icone nome="timer" tamanho={18} /></button>
       </div>
       {stats && <Estatisticas fechar={() => setStats(false)} />}
     </div>
