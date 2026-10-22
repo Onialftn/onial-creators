@@ -86,21 +86,28 @@ export async function coletarConta(contaId: string, completo = false) {
           }
         }
       }
+      // vídeos com views que não estão entre os 200 mais recentes: busca título e data real de postagem
+      const semCadastro = [...new Set(mapas.flatMap((m) => [...m.keys()]))].filter((id) => !porExterno.has(id));
+      const { data: genericos } = await admin.from("videos").select("id, id_externo").eq("criador_id", criador).eq("plataforma", rede).eq("titulo", "Vídeo do YouTube").limit(200);
+      const info = await REDE.youtube.detalhes(tokens, [...semCadastro, ...(genericos ?? []).map((g) => String(g.id_externo))]).catch(() => new Map<string, { titulo: string; postadoEm: string }>());
+      for (const g of genericos ?? []) {
+        const d = info.get(String(g.id_externo));
+        if (d) await admin.from("videos").update({ titulo: d.titulo, postado_em: d.postadoEm }).eq("id", g.id);
+      }
+      if (semCadastro.length) {
+        const primeiroDia = new Map<string, string>();
+        mapas.forEach((m, i) => m.forEach((_, id) => { if (!primeiroDia.has(id)) primeiroDia.set(id, dias[i]); }));
+        const { data: ins } = await admin
+          .from("videos")
+          .insert(semCadastro.map((id) => ({ criador_id: criador, plataforma: rede, id_externo: id, titulo: info.get(id)?.titulo ?? "Vídeo do YouTube", url: `https://www.youtube.com/shorts/${id}`, postado_em: info.get(id)?.postadoEm ?? primeiroDia.get(id)! })))
+          .select("id, id_externo, views_total, views_total_em");
+        for (const v of ins ?? []) porExterno.set(v.id_externo as string, v);
+      }
       for (let i = 0; i < dias.length; i++) {
         const dia = dias[i];
         const mapa = mapas[i];
         const resto = (totais.get(dia) ?? 0) - [...mapa.values()].reduce((a, b) => a + b, 0);
-        if (resto > 0) mapa.set(outros, resto);
-        const faltando = [...mapa.keys()].filter((id) => !porExterno.has(id));
-        if (faltando.length) {
-          const { data: ins } = await admin
-            .from("videos")
-            .insert(faltando.map((id) => id === outros
-              ? { criador_id: criador, plataforma: rede, id_externo: id, titulo: "Outros vídeos do canal", url: null, postado_em: dias[0] }
-              : { criador_id: criador, plataforma: rede, id_externo: id, titulo: "Vídeo do YouTube", url: `https://www.youtube.com/watch?v=${id}`, postado_em: dia }))
-            .select("id, id_externo, views_total, views_total_em");
-          for (const v of ins ?? []) porExterno.set(v.id_externo as string, v);
-        }
+        if (resto > 0) { await idOutros(dias[0]); mapa.set(outros, resto); }
         const rows = [...mapa.entries()].map(([id, views]) => ({ video_id: porExterno.get(id)!.id, dia, criador_id: criador, plataforma: rede, views }));
         if (rows.length) await admin.from("views_diarias").upsert(rows);
         linhas += rows.length;

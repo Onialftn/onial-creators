@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { BONUS_META_CENTAVOS_POR_MIL, calcularConstancia, calcularPagamento, fimDaSemana as fimDaSemanaDe, inicioDaSemana as inicioDaSemanaDe, type DiaPostagem } from "@/lib/pagamento";
+import { postagensPorDia, type VideoPostado } from "@/lib/postagens";
 import { diaDaSemana, hojeBrasil, intervalo, mesDe, primeiroDia, ultimoDia } from "@/lib/datas";
 
 export type Plataforma = "tiktok" | "youtube" | "instagram";
@@ -61,12 +62,13 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const semIni = inicioDaSemanaDe(ini);
   const semFim = fimDaSemanaDe(fim);
 
-  const [views, meta, agenda, dias] = await Promise.all([
+  const [views, meta, agenda, dias, videos] = await Promise.all([
     // soma pronta no banco (a leitura direta de views_diarias corta em 1.000 linhas)
     sb.from("ranking_mensal").select("plataforma, views").eq("criador_id", criadorId).eq("mes", mes),
     sb.from("metas").select("meta_views").eq("criador_id", criadorId).eq("mes", mes).maybeSingle(),
     sb.from("agenda_postagem").select("dia_semana").eq("criador_id", criadorId),
     sb.from("dias_postagem").select("dia, postagens").eq("criador_id", criadorId).gte("dia", semIni).lte("dia", semFim),
+    sb.from("videos").select("plataforma, postado_em, id_externo, titulo").eq("criador_id", criadorId).gte("postado_em", semIni).lte("postado_em", semFim).limit(1000),
   ]);
 
   const viewsPorPlataforma: Record<Plataforma, number> = { tiktok: 0, youtube: 0, instagram: 0 };
@@ -74,7 +76,9 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const total = viewsPorPlataforma.tiktok + viewsPorPlataforma.youtube + viewsPorPlataforma.instagram;
 
   const agendados = new Set((agenda.data ?? []).map((r) => r.dia_semana as number));
-  const postagens = new Map((dias.data ?? []).map((r) => [r.dia as string, r.postagens as number]));
+  // automático pelas redes; o registro manual do gestor continua valendo (fica o maior)
+  const postagens = postagensPorDia((videos.data ?? []) as VideoPostado[]);
+  for (const r of dias.data ?? []) postagens.set(r.dia as string, Math.max(postagens.get(r.dia as string) ?? 0, r.postagens as number));
   const lista: DiaPostagem[] = intervalo(semIni, semFim).map((data) => ({
     data,
     agendado: agendados.has(diaDaSemana(data)),

@@ -90,6 +90,16 @@ const yt = {
       await fetch(`https://youtubeanalytics.googleapis.com/v2/reports?${p}`, { headers: { Authorization: `Bearer ${t.access}` } }), "YouTube Analytics");
     return new Map((d.rows ?? []).map(([v, n]) => [v, Number(n)]));
   },
+  /** título e data real de postagem de vídeos pelo id (até 50 por pedido) */
+  async detalhes(t: Tokens, ids: string[]): Promise<Map<string, { titulo: string; postadoEm: string }>> {
+    const out = new Map<string, { titulo: string; postadoEm: string }>();
+    for (let i = 0; i < ids.length; i += 50) {
+      const d = await json<{ items?: { id: string; snippet: { title: string; publishedAt: string } }[] }>(
+        await fetch(`https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${ids.slice(i, i + 50).join(",")}`, { headers: { Authorization: `Bearer ${t.access}` } }), "YouTube detalhes");
+      for (const v of d.items ?? []) out.set(v.id, { titulo: v.snippet.title, postadoEm: dataBR(new Date(v.snippet.publishedAt)) });
+    }
+    return out;
+  },
   /** total de views do canal por dia (o mesmo número do YouTube Studio) */
   async totalPorDia(t: Tokens, de: string, ate: string): Promise<Map<string, number>> {
     const p = new URLSearchParams({ ids: "channel==MINE", startDate: de, endDate: ate, metrics: "views", dimensions: "day", sort: "day" });
