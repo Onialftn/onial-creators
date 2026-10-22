@@ -56,7 +56,10 @@ export function MenuLateral({ nome, papel }: { nome: string; papel: "criador" | 
     <aside className="menu">
       <Link href="/" className="flex items-center gap-2.5 px-2">
         <Image src="/logo.png" alt="Logo Onial" width={44} height={44} className="rounded-lg" style={{ boxShadow: "0 0 18px rgba(232,176,20,.35)" }} priority />
-        <span className="display menu-marca" style={{ fontSize: 18, letterSpacing: 1, whiteSpace: "nowrap" }}>ONIAL CREATORS</span>
+        <span className="menu-marca flex flex-col items-start" style={{ gap: 3 }}>
+          <span className="display" style={{ fontSize: 18, letterSpacing: 1, whiteSpace: "nowrap", lineHeight: 1 }}>ONIAL CREATORS</span>
+          <span title="Site em desenvolvimento" style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, padding: "2px 7px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A", lineHeight: 1.3 }}>BETA</span>
+        </span>
       </Link>
       {GRUPOS.filter((g) => !g.soGestor || papel === "gestor").map((g) => (
         <nav key={g.titulo} className="menu-grupo" aria-label={g.titulo}>

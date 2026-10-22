@@ -29,6 +29,7 @@ export default function Login() {
         <div className="flex flex-col items-center gap-2.5 text-center">
           <Image src="/logo.png" alt="Logo Onial" width={84} height={84} className="rounded-2xl" style={{ boxShadow: "0 0 30px rgba(232,176,20,.35)" }} priority />
           <h1 className="display" style={{ fontSize: 28, letterSpacing: 1.5, margin: 0 }}>ONIAL CREATORS</h1>
+          <span title="Site em desenvolvimento" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, padding: "2px 8px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A", marginTop: -4 }}>BETA</span>
           <p style={{ color: "var(--muted)", margin: 0 }}>Entre com o login da sua equipe</p>
         </div>
         <label className="flex flex-col gap-1.5">
