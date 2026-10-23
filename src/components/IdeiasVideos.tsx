@@ -95,24 +95,24 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
   async function roteiro(v: VideoRef) {
     const t = traduzidos[v.id];
     if (t && (await copiarTexto(t.falas.join("\n\n")))) return marcarCopiado(v.id);
-    if (!automatico || !iaPronta || gerando) { setInicio(undefined); return setTraduzir(v); }
+    if (gerando) return;
+    if (!automatico || !iaPronta) { setInicio(undefined); setAssistir(null); return setTraduzir(v); }
     // automático: o Gemini transcreve pelo link e o Claude traduz; depois copia
     setGerando(v.id);
     try {
       const r = await fetch("/api/ia/roteiro", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mapa, video: v.id }) });
       const d = await r.json();
-      if (!r.ok) { setInicio({ erro: d.erro }); return setTraduzir(v); }
+      if (!r.ok) { setInicio({ erro: d.erro }); setAssistir(null); return setTraduzir(v); }
       setTraduzidos((x) => ({ ...x, [v.id]: { falas: d.roteiro.falas, mapa_citado: d.roteiro.mapa_citado } }));
       if (await copiarTexto(d.roteiro.falas.join("\n\n"))) return marcarCopiado(v.id);
-      setInicio({ res: d.roteiro }); setTraduzir(v); // o navegador não deixou copiar sozinho: mostra o texto com o botão Copiar
-    } catch { setInicio({ erro: "Não consegui gerar agora. Cole a transcrição abaixo." }); setTraduzir(v); }
+      setInicio({ res: d.roteiro }); setAssistir(null); setTraduzir(v); // o navegador não deixou copiar sozinho: mostra o texto com o botão Copiar
+    } catch { setInicio({ erro: "Não consegui gerar agora. Cole a transcrição abaixo." }); setAssistir(null); setTraduzir(v); }
     finally { setGerando(null); }
   }
 
   const Acoes = ({ v }: { v: VideoRef }) => (
     <div className="flex gap-2">
       <button className="btn-line flex-1" onClick={() => setAssistir(v)} style={{ minHeight: 38 }}><Icone nome="play" tamanho={14} />Assistir</button>
-      <button className="btn-gold" onClick={() => roteiro(v)} title={traduzidos[v.id] ? "Copiar o roteiro em português" : "Traduzir o roteiro para português"} style={{ minHeight: 38, padding: "0 12px", fontSize: 13 }}>{copiado === v.id ? "Copiado!" : gerando === v.id ? "Gerando…" : "Roteiro"}</button>
     </div>
   );
 
@@ -162,7 +162,9 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
           <div style={{ width: "100%", maxWidth: 340, margin: "0 auto", aspectRatio: "9/16", borderRadius: 10, overflow: "hidden", background: "#000" }}>
             <iframe src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&rel=0`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
           </div>
-          <button className="btn-gold" onClick={() => { const v = assistir; setAssistir(null); roteiro(v); }}>{traduzidos[assistir.id] ? "Copiar roteiro em português" : "Roteiro em português"}</button>
+          <button className="btn-gold" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48 }}>
+            {copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português… (uns 15 segundos)" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}
+          </button>
         </Janela>
       )}
       {traduzir && <Janela titulo={`Roteiro em português · ${traduzir.titulo}`} fechar={() => setTraduzir(null)}><Traduzir v={traduzir} mapa={mapa} iaPronta={iaPronta} inicio={inicio} pronta={(t) => setTraduzidos((x) => ({ ...x, [traduzir.id]: t }))} /></Janela>}
