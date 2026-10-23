@@ -113,7 +113,7 @@ export function Roteiros({ salvos, usados: usadosIni, limite, pronta }: { salvos
             <>
               {res.titulo && <div className="display" style={{ fontSize: 22, color: "var(--strong)" }}>{res.titulo}</div>}
               {res.mapa_trocado
-                ? <div className="pill-ok" style={{ alignSelf: "flex-start" }}><Icone nome="check" tamanho={12} />Mapa trocado{res.mapa_citado ? `: "${res.mapa_citado}"` : ""} → {MAPAS.find((m) => m.id === mapa)?.nome}</div>
+                ? <div className="pill-ok" style={{ alignSelf: "flex-start" }}><Icone nome="check" tamanho={12} />Mapa trocado{res.mapa_citado ? `: "${res.mapa_citado}"` : ""} → {MAPAS.find((m) => m.id === mapa)?.falado}</div>
                 : <div className="pill-tint" style={{ alignSelf: "flex-start" }}>O roteiro não citava nenhum mapa</div>}
               <div className="flex flex-col gap-3">
                 {res.falas.map((f, i) => (

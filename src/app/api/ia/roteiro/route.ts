@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: `Você já usou os ${LIMITE_MES.roteiro} roteiros deste mês. Fale com o gestor se precisar de mais.` }, { status: 429 });
 
   try {
-    const r = await traduzirRoteiro({ mapa: mapa.nome, original, anterior: b.anterior ? String(b.anterior).slice(0, 6000) : undefined });
+    const r = await traduzirRoteiro({ mapa: mapa.falado, original, anterior: b.anterior ? String(b.anterior).slice(0, 6000) : undefined });
     await registrarUso(user.id, "roteiro", r);
     return NextResponse.json({ roteiro: r.dados, usados: usados + 1, limite: LIMITE_MES.roteiro });
   } catch (e) {
