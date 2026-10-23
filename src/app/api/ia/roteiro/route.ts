@@ -2,7 +2,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { MAPAS } from "@/lib/ia/mapas";
 import { traduzirRoteiro } from "@/lib/ia/roteiro";
 import { LIMITE_MES, registrarUso, usadosNoMes } from "@/lib/ia/uso";
-import { supabaseServidor } from "@/lib/supabase/server";
+import { supabaseAdmin, supabaseServidor } from "@/lib/supabase/server";
 
 export const maxDuration = 60;
 
@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
   if (!user) return NextResponse.json({ erro: "Entre de novo no site." }, { status: 401 });
   const { data: perfil } = await sb.from("perfis").select("papel").eq("id", user.id).single();
 
-  const b = (await req.json().catch(() => ({}))) as { mapa?: string; original?: string; anterior?: string };
+  const b = (await req.json().catch(() => ({}))) as { mapa?: string; original?: string; anterior?: string; video?: string };
+  const video = /^[\w-]{6,20}$/.test(String(b.video ?? "")) ? String(b.video) : null;
   const mapa = MAPAS.find((m) => m.id === b.mapa);
   // tira os tempos que vêm junto ao copiar a transcrição do YouTube ("0:03", "1 minuto e 5 segundos")
   const original = String(b.original ?? "")
@@ -32,6 +33,8 @@ export async function POST(req: NextRequest) {
   try {
     const r = await traduzirRoteiro({ mapa: mapa.falado, original, anterior: b.anterior ? String(b.anterior).slice(0, 6000) : undefined });
     await registrarUso(user.id, "roteiro", r);
+    // guarda a tradução do vídeo de referência: o próximo que clicar em Roteiro copia na hora
+    if (video) await supabaseAdmin().from("traducoes").upsert({ video_id: video, mapa: mapa.id, titulo: r.dados.titulo, falas: r.dados.falas, mapa_citado: r.dados.mapa_citado }).then(() => undefined, () => undefined);
     return NextResponse.json({ roteiro: r.dados, usados: usados + 1, limite: LIMITE_MES.roteiro });
   } catch (e) {
     return NextResponse.json({ erro: e instanceof Error ? e.message : "A IA não respondeu. Tente de novo." }, { status: 502 });

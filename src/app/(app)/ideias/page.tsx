@@ -24,6 +24,10 @@ export default async function Ideias({ searchParams }: { searchParams: Promise<{
   const porDia = (v: VideoRef) => v.views / Math.max(0.25, (Date.now() - new Date(v.publicado).getTime()) / 86_400_000);
   const melhores = videos.filter((v) => new Date(v.publicado).getTime() >= semana).map((v) => ({ ...v, porDia: Math.round(porDia(v)) })).sort((a, b) => b.porDia - a.porDia).slice(0, 10);
 
+  const ids = [...new Set([...melhores, ...videos.slice(0, 20)].map((v) => v.id))];
+  const { data: prontas } = ids.length ? await sb.from("traducoes").select("video_id, falas, mapa_citado").eq("mapa", mapa.id).in("video_id", ids) : { data: [] };
+  const traduzidos = Object.fromEntries((prontas ?? []).map((t) => [t.video_id as string, { falas: t.falas as string[], mapa_citado: t.mapa_citado as string }]));
+
   return (
     <>
       <Cabecalho icone="bulb" titulo="Ideias de vídeos" sub="Escolha o mapa e o tema. Veja os melhores vídeos novos dos canais de referência e copie o roteiro em português." />
@@ -60,7 +64,7 @@ export default async function Ideias({ searchParams }: { searchParams: Promise<{
       ) : erro ? (
         <section className="card pill-warn" style={{ padding: "14px 16px" }}>{erro}</section>
       ) : (
-        <IdeiasVideos mapa={mapa.id} tema={tema} melhores={melhores} recentes={videos.slice(0, 20)} iaPronta={iaConfigurada()} />
+        <IdeiasVideos mapa={mapa.id} tema={tema} melhores={melhores} recentes={videos.slice(0, 20)} iaPronta={iaConfigurada()} traduzidos={traduzidos} />
       )}
     </>
   );
