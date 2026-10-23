@@ -122,17 +122,17 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
       </section>
 
       <section className="card flex flex-col gap-3">
-        <TituloCard icone="zap" direita={pushConfigurado() ? "Avisos no celular: ligados" : "Avisos no celular: falta configurar"}>Avisos</TituloCard>
+        <TituloCard icone="zap" direita={pushConfigurado() ? "Notificações no celular: ligadas" : "Notificações no celular: falta configurar"}>Notificações</TituloCard>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todo dia, depois da coleta das 6h, cada criador recebe: dia de postar com o mapa da semana, dias para repor, faltas, marcos da meta (50%, 75%, 90%, batida), vídeo bombando (2× a média dele) e subida no ranking. Rede desconectada, mês fechado e pagamento feito avisam na hora.</p>
         {novasChaves && (
           <div className="tile flex flex-col gap-2" style={{ fontSize: 13 }}>
-            <b style={{ color: "var(--strong)" }}>Para ligar os avisos no celular, crie estas 2 variáveis na Vercel (Settings → Environment Variables) e faça Redeploy:</b>
+            <b style={{ color: "var(--strong)" }}>Para ligar as notificações no celular, crie estas 2 variáveis na Vercel (Settings → Environment Variables) e faça Redeploy:</b>
             <div><span className="label">VAPID_PUBLIC_KEY</span><code style={{ display: "block", wordBreak: "break-all", userSelect: "all", color: "var(--fg)" }}>{novasChaves.publicKey}</code></div>
             <div><span className="label">VAPID_PRIVATE_KEY (secreta: só na Vercel)</span><code style={{ display: "block", wordBreak: "break-all", userSelect: "all", color: "var(--fg)" }}>{novasChaves.privateKey}</code></div>
             <span style={{ color: "var(--muted)" }}>Use as duas desta mesma tela juntas (elas mudam se você recarregar a página).</span>
           </div>
         )}
-        <form action={gerarAvisosAgora}><button className="btn-line" type="submit">Gerar os avisos de hoje agora</button></form>
+        <form action={gerarAvisosAgora}><button className="btn-line" type="submit">Gerar as notificações de hoje agora</button></form>
       </section>
 
       <section id="referencias" className="card flex flex-col gap-4">

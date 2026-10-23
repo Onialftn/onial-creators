@@ -152,5 +152,5 @@ export async function gerarAvisosAgora() {
   await gestor();
   const n = await gerarNotificacoes();
   revalidatePath("/", "layout");
-  redirect(`/gestor?ok=${encodeURIComponent(n ? `${n} avisos conferidos (os que já existiam não se repetem).` : "Nenhum aviso para hoje.")}`);
+  redirect(`/gestor?ok=${encodeURIComponent(n ? `${n} notificações conferidas (as que já existiam não se repetem).` : "Nenhuma notificação para hoje.")}`);
 }
