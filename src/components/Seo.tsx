@@ -21,7 +21,7 @@ function Copiar({ texto, rotulo = "Copiar" }: { texto: string; rotulo?: string }
 }
 
 /** Anel de nota 0 a 100. */
-function Medidor({ nota, tamanho = 80 }: { nota: number; tamanho?: number }) {
+export function Medidor({ nota, tamanho = 80 }: { nota: number; tamanho?: number }) {
   const r = tamanho / 2 - 8;
   const C = 2 * Math.PI * r;
   return (
