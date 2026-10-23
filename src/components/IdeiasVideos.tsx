@@ -121,7 +121,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
     setGerando(v.id);
     try {
       const r = await fetch("/api/ia/roteiro", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mapa, video: v.id }) });
-      const d = await r.json();
+      const d = await r.json().catch(() => ({ erro: r.status === 504 ? "Demorou demais para gerar. Tente de novo ou cole a transcrição abaixo." : "Não consegui gerar agora. Cole a transcrição abaixo." }));
       if (!r.ok) { setInicio({ erro: d.erro }); setAssistir(null); return setTraduzir(v); }
       setTraduzidos((x) => ({ ...x, [v.id]: { falas: d.roteiro.falas, mapa_citado: d.roteiro.mapa_citado } }));
       if (await copiarTexto(d.roteiro.falas.join("\n\n"))) return marcarCopiado(v.id);

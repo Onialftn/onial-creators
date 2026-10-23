@@ -10,13 +10,16 @@ export function geminiConfigurado() {
 
 export async function transcreverYoutube(videoId: string): Promise<string> {
   let ultimo: Error = new Error("Não consegui transcrever esse vídeo automaticamente.");
+  const limite = Date.now() + 110_000; // deixa tempo para a tradução depois
   for (const modelo of MODELOS_GEMINI) {
     for (let tentativa = 0; tentativa < 2; tentativa++) {
+      if (Date.now() > limite) throw new Error("O Google está demorando demais agora. Tente de novo em alguns minutos.");
       try {
         return await pedirTranscricao(videoId, modelo);
       } catch (e) {
         ultimo = e instanceof Error ? e : ultimo;
-        const ocupado = (e as { ocupado?: boolean }).ocupado;
+        const ocupado = (e as { ocupado?: boolean }).ocupado || (e instanceof Error && e.name === "TimeoutError");
+        console.error("Gemini falhou", modelo, tentativa, ultimo.message.slice(0, 200));
         if (!ocupado) throw ultimo; // erro de verdade (vídeo sem fala, chave errada...): não adianta repetir
         if (tentativa === 0) await new Promise((r) => setTimeout(r, 1500));
       }
@@ -29,6 +32,7 @@ async function pedirTranscricao(videoId: string, modelo: string): Promise<string
   const chave = process.env.GEMINI_API_KEY?.trim();
   if (!chave) throw new Error("A transcrição automática ainda não foi configurada.");
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
+    signal: AbortSignal.timeout(60_000),
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": chave },
     body: JSON.stringify({

@@ -5,7 +5,7 @@ import { traduzirRoteiro } from "@/lib/ia/roteiro";
 import { LIMITE_MES, registrarUso, usadosNoMes } from "@/lib/ia/uso";
 import { supabaseAdmin, supabaseServidor } from "@/lib/supabase/server";
 
-export const maxDuration = 60;
+export const maxDuration = 180;
 
 /** Traduz o roteiro gringo para o português e troca o mapa citado pelo mapa da Onial. */
 export async function POST(req: NextRequest) {
