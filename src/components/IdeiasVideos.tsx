@@ -39,6 +39,9 @@ function Progresso({ ativo, terminou }: { ativo: boolean; terminou: boolean }) {
   return <span aria-hidden="true" className="absolute inset-y-0 left-0" style={{ width: `${largura}%`, background: "rgba(255,255,255,.35)", transition: "width .3s ease", borderRadius: "inherit" }} />;
 }
 
+/** botão verde de "copiado" (texto escuro, como o dourado) */
+const VERDE = { background: "#3DDC97", color: "#0A0A0A", boxShadow: "0 0 22px rgba(61,220,151,.35)" } as const;
+
 type Pronta = { falas: string[]; mapa_citado: string };
 async function copiarTexto(t: string) {
   try { await navigator.clipboard.writeText(t); return true; } catch { return false; }
@@ -63,8 +66,11 @@ function Traduzir({ v, mapa, iaPronta, pronta, inicio }: { v: VideoRef; mapa: st
       setAviso((await copiarTexto(d.roteiro.falas.join("\n\n"))) ? "Roteiro traduzido e copiado. É só colar." : "");
     } catch (e) { setErro(e instanceof Error ? e.message : "A IA não respondeu."); } finally { setCarregando(false); }
   }
+  const [foiCopiado, setFoiCopiado] = useState(false);
   async function copiar() {
-    setAviso((await copiarTexto(res!.falas.join("\n\n"))) ? "Roteiro copiado." : "Não consegui copiar. Selecione o texto e copie.");
+    const ok = await copiarTexto(res!.falas.join("\n\n"));
+    setAviso(ok ? "" : "Não consegui copiar. Selecione o texto e copie.");
+    if (ok) { setFoiCopiado(true); setTimeout(() => setFoiCopiado(false), 2500); }
   }
   if (res)
     return (
@@ -73,7 +79,7 @@ function Traduzir({ v, mapa, iaPronta, pronta, inicio }: { v: VideoRef; mapa: st
         {res.mapa_trocado && <div className="pill-tint" style={{ alignSelf: "flex-start" }}>Mapa trocado{res.mapa_citado ? `: "${res.mapa_citado}"` : ""}</div>}
         <div className="flex flex-col gap-2.5">{res.falas.map((f, i) => <p key={i} style={{ margin: 0, color: "var(--strong)", lineHeight: 1.5 }}>{f}</p>)}</div>
         <div className="flex flex-wrap gap-2">
-          <button className="btn-gold" onClick={copiar}>Copiar roteiro</button>
+          <button className="btn-gold" onClick={copiar} style={foiCopiado ? VERDE : undefined}>{foiCopiado ? <><Icone nome="check" tamanho={16} />Copiado!</> : "Copiar roteiro"}</button>
           <button className="btn-line" onClick={() => { setRes(null); setTexto(""); }}>Colar outro texto</button>
         </div>
       </>
@@ -176,7 +182,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
           <div style={{ width: "100%", maxWidth: 340, margin: "0 auto", aspectRatio: "9/16", borderRadius: 10, overflow: "hidden", background: "#000" }}>
             <iframe src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&rel=0`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
           </div>
-          <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1 }}>
+          <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1, ...(copiado === assistir.id ? VERDE : {}) }}>
             <Progresso ativo={gerando === assistir.id} terminou={copiado === assistir.id} />
             <span className="relative flex items-center gap-2">{copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português…" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}</span>
           </button>
