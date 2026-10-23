@@ -33,7 +33,15 @@ export function segundosISO(d: string) {
 async function buscar(canais: string[]): Promise<VideoRef[]> {
   if (!canais.length) return [];
   const token = await tokenYoutube();
-  const ch = await yt<{ items?: { id: string; snippet: { title: string }; contentDetails: { relatedPlaylists: { uploads: string } } }[] }>(`channels?part=snippet,contentDetails&id=${canais.join(",")}`, token);
+  type Canal = { id: string; snippet: { title: string }; contentDetails: { relatedPlaylists: { uploads: string } } };
+  // canais guardados pelo código (UC...) vão juntos; os guardados pelo @nome são buscados um a um
+  const porId = canais.filter((c) => !c.startsWith("@"));
+  const porNome = canais.filter((c) => c.startsWith("@"));
+  const listas = await Promise.all([
+    porId.length ? yt<{ items?: Canal[] }>(`channels?part=snippet,contentDetails&id=${porId.join(",")}`, token) : Promise.resolve({ items: [] as Canal[] }),
+    ...porNome.map((h) => yt<{ items?: Canal[] }>(`channels?part=snippet,contentDetails&forHandle=${encodeURIComponent(h)}`, token).catch(() => ({ items: [] as Canal[] }))),
+  ]);
+  const ch = { items: listas.flatMap((l) => l.items ?? []) };
   const ids: string[] = [];
   const nomeCanal = new Map<string, string>();
   await Promise.all((ch.items ?? []).map(async (c) => {
