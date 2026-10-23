@@ -5,7 +5,11 @@ import { Icone, NOME_PLATAFORMA } from "@/components/Icone";
 import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes } from "@/lib/datas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
-import { adicionarCanal, coletarAgora, criarCriador, removerCanal, fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMeta } from "./acoes";
+import { adicionarCanal, coletarAgora, criarCriador, gerarAvisosAgora, removerCanal, fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapaSemana, salvarMeta } from "./acoes";
+import webpush from "web-push";
+import { pushConfigurado } from "@/lib/notificacoes";
+import { inicioDaSemana } from "@/lib/pagamento";
+import { somarDias } from "@/lib/datas";
 import { LogoPlataforma } from "@/components/Icone";
 import { REDES, redeConfigurada } from "@/lib/coleta/redes";
 import { iaConfigurada } from "@/lib/ia/claude";
@@ -28,6 +32,12 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
   const [{ data: agenda }, { data: pags }] = sel
     ? await Promise.all([sb.from("agenda_postagem").select("dia_semana").eq("criador_id", sel.id), sb.from("pagamentos").select("*").eq("criador_id", sel.id).order("mes", { ascending: false })])
     : [{ data: null }, { data: null }];
+  const semanaAtual = inicioDaSemana(hoje);
+  const proximaSemana = somarDias(semanaAtual, 7);
+  const { data: mapasSel } = sel ? await sb.from("mapa_semana").select("semana, mapa").eq("criador_id", sel.id).in("semana", [semanaAtual, proximaSemana]) : { data: [] };
+  const dmy = (d: string) => `${d.slice(8)}/${d.slice(5, 7)}`;
+  // chaves para os avisos no celular (só aparecem enquanto não estiverem configuradas na Vercel)
+  const novasChaves = pushConfigurado() ? null : webpush.generateVAPIDKeys();
   const dias = new Set((agenda ?? []).map((a) => a.dia_semana as number));
   const custoMes = resumos.reduce((s, r) => s + r.pagamento.totalCentavos, 0);
   const { data: contasRede } = await sb.from("contas_plataforma").select("criador_id, plataforma, nome_conta, ultima_coleta, erro");
@@ -111,6 +121,20 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Gasto estimado pelo site. O valor cobrado de verdade aparece no console da Anthropic. Os limites zeram todo dia 1º.</p>
       </section>
 
+      <section className="card flex flex-col gap-3">
+        <TituloCard icone="zap" direita={pushConfigurado() ? "Avisos no celular: ligados" : "Avisos no celular: falta configurar"}>Avisos</TituloCard>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todo dia, depois da coleta das 6h, cada criador recebe: dia de postar com o mapa da semana, dias para repor, faltas, marcos da meta (50%, 75%, 90%, batida), vídeo bombando (2× a média dele) e subida no ranking. Rede desconectada, mês fechado e pagamento feito avisam na hora.</p>
+        {novasChaves && (
+          <div className="tile flex flex-col gap-2" style={{ fontSize: 13 }}>
+            <b style={{ color: "var(--strong)" }}>Para ligar os avisos no celular, crie estas 2 variáveis na Vercel (Settings → Environment Variables) e faça Redeploy:</b>
+            <div><span className="label">VAPID_PUBLIC_KEY</span><code style={{ display: "block", wordBreak: "break-all", userSelect: "all", color: "var(--fg)" }}>{novasChaves.publicKey}</code></div>
+            <div><span className="label">VAPID_PRIVATE_KEY (secreta: só na Vercel)</span><code style={{ display: "block", wordBreak: "break-all", userSelect: "all", color: "var(--fg)" }}>{novasChaves.privateKey}</code></div>
+            <span style={{ color: "var(--muted)" }}>Use as duas desta mesma tela juntas (elas mudam se você recarregar a página).</span>
+          </div>
+        )}
+        <form action={gerarAvisosAgora}><button className="btn-line" type="submit">Gerar os avisos de hoje agora</button></form>
+      </section>
+
       <section id="referencias" className="card flex flex-col gap-4">
         <TituloCard icone="bulb">Canais de referência (Ideias de vídeos)</TituloCard>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Os Shorts desses canais aparecem na aba Ideias de vídeos, separados por mapa e tema. Precisa ter pelo menos uma conta do YouTube conectada no site.</p>
@@ -161,6 +185,22 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
               </div>
               <button className="btn-gold" type="submit">Salvar dias (escolha 5)</button>
             </form>
+            <div className="card flex flex-col gap-3">
+              <TituloCard icone="bulb">Mapa da semana</TituloCard>
+              <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Aparece no aviso &quot;Hoje é dia de postar&quot; das 6h e abre a aba Ideias nesse mapa.</p>
+              {[[semanaAtual, "Esta semana"], [proximaSemana, "Próxima semana"]].map(([sem, rot]) => (
+                <form key={sem} action={salvarMapaSemana} className="flex flex-wrap items-end gap-2">
+                  <input type="hidden" name="criador" value={sel.id} /><input type="hidden" name="semana" value={sem} />
+                  <label className="flex min-w-0 flex-1 flex-col gap-1.5"><span className="label">{rot} ({dmy(sem)} a {dmy(somarDias(sem, 6))})</span>
+                    <select className="input" name="mapa" defaultValue={mapasSel?.find((x) => x.semana === sem)?.mapa ?? ""}>
+                      <option value="">Sem mapa definido</option>
+                      {MAPAS.map((m) => <option key={m.id} value={m.id}>{m.emoji} {m.nome}</option>)}
+                    </select>
+                  </label>
+                  <button className="btn-line" type="submit">Salvar</button>
+                </form>
+              ))}
+            </div>
           </section>
 
           <section className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))" }}>

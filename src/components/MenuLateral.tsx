@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Avatar } from "./Avatar";
 import { Icone } from "./Icone";
+import { Sino, type Notificacao } from "./Sino";
 
 type Item = { href: string; rotulo: string; icone: string; emBreve?: boolean };
 const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
@@ -37,7 +38,7 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
   { titulo: "Gestão", soGestor: true, itens: [{ href: "/gestor", rotulo: "Painel do gestor", icone: "gear" }] },
 ];
 
-export function MenuLateral({ nome, papel, foto = null }: { nome: string; papel: "criador" | "gestor"; foto?: string | null }) {
+export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush = null }: { nome: string; papel: "criador" | "gestor"; foto?: string | null; avisos?: Notificacao[]; chavePush?: string | null }) {
   const rota = usePathname();
   const [claro, setClaro] = useState(false);
   useEffect(() => setClaro(document.documentElement.getAttribute("data-mode") === "light"), []);
@@ -71,6 +72,7 @@ export function MenuLateral({ nome, papel, foto = null }: { nome: string; papel:
         <span title="Site em desenvolvimento" style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, padding: "2px 6px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A" }}>BETA</span>
       </Link>
       <span className="display truncate" style={{ flex: 1, fontSize: 18, letterSpacing: 0.5, color: "var(--strong)", textAlign: "center" }}>{atual?.rotulo ?? "Onial Creators"}</span>
+      <Sino itens={avisos} chavePublica={chavePush} compacto />
       <button type="button" onClick={() => setAberto(true)} aria-label="Abrir menu" aria-expanded={aberto} aria-controls="menu-principal" className="flex items-center justify-center" style={{ width: 44, height: 44, borderRadius: 8, border: "1px solid var(--line)", background: "var(--panel)", color: "var(--fg)" }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
       </button>
@@ -85,6 +87,7 @@ export function MenuLateral({ nome, papel, foto = null }: { nome: string; papel:
           <span title="Site em desenvolvimento" style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, padding: "2px 7px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A", lineHeight: 1.3 }}>BETA</span>
         </span>
       </Link>
+      <div className="menu-sino"><Sino itens={avisos} chavePublica={chavePush} /></div>
       {GRUPOS.filter((g) => !g.soGestor || papel === "gestor").map((g) => (
         <nav key={g.titulo} className="menu-grupo" aria-label={g.titulo}>
           <div className="menu-titulo">{g.titulo.toUpperCase()}</div>

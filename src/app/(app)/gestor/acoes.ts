@@ -6,6 +6,9 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { anotarSaldo, coletarTodas } from "@/lib/coleta/coletar";
 import { MAPAS } from "@/lib/ia/mapas";
 import { resolverCanal } from "@/lib/ideias";
+import { gerarNotificacoes, notificar } from "@/lib/notificacoes";
+import { formatarReais } from "@/lib/pagamento";
+import { nomeMes } from "@/lib/datas";
 
 async function gestor() {
   const ctx = await usuarioAtual();
@@ -95,13 +98,15 @@ export async function fecharMes(f: FormData) {
     { criador_id: criador, mes, views: p.views, faltas: p.faltas, bruto_centavos: p.brutoCentavos, constancia_centavos: p.constanciaCentavos, bonus_meta_centavos: p.bonusMetaCentavos, total_centavos: p.totalCentavos, status: "em_aberto" },
     { onConflict: "criador_id,mes" },
   );
+  await notificar(criador, { tipo: "pagamento", titulo: `Seu mês de ${nomeMes(mes).split(" ")[0].toLowerCase()} foi fechado`, texto: `Você vai receber ${formatarReais(p.totalCentavos)}. Veja os detalhes em Pagamentos.`, link: "/pagamentos", chave: `fechado:${mes}:${p.totalCentavos}` }).catch(() => undefined);
   voltar(criador, "Mês fechado. O valor aparece em Pagamentos como A pagar.");
 }
 
 export async function marcarPago(f: FormData) {
   const { sb } = await gestor();
   const criador = texto(f, "criador");
-  await sb.from("pagamentos").update({ status: "pago", pago_em: new Date().toISOString() }).eq("id", texto(f, "pagamento"));
+  const { data: pg } = await sb.from("pagamentos").update({ status: "pago", pago_em: new Date().toISOString() }).eq("id", texto(f, "pagamento")).select("mes, total_centavos").maybeSingle();
+  if (pg) await notificar(criador, { tipo: "pagamento", titulo: "Pagamento feito! 💸", texto: `Seu pagamento de ${nomeMes(String(pg.mes)).toLowerCase()} (${formatarReais(Number(pg.total_centavos))}) foi marcado como pago.`, link: "/pagamentos", chave: `pago:${texto(f, "pagamento")}` }).catch(() => undefined);
   voltar(criador, "Pagamento marcado como pago.");
 }
 
@@ -130,4 +135,22 @@ export async function removerCanal(f: FormData) {
   await sb.from("canais_referencia").delete().eq("id", texto(f, "id"));
   revalidatePath("/", "layout");
   redirect("/gestor?ok=Canal%20removido.#referencias");
+}
+
+export async function salvarMapaSemana(f: FormData) {
+  const { sb } = await gestor();
+  const criador = texto(f, "criador");
+  const semana = texto(f, "semana");
+  const mapa = texto(f, "mapa");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(semana)) voltar(criador, "Semana inválida.");
+  if (!mapa) await sb.from("mapa_semana").delete().eq("criador_id", criador).eq("semana", semana);
+  else if (MAPAS.some((m) => m.id === mapa)) await sb.from("mapa_semana").upsert({ criador_id: criador, semana, mapa });
+  voltar(criador, "Mapa da semana salvo.");
+}
+
+export async function gerarAvisosAgora() {
+  await gestor();
+  const n = await gerarNotificacoes();
+  revalidatePath("/", "layout");
+  redirect(`/gestor?ok=${encodeURIComponent(n ? `${n} avisos conferidos (os que já existiam não se repetem).` : "Nenhum aviso para hoje.")}`);
 }
