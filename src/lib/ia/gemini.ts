@@ -25,7 +25,9 @@ export async function transcreverYoutube(videoId: string): Promise<string> {
   const corpo = await r.text();
   if (!r.ok) {
     console.error("Gemini", r.status, corpo.slice(0, 400));
-    throw new Error(r.status === 429 ? "A transcrição automática atingiu o limite de hoje." : "Não consegui transcrever esse vídeo automaticamente.");
+    let motivo = "";
+    try { const e = JSON.parse(corpo) as { error?: { status?: string; message?: string } }; motivo = `${e.error?.status ?? r.status}: ${e.error?.message ?? ""}`.replace(/(AIza|AQ\.)[\w.-]+/g, "[chave]").slice(0, 200); } catch { motivo = String(r.status); }
+    throw new Error(r.status === 429 ? "A transcrição automática atingiu o limite de hoje." : `Não consegui transcrever esse vídeo automaticamente (Google: ${motivo}).`);
   }
   const d = JSON.parse(corpo) as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
   const texto = (d.candidates?.[0]?.content?.parts ?? []).map((p) => p.text ?? "").join("").trim();
