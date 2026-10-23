@@ -51,9 +51,33 @@ export function MenuLateral({ nome, papel, foto = null }: { nome: string; papel:
     } catch {}
   }
   const ativo = (href: string) => (href === "/" ? rota === "/" : rota.startsWith(href));
+  // celular: o menu abre pela lateral (botão ☰) e fecha ao trocar de aba, tocar fora ou apertar Esc
+  const [aberto, setAberto] = useState(false);
+  useEffect(() => setAberto(false), [rota]);
+  useEffect(() => {
+    if (!aberto) return;
+    const f = (e: KeyboardEvent) => e.key === "Escape" && setAberto(false);
+    window.addEventListener("keydown", f);
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", f); document.body.style.overflow = ""; };
+  }, [aberto]);
+  const atual = GRUPOS.flatMap((g) => g.itens).find((i) => ativo(i.href));
 
   return (
-    <aside className="menu">
+    <>
+    <header className="topo-movel">
+      <Link href="/" className="flex items-center gap-2" aria-label="Início">
+        <Image src="/logo.png" alt="Logo Onial" width={34} height={34} className="rounded-lg" />
+        <span title="Site em desenvolvimento" style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, padding: "2px 6px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A" }}>BETA</span>
+      </Link>
+      <span className="display truncate" style={{ flex: 1, fontSize: 18, letterSpacing: 0.5, color: "var(--strong)", textAlign: "center" }}>{atual?.rotulo ?? "Onial Creators"}</span>
+      <button type="button" onClick={() => setAberto(true)} aria-label="Abrir menu" aria-expanded={aberto} aria-controls="menu-principal" className="flex items-center justify-center" style={{ width: 44, height: 44, borderRadius: 8, border: "1px solid var(--line)", background: "var(--panel)", color: "var(--fg)" }}>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+      </button>
+    </header>
+    <div className={`menu-fundo ${aberto ? "menu-fundo-on" : ""}`} onClick={() => setAberto(false)} aria-hidden="true" />
+    <aside id="menu-principal" className={`menu ${aberto ? "menu-aberto" : ""}`}>
+      <button type="button" className="menu-fechar" onClick={() => setAberto(false)} aria-label="Fechar menu"><Icone nome="x" tamanho={18} /></button>
       <Link href="/" className="flex items-center gap-2.5 px-2">
         <Image src="/logo.png" alt="Logo Onial" width={44} height={44} className="rounded-lg" style={{ boxShadow: "0 0 18px rgba(232,176,20,.35)" }} priority />
         <span className="menu-marca flex flex-col items-start" style={{ gap: 3 }}>
@@ -88,5 +112,6 @@ export function MenuLateral({ nome, papel, foto = null }: { nome: string; papel:
         </div>
       </div>
     </aside>
+    </>
   );
 }

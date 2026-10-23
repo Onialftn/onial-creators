@@ -12,7 +12,7 @@ Todo o texto do site é em português do Brasil.
 - Fontes: Rajdhani (títulos, números) e Inter (texto).
 - Botão dourado sempre com texto escuro.
 - Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Pagamentos, Minhas redes), OTIMIZAÇÕES (Ideias de vídeos, Áudio, Avaliar vídeo, Pomodoro), EQUIPE (Ranking do mês, Meta coletiva com selo EM BREVE). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
-- No celular, o menu vira uma barra no topo.
+- No celular: barra fixa no topo (logo, BETA, nome da aba e botão ☰) e o menu abre pela lateral (decisão do dono).
 - A Dashboard é só para informações rápidas. Funções novas ganham aba própria, nunca entram na Dashboard.
 
 ## Tecnologia
