@@ -69,12 +69,13 @@ export default async function ConfigGestor({ searchParams }: { searchParams: Pro
         <TituloCard icone="bulb" direita={`Gasto no mês: ${dolar((usoIa ?? []).reduce((a, u) => a + Number(u.custo_usd), 0))}`}>Uso da IA no mês</TituloCard>
         <div className="overflow-x-auto">
           <table className="table" style={{ minWidth: 420 }}>
-            <thead><tr><th scope="col">PESSOA</th><th scope="col">ROTEIROS TRADUZIDOS</th><th scope="col">GASTO</th></tr></thead>
+            <thead><tr><th scope="col">PESSOA</th><th scope="col">ROTEIROS TRADUZIDOS</th><th scope="col">SEO</th><th scope="col">GASTO</th></tr></thead>
             <tbody>
               {pessoas.map((pp) => (
                 <tr key={pp.id}>
                   <td style={{ color: "var(--strong)", fontWeight: 600 }}>{pp.nome}</td>
                   <td style={{ fontVariantNumeric: "tabular-nums" }}>{usoDe(pp.id, "roteiro").length}{pp.id === perfil.id ? "" : <span style={{ color: "var(--muted)" }}> / {LIMITE_MES.roteiro}</span>}</td>
+                  <td style={{ fontVariantNumeric: "tabular-nums" }}>{usoDe(pp.id, "seo").length}{pp.id === perfil.id ? "" : <span style={{ color: "var(--muted)" }}> / {LIMITE_MES.seo}</span>}</td>
                   <td style={{ fontVariantNumeric: "tabular-nums" }}>{dolar(usoDe(pp.id).reduce((a, u) => a + Number(u.custo_usd), 0))}</td>
                 </tr>
               ))}

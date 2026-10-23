@@ -2,9 +2,9 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { hojeBrasil, mesDe, primeiroDia } from "@/lib/datas";
 
-export type TipoIA = "roteiro" | "ideia" | "avaliacao";
+export type TipoIA = "roteiro" | "ideia" | "avaliacao" | "seo";
 /** Quantos pedidos cada criador pode fazer por mês (o gestor não tem limite). */
-export const LIMITE_MES: Record<TipoIA, number> = { roteiro: 60, ideia: 40, avaliacao: 30 };
+export const LIMITE_MES: Record<TipoIA, number> = { roteiro: 60, ideia: 40, avaliacao: 30, seo: 60 };
 
 /** início do mês atual em Brasília, como instante */
 export function inicioDoMes() {
