@@ -46,7 +46,7 @@ async function buscar(canais: string[]): Promise<VideoRef[]> {
   const nomeCanal = new Map<string, string>();
   await Promise.all((ch.items ?? []).map(async (c) => {
     nomeCanal.set(c.id, c.snippet.title);
-    const p = await yt<{ items?: { contentDetails: { videoId: string } }[] }>(`playlistItems?part=contentDetails&maxResults=25&playlistId=${c.contentDetails.relatedPlaylists.uploads}`, token).catch(() => ({ items: [] }));
+    const p = await yt<{ items?: { contentDetails: { videoId: string } }[] }>(`playlistItems?part=contentDetails&maxResults=50&playlistId=${c.contentDetails.relatedPlaylists.uploads}`, token).catch(() => ({ items: [] }));
     for (const it of p.items ?? []) ids.push(it.contentDetails.videoId);
   }));
   const out: VideoRef[] = [];
