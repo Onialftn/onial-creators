@@ -47,7 +47,7 @@ perfis, contas_plataforma, videos, views_diarias, agenda_postagem, dias_postagem
 - YouTube Data API + YouTube Analytics API (OAuth do próprio criador): foto e nome do canal no perfil + views diárias.
 - Coleta automática (aba Minhas redes): cada criador conecta YouTube, TikTok e Instagram (OAuth); a Vercel roda `/api/coletar` todo dia às 06:00 de Brasília. YouTube Analytics dá views por dia; TikTok e Instagram dão o total, e o ganho do dia é a diferença (`src/lib/coleta/ganho.ts`). O lançamento manual do gestor fica como reserva.
 - IA (API do Claude, `src/lib/ia/`): tradução FIEL do roteiro gringo para o português (não reescreve; só troca o nome do mapa citado pelo mapa da Onial e usa o glossário, ex.: cheat → hacker), feita na aba Ideias de vídeos. Avaliação de vídeo na Fase 3. Limite por criador em `src/lib/ia/uso.ts`.
-- Ideias de vídeos: Shorts dos canais de referência que o gestor cadastra por mapa e tema (tabela canais_referencia). O YouTube não deixa baixar legenda de outros canais: o criador cola a transcrição.
+- Ideias de vídeos: Shorts dos canais de referência que o gestor cadastra por mapa e tema (tabela canais_referencia). O YouTube não deixa baixar legenda de outros canais: o Gemini (API do Google, `GEMINI_API_KEY`, `src/lib/ia/gemini.ts`) assiste o Short público pelo link e transcreve; se falhar, o criador cola a transcrição. Traduções ficam guardadas na tabela traducoes (o próximo clique copia na hora).
 
 ## Como trabalhar neste projeto
 

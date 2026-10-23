@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { geminiConfigurado, transcreverYoutube } from "@/lib/ia/gemini";
 import { MAPAS } from "@/lib/ia/mapas";
 import { traduzirRoteiro } from "@/lib/ia/roteiro";
 import { LIMITE_MES, registrarUso, usadosNoMes } from "@/lib/ia/uso";
@@ -23,7 +24,14 @@ export async function POST(req: NextRequest) {
     .join("\n")
     .trim();
   if (!mapa) return NextResponse.json({ erro: "Escolha o mapa." }, { status: 400 });
-  if (original.length < 30) return NextResponse.json({ erro: "Cole o roteiro do vídeo gringo (pelo menos uma ou duas frases)." }, { status: 400 });
+  // só o link do vídeo: já traduzido? devolve na hora. Senão o Gemini transcreve antes de traduzir.
+  let transcricao = original;
+  if (!original && video) {
+    const { data: pronta } = await supabaseAdmin().from("traducoes").select("titulo, falas, mapa_citado").eq("video_id", video).eq("mapa", mapa.id).maybeSingle();
+    if (pronta) return NextResponse.json({ roteiro: { titulo: pronta.titulo, falas: pronta.falas, mapa_citado: pronta.mapa_citado, mapa_trocado: !!pronta.mapa_citado }, guardada: true });
+    if (!geminiConfigurado()) return NextResponse.json({ erro: "Cole a transcrição do vídeo.", precisaColar: true }, { status: 400 });
+  }
+  if (original.length < 30 && !(video && !original)) return NextResponse.json({ erro: "Cole o roteiro do vídeo gringo (pelo menos uma ou duas frases)." }, { status: 400 });
   if (original.length > 6000) return NextResponse.json({ erro: "O roteiro está grande demais. Cole só o texto falado do vídeo." }, { status: 400 });
 
   const usados = await usadosNoMes(user.id, "roteiro");
@@ -31,7 +39,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ erro: `Você já usou os ${LIMITE_MES.roteiro} roteiros deste mês. Fale com o gestor se precisar de mais.` }, { status: 429 });
 
   try {
-    const r = await traduzirRoteiro({ mapa: mapa.falado, original, anterior: b.anterior ? String(b.anterior).slice(0, 6000) : undefined });
+    if (!transcricao) {
+      try { transcricao = (await transcreverYoutube(video!)).slice(0, 6000); }
+      catch (e) { return NextResponse.json({ erro: `${e instanceof Error ? e.message : "Não consegui transcrever."} Cole a transcrição abaixo.`, precisaColar: true }, { status: 502 }); }
+    }
+    const r = await traduzirRoteiro({ mapa: mapa.falado, original: transcricao, anterior: b.anterior ? String(b.anterior).slice(0, 6000) : undefined });
     await registrarUso(user.id, "roteiro", r);
     // guarda a tradução do vídeo de referência: o próximo que clicar em Roteiro copia na hora
     if (video) await supabaseAdmin().from("traducoes").upsert({ video_id: video, mapa: mapa.id, titulo: r.dados.titulo, falas: r.dados.falas, mapa_citado: r.dados.mapa_citado }).then(() => undefined, () => undefined);

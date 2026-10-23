@@ -30,11 +30,11 @@ async function copiarTexto(t: string) {
   try { await navigator.clipboard.writeText(t); return true; } catch { return false; }
 }
 
-function Traduzir({ v, mapa, iaPronta, pronta }: { v: VideoRef; mapa: string; iaPronta: boolean; pronta: (t: Pronta) => void }) {
+function Traduzir({ v, mapa, iaPronta, pronta, inicio }: { v: VideoRef; mapa: string; iaPronta: boolean; pronta: (t: Pronta) => void; inicio?: { res?: RoteiroIA; erro?: string } }) {
   const [texto, setTexto] = useState("");
-  const [res, setRes] = useState<RoteiroIA | null>(null);
+  const [res, setRes] = useState<RoteiroIA | null>(inicio?.res ?? null);
   const [carregando, setCarregando] = useState(false);
-  const [erro, setErro] = useState("");
+  const [erro, setErro] = useState(inicio?.erro ?? "");
   const [aviso, setAviso] = useState("");
   async function traduzir(t = texto) {
     if (t.trim().length < 30 || carregando) return;
@@ -81,28 +81,38 @@ function Traduzir({ v, mapa, iaPronta, pronta }: { v: VideoRef; mapa: string; ia
   );
 }
 
-export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, traduzidos: iniciais }: { mapa: string; tema: string; melhores: VideoRef[]; recentes: VideoRef[]; iaPronta: boolean; traduzidos: Record<string, Pronta> }) {
+export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automatico, traduzidos: iniciais }: { mapa: string; tema: string; melhores: VideoRef[]; recentes: VideoRef[]; iaPronta: boolean; automatico: boolean; traduzidos: Record<string, Pronta> }) {
   const [assistir, setAssistir] = useState<VideoRef | null>(null);
   const [traduzir, setTraduzir] = useState<VideoRef | null>(null);
   const [mostrar, setMostrar] = useState(10);
   const [traduzidos, setTraduzidos] = useState(iniciais);
   const [copiado, setCopiado] = useState<string | null>(null);
+  const [gerando, setGerando] = useState<string | null>(null);
+  const [inicio, setInicio] = useState<{ res?: RoteiroIA; erro?: string } | undefined>();
+  const marcarCopiado = (id: string) => { setCopiado(id); setTimeout(() => setCopiado((c) => (c === id ? null : c)), 2500); };
 
   /** Roteiro: se já foi traduzido por alguém da equipe, copia na hora; senão abre a janela para colar a transcrição. */
   async function roteiro(v: VideoRef) {
     const t = traduzidos[v.id];
-    if (t && (await copiarTexto(t.falas.join("\n\n")))) {
-      setCopiado(v.id);
-      setTimeout(() => setCopiado((c) => (c === v.id ? null : c)), 2500);
-      return;
-    }
-    setTraduzir(v);
+    if (t && (await copiarTexto(t.falas.join("\n\n")))) return marcarCopiado(v.id);
+    if (!automatico || !iaPronta || gerando) { setInicio(undefined); return setTraduzir(v); }
+    // automático: o Gemini transcreve pelo link e o Claude traduz; depois copia
+    setGerando(v.id);
+    try {
+      const r = await fetch("/api/ia/roteiro", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ mapa, video: v.id }) });
+      const d = await r.json();
+      if (!r.ok) { setInicio({ erro: d.erro }); return setTraduzir(v); }
+      setTraduzidos((x) => ({ ...x, [v.id]: { falas: d.roteiro.falas, mapa_citado: d.roteiro.mapa_citado } }));
+      if (await copiarTexto(d.roteiro.falas.join("\n\n"))) return marcarCopiado(v.id);
+      setInicio({ res: d.roteiro }); setTraduzir(v); // o navegador não deixou copiar sozinho: mostra o texto com o botão Copiar
+    } catch { setInicio({ erro: "Não consegui gerar agora. Cole a transcrição abaixo." }); setTraduzir(v); }
+    finally { setGerando(null); }
   }
 
   const Acoes = ({ v }: { v: VideoRef }) => (
     <div className="flex gap-2">
       <button className="btn-line flex-1" onClick={() => setAssistir(v)} style={{ minHeight: 38 }}><Icone nome="play" tamanho={14} />Assistir</button>
-      <button className="btn-gold" onClick={() => roteiro(v)} title={traduzidos[v.id] ? "Copiar o roteiro em português" : "Traduzir o roteiro para português"} style={{ minHeight: 38, padding: "0 12px", fontSize: 13 }}>{copiado === v.id ? "Copiado!" : "Roteiro"}</button>
+      <button className="btn-gold" onClick={() => roteiro(v)} title={traduzidos[v.id] ? "Copiar o roteiro em português" : "Traduzir o roteiro para português"} style={{ minHeight: 38, padding: "0 12px", fontSize: 13 }}>{copiado === v.id ? "Copiado!" : gerando === v.id ? "Gerando…" : "Roteiro"}</button>
     </div>
   );
 
@@ -155,7 +165,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, traduzi
           <button className="btn-gold" onClick={() => { const v = assistir; setAssistir(null); roteiro(v); }}>{traduzidos[assistir.id] ? "Copiar roteiro em português" : "Roteiro em português"}</button>
         </Janela>
       )}
-      {traduzir && <Janela titulo={`Roteiro em português · ${traduzir.titulo}`} fechar={() => setTraduzir(null)}><Traduzir v={traduzir} mapa={mapa} iaPronta={iaPronta} pronta={(t) => setTraduzidos((x) => ({ ...x, [traduzir.id]: t }))} /></Janela>}
+      {traduzir && <Janela titulo={`Roteiro em português · ${traduzir.titulo}`} fechar={() => setTraduzir(null)}><Traduzir v={traduzir} mapa={mapa} iaPronta={iaPronta} inicio={inicio} pronta={(t) => setTraduzidos((x) => ({ ...x, [traduzir.id]: t }))} /></Janela>}
     </>
   );
 }

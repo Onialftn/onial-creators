@@ -33,6 +33,7 @@ Rode `supabase/migrations/0003_ia_roteiros.sql` no SQL Editor e crie na Vercel:
 
 | Variável | De onde vem |
 | --- | --- |
+| `GEMINI_API_KEY` | aistudio.google.com/apikey (transcreve os Shorts de referência pelo link; sem ela o criador cola a transcrição) |
 | `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys (defina também um limite de gasto mensal em Limits) |
 
 Limites por criador por mês ficam em `src/lib/ia/uso.ts` (`LIMITE_MES`). O gestor vê o uso e o gasto no Painel do gestor.

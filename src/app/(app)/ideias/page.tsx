@@ -4,6 +4,7 @@ import { Icone } from "@/components/Icone";
 import { IdeiasVideos } from "@/components/IdeiasVideos";
 import { usuarioAtual } from "@/lib/dados";
 import { iaConfigurada } from "@/lib/ia/claude";
+import { geminiConfigurado } from "@/lib/ia/gemini";
 import { MAPAS } from "@/lib/ia/mapas";
 import { videosDosCanais, type VideoRef } from "@/lib/ideias";
 
@@ -64,7 +65,7 @@ export default async function Ideias({ searchParams }: { searchParams: Promise<{
       ) : erro ? (
         <section className="card pill-warn" style={{ padding: "14px 16px" }}>{erro}</section>
       ) : (
-        <IdeiasVideos mapa={mapa.id} tema={tema} melhores={melhores} recentes={videos.slice(0, 20)} iaPronta={iaConfigurada()} traduzidos={traduzidos} />
+        <IdeiasVideos mapa={mapa.id} tema={tema} melhores={melhores} recentes={videos.slice(0, 20)} iaPronta={iaConfigurada()} automatico={geminiConfigurado()} traduzidos={traduzidos} />
       )}
     </>
   );
