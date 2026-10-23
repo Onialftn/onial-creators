@@ -48,7 +48,7 @@ export async function completarSeo(p: { titulo: string }) {
 Regras:
 - descricao: em PRIMEIRA PESSOA, como se o criador falasse ("Neste vídeo eu mostro..."). 2 a 4 frases resumindo o vídeo, com a palavra-chave principal do título na primeira frase, "Fortnite" e o nome do mapa certo para o assunto de forma natural (o código do mapa está no vídeo). Sem links e sem hashtags.
 - hashtags: exatamente 3, minúsculas, sem acento e sem espaço, começando com #fortnite.${HASHTAGS_BOAS.length ? ` Escolha entre estas, que são as que mais dão certo na equipe: ${HASHTAGS_BOAS.join(" ")}` : ""}
-- tags: 15 a 25 tags de busca do YouTube (sem #), da mais importante para a menos: a palavra-chave do título, variações, o nome do mapa, termos de Fortnite em português e os mais buscados em inglês.
+- tags: 15 a 25 tags de busca do YouTube (sem #), da mais importante para a menos: a palavra-chave do título, variações, o nome do mapa e termos de Fortnite. TODAS em português do Brasil: nada de tags em inglês (só os nomes próprios e termos do jogo que o brasileiro fala em inglês, como Fortnite, build, edit, aim, 1v1, ficam como são).
 ${REGRAS_GERAIS}`,
     mensagem: `Título escolhido:\n<titulo>${p.titulo}</titulo>`,
     schema: {
