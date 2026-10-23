@@ -15,7 +15,12 @@ export async function POST(req: NextRequest) {
 
   const b = (await req.json().catch(() => ({}))) as { mapa?: string; original?: string; anterior?: string };
   const mapa = MAPAS.find((m) => m.id === b.mapa);
-  const original = String(b.original ?? "").trim();
+  // tira os tempos que vêm junto ao copiar a transcrição do YouTube ("0:03", "1 minuto e 5 segundos")
+  const original = String(b.original ?? "")
+    .split("\n")
+    .filter((l) => !/^\s*\d{1,2}:\d{2}(:\d{2})?\s*$/.test(l) && !/^\s*\d+\s*(segundos?|minutos?|seconds?|minutes?)(\s*(e|and)\s*\d+\s*(segundos?|seconds?))?\s*$/i.test(l))
+    .join("\n")
+    .trim();
   if (!mapa) return NextResponse.json({ erro: "Escolha o mapa." }, { status: 400 });
   if (original.length < 30) return NextResponse.json({ erro: "Cole o roteiro do vídeo gringo (pelo menos uma ou duas frases)." }, { status: 400 });
   if (original.length > 6000) return NextResponse.json({ erro: "O roteiro está grande demais. Cole só o texto falado do vídeo." }, { status: 400 });

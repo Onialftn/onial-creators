@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { coletarTodas } from "@/lib/coleta/coletar";
+import { MAPAS } from "@/lib/ia/mapas";
+import { resolverCanal } from "@/lib/ideias";
 
 async function gestor() {
   const ctx = await usuarioAtual();
@@ -108,4 +110,23 @@ export async function coletarAgora() {
   const falhas = r.filter((x) => !x.ok).length;
   revalidatePath("/", "layout");
   redirect(`/gestor?ok=${encodeURIComponent(r.length === 0 ? "Nenhuma conta conectada ainda." : `Coleta feita em ${r.length} contas${falhas ? `, ${falhas} com problema` : ""}.`)}`);
+}
+
+export async function adicionarCanal(f: FormData) {
+  const { sb } = await gestor();
+  const mapa = MAPAS.find((m) => m.id === texto(f, "mapa"));
+  const tema = mapa?.temas.find((t) => t === texto(f, "tema"));
+  const volta = (k: "ok" | "erro", m: string) => { revalidatePath("/", "layout"); redirect(`/gestor?${k}=${encodeURIComponent(m)}#referencias`); };
+  if (!mapa || !tema) volta("erro", "Escolha o mapa e o tema.");
+  let canal: Awaited<ReturnType<typeof resolverCanal>>;
+  try { canal = await resolverCanal(texto(f, "canal")); } catch (e) { return volta("erro", e instanceof Error ? e.message : "Não achei o canal."); }
+  const { error } = await sb.from("canais_referencia").upsert({ mapa: mapa!.id, tema: tema!, ...canal }, { onConflict: "mapa,tema,canal_id" });
+  volta(error ? "erro" : "ok", error ? "Não consegui salvar o canal." : `${canal.nome} adicionado em ${tema}.`);
+}
+
+export async function removerCanal(f: FormData) {
+  const { sb } = await gestor();
+  await sb.from("canais_referencia").delete().eq("id", texto(f, "id"));
+  revalidatePath("/", "layout");
+  redirect("/gestor?ok=Canal%20removido.#referencias");
 }

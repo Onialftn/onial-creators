@@ -11,7 +11,7 @@ Todo o texto do site é em português do Brasil.
 - Fundo preto, destaque dourado da coroa do logo (`#E8B014`), texto claro. Modo claro e escuro com os mesmos tokens do protótipo (`--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--accent-text`, `--ok`, `--warn`...).
 - Fontes: Rajdhani (títulos, números) e Inter (texto).
 - Botão dourado sempre com texto escuro.
-- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Pagamentos, Minhas redes), OTIMIZAÇÕES (Ideias de vídeos, Roteiros, Áudio, Avaliar vídeo, Pomodoro), EQUIPE (Ranking do mês, Meta coletiva com selo EM BREVE).
+- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Pagamentos, Minhas redes), OTIMIZAÇÕES (Ideias de vídeos, Áudio, Avaliar vídeo, Pomodoro), EQUIPE (Ranking do mês, Meta coletiva com selo EM BREVE). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
 - No celular, o menu vira uma barra no topo.
 - A Dashboard é só para informações rápidas. Funções novas ganham aba própria, nunca entram na Dashboard.
 
@@ -46,7 +46,8 @@ perfis, contas_plataforma, videos, views_diarias, agenda_postagem, dias_postagem
 
 - YouTube Data API + YouTube Analytics API (OAuth do próprio criador): foto e nome do canal no perfil + views diárias.
 - Coleta automática (aba Minhas redes): cada criador conecta YouTube, TikTok e Instagram (OAuth); a Vercel roda `/api/coletar` todo dia às 06:00 de Brasília. YouTube Analytics dá views por dia; TikTok e Instagram dão o total, e o ganho do dia é a diferença (`src/lib/coleta/ganho.ts`). O lançamento manual do gestor fica como reserva.
-- IA (API do Claude): roteiros, adaptação de roteiro gringo para o público brasileiro, avaliação de vídeo. Fases 2 e 3.
+- IA (API do Claude, `src/lib/ia/`): tradução FIEL do roteiro gringo para o português (não reescreve; só troca o nome do mapa citado pelo mapa da Onial e usa o glossário, ex.: cheat → hacker), feita na aba Ideias de vídeos. Avaliação de vídeo na Fase 3. Limite por criador em `src/lib/ia/uso.ts`.
+- Ideias de vídeos: Shorts dos canais de referência que o gestor cadastra por mapa e tema (tabela canais_referencia). O YouTube não deixa baixar legenda de outros canais: o criador cola a transcrição.
 
 ## Como trabalhar neste projeto
 

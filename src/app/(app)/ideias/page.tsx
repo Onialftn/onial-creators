@@ -1,5 +1,65 @@
-import { EmBreve } from "@/components/Blocos";
+import Link from "next/link";
+import { Cabecalho, TituloCard } from "@/components/Blocos";
+import { Icone } from "@/components/Icone";
+import { IdeiasVideos } from "@/components/IdeiasVideos";
+import { usuarioAtual } from "@/lib/dados";
+import { iaConfigurada } from "@/lib/ia/claude";
+import { MAPAS } from "@/lib/ia/mapas";
+import { videosDosCanais, type VideoRef } from "@/lib/ideias";
 
-export default function Pagina() {
-  return <EmBreve icone="bulb" titulo="Ideias de vídeos" fase="FASE 2" texto="Escolha o mapa e o tema e a IA mostra os melhores vídeos novos dos canais de referência, com o roteiro traduzido para copiar." />;
+export const maxDuration = 60;
+
+export default async function Ideias({ searchParams }: { searchParams: Promise<{ mapa?: string; tema?: string }> }) {
+  const { sb, perfil } = await usuarioAtual();
+  const q = await searchParams;
+  const mapa = MAPAS.find((m) => m.id === q.mapa) ?? MAPAS[0];
+  const tema = (mapa.temas as readonly string[]).find((t) => t === q.tema) ?? mapa.temas[0];
+  const { data: canais } = await sb.from("canais_referencia").select("canal_id, nome").eq("mapa", mapa.id).eq("tema", tema);
+  let videos: VideoRef[] = [];
+  let erro = "";
+  try { videos = await videosDosCanais((canais ?? []).map((c) => c.canal_id as string)); } catch (e) { erro = e instanceof Error ? e.message : "Não consegui buscar os vídeos agora."; }
+
+  const semana = Date.now() - 7 * 86_400_000;
+  const melhores = videos.filter((v) => new Date(v.publicado).getTime() >= semana).sort((a, b) => b.views - a.views).slice(0, 5);
+
+  return (
+    <>
+      <Cabecalho icone="bulb" titulo="Ideias de vídeos" sub="Escolha o mapa e o tema. Veja os melhores vídeos novos dos canais de referência e copie o roteiro em português." />
+
+      <section className="card flex flex-col gap-4">
+        <TituloCard icone="target">1. Qual mapa você vai divulgar?</TituloCard>
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
+          {MAPAS.map((m, i) => {
+            const ativo = m.id === mapa.id;
+            return (
+              <Link key={m.id} href={`/ideias?mapa=${m.id}`} aria-current={ativo ? "true" : undefined} className="flex items-center gap-3" style={{ minHeight: 64, padding: "12px 16px", borderRadius: 8, border: `1px solid ${ativo ? "#E8B014" : "var(--line)"}`, background: ativo ? "var(--tint)" : "var(--bg)" }}>
+                <span style={{ fontSize: 24 }}>{m.emoji}</span>
+                <span className="flex flex-col"><span className="label">Opção {i + 1}</span><span style={{ color: "var(--strong)", fontWeight: 600 }}>{m.nome}</span></span>
+                {ativo && <span style={{ marginLeft: "auto", color: "var(--accent-text)", display: "flex" }}><Icone nome="check" /></span>}
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="card flex flex-col gap-4">
+        <TituloCard icone="bulb">2. Qual o tema do vídeo?</TituloCard>
+        <div className="flex flex-wrap gap-2">
+          {mapa.temas.map((t) => (
+            <Link key={t} href={`/ideias?mapa=${mapa.id}&tema=${encodeURIComponent(t)}`} className={t === tema ? "btn-gold" : "btn-line"} aria-current={t === tema ? "true" : undefined}>{t}</Link>
+          ))}
+        </div>
+      </section>
+
+      {!canais?.length ? (
+        <section className="card" style={{ color: "var(--muted)" }}>
+          {perfil.papel === "gestor" ? <>Nenhum canal de referência para <b style={{ color: "var(--fg)" }}>{tema}</b> ainda. Cadastre em <Link href="/gestor#referencias" style={{ color: "var(--accent-text)" }}>Painel do gestor → Canais de referência</Link>.</> : <>O gestor ainda não cadastrou os canais de referência de <b style={{ color: "var(--fg)" }}>{tema}</b>.</>}
+        </section>
+      ) : erro ? (
+        <section className="card pill-warn" style={{ padding: "14px 16px" }}>{erro}</section>
+      ) : (
+        <IdeiasVideos mapa={mapa.id} tema={tema} melhores={melhores} recentes={videos.slice(0, 20)} iaPronta={iaConfigurada()} />
+      )}
+    </>
+  );
 }

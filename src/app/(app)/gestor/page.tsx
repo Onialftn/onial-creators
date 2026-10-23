@@ -5,10 +5,11 @@ import { Icone, NOME_PLATAFORMA } from "@/components/Icone";
 import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes } from "@/lib/datas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
-import { coletarAgora, criarCriador, fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMeta } from "./acoes";
+import { adicionarCanal, coletarAgora, criarCriador, removerCanal, fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMeta } from "./acoes";
 import { LogoPlataforma } from "@/components/Icone";
 import { REDES, redeConfigurada } from "@/lib/coleta/redes";
 import { iaConfigurada } from "@/lib/ia/claude";
+import { MAPAS } from "@/lib/ia/mapas";
 import { LIMITE_MES, inicioDoMes } from "@/lib/ia/uso";
 
 export const maxDuration = 300;
@@ -34,6 +35,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
   const pessoasIa = [...lista, { id: perfil.id, nome: `${perfil.nome} (gestor)` }];
   const usoDe = (id: string, tipo?: string) => (usoIa ?? []).filter((u) => u.criador_id === id && (!tipo || u.tipo === tipo));
   const dolar = (v: number) => `US$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const { data: refs } = await sb.from("canais_referencia").select("id, mapa, tema, nome, foto_url, canal_id").order("criado_em");
   const custoIa = (usoIa ?? []).reduce((a, u) => a + Number(u.custo_usd), 0);
 
   return (
@@ -107,6 +109,34 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
           </table>
         </div>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Gasto estimado pelo site. O valor cobrado de verdade aparece no console da Anthropic. Os limites zeram todo dia 1º.</p>
+      </section>
+
+      <section id="referencias" className="card flex flex-col gap-4">
+        <TituloCard icone="bulb">Canais de referência (Ideias de vídeos)</TituloCard>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Os Shorts desses canais aparecem na aba Ideias de vídeos, separados por mapa e tema. Precisa ter pelo menos uma conta do YouTube conectada no site.</p>
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))" }}>
+          {MAPAS.flatMap((m) => m.temas.map((t) => {
+            const lista = (refs ?? []).filter((r) => r.mapa === m.id && r.tema === t);
+            return (
+              <div key={m.id + t} className="tile flex flex-col gap-2">
+                <div style={{ color: "var(--strong)", fontWeight: 600 }}>{m.emoji} {t} <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 12 }}>· {m.nome.replace("Onial ", "")}</span></div>
+                {lista.length === 0 && <div style={{ color: "var(--muted)", fontSize: 13 }}>Nenhum canal ainda.</div>}
+                {lista.map((r) => (
+                  <form key={r.id} action={removerCanal} className="flex items-center gap-2" style={{ fontSize: 14 }}>
+                    <input type="hidden" name="id" value={r.id} />
+                    <a href={`https://www.youtube.com/channel/${r.canal_id}`} target="_blank" rel="noreferrer" className="flex-1 truncate">{r.nome}</a>
+                    <button type="submit" aria-label={`Remover ${r.nome}`} style={{ color: "var(--muted)", width: 32, height: 32 }} className="flex items-center justify-center"><Icone nome="x" tamanho={14} /></button>
+                  </form>
+                ))}
+                <form action={adicionarCanal} className="flex gap-2">
+                  <input type="hidden" name="mapa" value={m.id} /><input type="hidden" name="tema" value={t} />
+                  <input className="input" name="canal" placeholder="youtube.com/@canal" aria-label={`Link do canal para ${t}`} style={{ minHeight: 38 }} required />
+                  <button className="btn-line" type="submit" style={{ minHeight: 38 }}>Adicionar</button>
+                </form>
+              </div>
+            );
+          }))}
+        </div>
       </section>
 
       {sel && rSel && (

@@ -7,7 +7,7 @@ import { REDE, type Rede, type Tokens } from "./redes";
 
 type Admin = ReturnType<typeof supabaseAdmin>;
 
-async function tokensValidos(admin: Admin, contaId: string, rede: Rede): Promise<Tokens> {
+export async function tokensValidos(admin: Admin, contaId: string, rede: Rede): Promise<Tokens> {
   const { data: t } = await admin.from("tokens_plataforma").select("access_token, refresh_token, expira_em").eq("conta_id", contaId).single();
   if (!t?.access_token) throw new Error("Conta sem autorização: conecte de novo.");
   let tokens: Tokens = { access: t.access_token, refresh: t.refresh_token, expiraEm: t.expira_em ? new Date(t.expira_em) : null };
