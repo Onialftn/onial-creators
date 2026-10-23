@@ -98,7 +98,22 @@ export function Sino({ itens, chavePublica, compacto = false }: { itens: Notific
               <button aria-label="Fechar avisos" onClick={() => setAberto(false)} className="flex items-center justify-center" style={{ width: 40, height: 40, color: "var(--muted)" }}><Icone nome="x" tamanho={18} /></button>
             </div>
             <AvisosCelular chavePublica={chavePublica} />
-            {itens.length === 0 && <p style={{ margin: 0, color: "var(--muted)" }}>Nenhum aviso ainda. Eles chegam todo dia de manhã, depois que o site busca suas views.</p>}
+            {itens.length === 0 && (
+              <div className="flex flex-col gap-2.5">
+                <p style={{ margin: 0, color: "var(--text2)" }}>Você ainda não tem avisos. Eles aparecem aqui quando:</p>
+                {([
+                  ["cal", "É dia de postar, com o mapa da sua semana"],
+                  ["cal", "Você tem um dia para repor até domingo"],
+                  ["target", "Você chega a 50%, 75% e 90% da meta, ou bate a meta"],
+                  ["zap", "Um vídeo seu está bombando em alguma rede"],
+                  ["trophy", "Você sobe de posição no ranking"],
+                  ["wallet", "Seu mês é fechado e quando o pagamento é feito"],
+                  ["zap", "Alguma rede sua precisa ser conectada de novo"],
+                ] as const).map(([ic, t]) => (
+                  <div key={t} className="flex items-center gap-2.5" style={{ fontSize: 13, color: "var(--muted)" }}><span style={{ color: "var(--accent-text)", display: "flex" }}><Icone nome={ic} tamanho={16} /></span>{t}</div>
+                ))}
+              </div>
+            )}
             {itens.map((n) => {
               const corpo = (
                 <div className="flex gap-3" style={{ padding: 12, borderRadius: 8, background: n.lida ? "transparent" : "var(--tint)", border: "1px solid var(--line)" }}>
