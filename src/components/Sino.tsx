@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState, useTransition } from "react";
-import { marcarLidas } from "@/app/acoes/notificacoes";
+import { limparNotificacoes, marcarLidas } from "@/app/acoes/notificacoes";
 import { Icone } from "./Icone";
 
 export interface Notificacao { id: string; tipo: string; titulo: string; texto: string; link: string | null; lida: boolean; criado_em: string }
@@ -69,10 +69,20 @@ function AvisosCelular({ chavePublica }: { chavePublica: string | null }) {
 }
 
 /** Sino com a lista de avisos (abre um painel pela direita). */
-export function Sino({ itens, chavePublica, compacto = false }: { itens: Notificacao[]; chavePublica: string | null; compacto?: boolean }) {
+export function Sino({ itens: iniciais, chavePublica, compacto = false }: { itens: Notificacao[]; chavePublica: string | null; compacto?: boolean }) {
   const [aberto, setAberto] = useState(false);
+  const [itens, setItens] = useState(iniciais);
   const [, iniciar] = useTransition();
+  useEffect(() => setItens(iniciais), [iniciais]);
   const naoLidas = itens.filter((i) => !i.lida).length;
+  function lidas(ids?: string[]) {
+    setItens((l) => l.map((i) => (!ids || ids.includes(i.id) ? { ...i, lida: true } : i)));
+    iniciar(() => marcarLidas(ids));
+  }
+  function limpar(ids?: string[]) {
+    setItens((l) => (ids ? l.filter((i) => !ids.includes(i.id)) : []));
+    iniciar(() => limparNotificacoes(ids));
+  }
   useEffect(() => {
     if (!aberto) return;
     const f = (e: KeyboardEvent) => e.key === "Escape" && setAberto(false);
@@ -81,7 +91,6 @@ export function Sino({ itens, chavePublica, compacto = false }: { itens: Notific
   }, [aberto]);
   function abrir() {
     setAberto(true);
-    if (naoLidas) iniciar(() => marcarLidas());
   }
   return (
     <>
@@ -98,18 +107,30 @@ export function Sino({ itens, chavePublica, compacto = false }: { itens: Notific
               <button aria-label="Fechar notificações" onClick={() => setAberto(false)} className="flex items-center justify-center" style={{ width: 40, height: 40, color: "var(--muted)" }}><Icone nome="x" tamanho={18} /></button>
             </div>
             <AvisosCelular chavePublica={chavePublica} />
+            {itens.length > 0 && (
+              <div className="flex items-center justify-between gap-2" style={{ fontSize: 13 }}>
+                <button type="button" onClick={() => lidas()} disabled={!naoLidas} className="flex items-center gap-1" style={{ color: naoLidas ? "var(--accent-text)" : "var(--muted)", minHeight: 32 }}><Icone nome="check" tamanho={14} /> Marcar todas como lidas</button>
+                <button type="button" onClick={() => limpar()} style={{ color: "var(--muted)", minHeight: 32 }}>Limpar tudo</button>
+              </div>
+            )}
             {itens.length === 0 && <p style={{ margin: 0, color: "var(--muted)" }}>Você não tem notificações ainda.</p>}
             {itens.map((n) => {
               const corpo = (
-                <div className="flex gap-3" style={{ padding: 12, borderRadius: 8, background: n.lida ? "transparent" : "var(--tint)", border: "1px solid var(--line)" }}>
+                <div className="flex gap-3" style={{ padding: 12, paddingRight: 40, borderRadius: 8, background: n.lida ? "transparent" : "var(--tint)", border: "1px solid var(--line)" }}>
                   <span style={{ color: "var(--accent-text)", display: "flex", paddingTop: 2 }}><Icone nome={ICONE[n.tipo] ?? "zap"} tamanho={18} /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-start justify-between gap-2"><b style={{ color: "var(--strong)", fontSize: 14, lineHeight: 1.35 }}>{n.titulo}</b><span style={{ color: "var(--muted)", fontSize: 11, whiteSpace: "nowrap" }}>{ha(n.criado_em)}</span></span>
+                    <span className="flex items-start justify-between gap-2"><b style={{ color: "var(--strong)", fontSize: 14, lineHeight: 1.35 }}>{n.titulo}</b><span style={{ color: "var(--muted)", fontSize: 11, whiteSpace: "nowrap" }}>{!n.lida && <span aria-label="Nova" style={{ display: "inline-block", width: 7, height: 7, borderRadius: 4, background: "#E8B014", marginRight: 5 }} />}{ha(n.criado_em)}</span></span>
                     {n.texto && <span style={{ display: "block", color: "var(--text2)", fontSize: 13, marginTop: 3, lineHeight: 1.45 }}>{n.texto}</span>}
                   </span>
                 </div>
               );
-              return n.link ? <Link key={n.id} href={n.link} onClick={() => setAberto(false)}>{corpo}</Link> : <div key={n.id}>{corpo}</div>;
+              const abrirItem = () => { if (!n.lida) lidas([n.id]); };
+              return (
+                <div key={n.id} className="relative">
+                  {n.link ? <Link href={n.link} onClick={() => { abrirItem(); setAberto(false); }}>{corpo}</Link> : <div onClick={abrirItem}>{corpo}</div>}
+                  <button type="button" aria-label="Limpar esta notificação" title="Limpar" onClick={() => limpar([n.id])} className="absolute flex items-center justify-center" style={{ right: 4, bottom: 4, width: 32, height: 32, color: "var(--muted)" }}><Icone nome="x" tamanho={14} /></button>
+                </div>
+              );
             })}
           </aside>
         </div>
