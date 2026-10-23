@@ -10,6 +10,10 @@ const QUAL_MAPA = `um dos mapas do Fortnite Criativo da Onial, escolhido pelo as
 export const TITULOS_VIRAIS: string[] = [];
 /** Hashtags que mais dão certo na equipe (o gestor manda). A IA escolhe 3 delas quando houver. */
 export const HASHTAGS_BOAS: string[] = [];
+/** Hashtags fixas por tipo de vídeo (definidas pelo gestor): quando o título é desse assunto, são sempre estas 3. */
+export const HASHTAGS_FIXAS: { assunto: RegExp; hashtags: string[] }[] = [
+  { assunto: /\b(xp|n[ií]vel|n[ií]veis|level|levels|upar|farm)\b/i, hashtags: ["#fortnite", "#fortnitexp", "#fortnitebrasil"] },
+];
 
 const REGRAS_GERAIS = `- Português do Brasil, jeito de criador brasileiro de Fortnite (kill, build, edit, loot ficam em inglês; "cheat" vira "hacker").
 - Nunca invente números, resultados ou fatos que não estejam no que o criador contou.
@@ -58,6 +62,7 @@ ${REGRAS_GERAIS}`,
     maxTokens: 1500,
   });
   const tag = (h: string) => `#${h.replace(/^#+/, "").replace(/\s+/g, "").toLowerCase()}`;
-  const hashtags = [...new Set(r.dados.hashtags.map(tag))].slice(0, 3);
+  const fixas = HASHTAGS_FIXAS.find((f) => f.assunto.test(p.titulo))?.hashtags;
+  const hashtags = fixas ?? [...new Set(r.dados.hashtags.map(tag))].slice(0, 3);
   return { ...r, dados: { descricao: r.dados.descricao.trim(), hashtags, tags: tagsAte500(r.dados.tags) } satisfies RestoSeo };
 }
