@@ -25,6 +25,20 @@ function Janela({ titulo, fechar, children }: { titulo: string; fechar: () => vo
   );
 }
 
+/** Barra estimada: enche rápido no começo e vai desacelerando até ~92%; quando termina, completa. */
+function Progresso({ ativo, terminou }: { ativo: boolean; terminou: boolean }) {
+  const [p, setP] = useState(0);
+  useEffect(() => {
+    if (!ativo) return;
+    const inicio = Date.now();
+    setP(0);
+    const t = setInterval(() => setP(92 * (1 - Math.exp(-(Date.now() - inicio) / 9000))), 200);
+    return () => clearInterval(t);
+  }, [ativo]);
+  const largura = terminou ? 100 : ativo ? p : 0;
+  return <span aria-hidden="true" className="absolute inset-y-0 left-0" style={{ width: `${largura}%`, background: "rgba(255,255,255,.35)", transition: "width .3s ease", borderRadius: "inherit" }} />;
+}
+
 type Pronta = { falas: string[]; mapa_citado: string };
 async function copiarTexto(t: string) {
   try { await navigator.clipboard.writeText(t); return true; } catch { return false; }
@@ -162,8 +176,9 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
           <div style={{ width: "100%", maxWidth: 340, margin: "0 auto", aspectRatio: "9/16", borderRadius: 10, overflow: "hidden", background: "#000" }}>
             <iframe src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&rel=0`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
           </div>
-          <button className="btn-gold" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48 }}>
-            {copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português… (uns 15 segundos)" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}
+          <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1 }}>
+            <Progresso ativo={gerando === assistir.id} terminou={copiado === assistir.id} />
+            <span className="relative flex items-center gap-2">{copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português…" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}</span>
           </button>
         </Janela>
       )}
