@@ -31,7 +31,7 @@ export default async function Ideias({ searchParams }: { searchParams: Promise<{
 
   return (
     <>
-      <Cabecalho icone="bulb" titulo="Ideias de vídeos" sub="Escolha o mapa e o tema. Veja os melhores vídeos novos dos canais de referência e copie o roteiro em português." />
+      <Cabecalho icone="bulb" titulo="Ideias & roteiros" sub="Escolha o mapa e o tema. Veja os melhores vídeos novos dos canais de referência e copie o roteiro em português." />
 
       <section className="card flex flex-col gap-4">
         <TituloCard icone="target">1. Qual mapa você vai divulgar?</TituloCard>

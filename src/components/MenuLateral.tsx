@@ -22,9 +22,9 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
   {
     titulo: "Otimizações",
     itens: [
-      { href: "/ideias", rotulo: "Ideias de vídeos", icone: "bulb" },
-      { href: "/seo", rotulo: "SEO", icone: "hash" },
-      { href: "/audio", rotulo: "Áudio", icone: "wave" },
+      { href: "/ideias", rotulo: "Ideias & roteiros", icone: "bulb" },
+      { href: "/seo", rotulo: "SEO para vídeos", icone: "hash" },
+      { href: "/audio", rotulo: "Limpar narração", icone: "wave" },
       { href: "/avaliar", rotulo: "Avaliar vídeo", icone: "video" },
       { href: "/pomodoro", rotulo: "Pomodoro", icone: "timer" },
     ],

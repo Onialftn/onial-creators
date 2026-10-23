@@ -85,7 +85,7 @@ export async function gerarNotificacoes() {
         await avisar({
           tipo: "postar",
           titulo: mapa ? `Hoje é dia de postar no ${mapa.nome} ${mapa.emoji}` : "Hoje é dia de postar 🎬",
-          texto: mapa ? "Esse é o mapa da sua semana. Veja os vídeos em alta em Ideias de vídeos." : "Veja os vídeos em alta em Ideias de vídeos para se inspirar.",
+          texto: mapa ? "Esse é o mapa da sua semana. Veja os vídeos em alta em Ideias & roteiros." : "Veja os vídeos em alta em Ideias & roteiros para se inspirar.",
           link: mapa ? `/ideias?mapa=${mapa.id}` : "/ideias",
           chave: `postar:${hoje}`,
         });

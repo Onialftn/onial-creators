@@ -86,7 +86,7 @@ export default async function ConfigGestor({ searchParams }: { searchParams: Pro
       </section>
 
       <section id="referencias" className="card flex flex-col gap-4">
-        <TituloCard icone="bulb">Canais de referência (Ideias de vídeos)</TituloCard>
+        <TituloCard icone="bulb">Canais de referência (Ideias & roteiros)</TituloCard>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))" }}>
           {MAPAS.flatMap((m) => m.temas.map((t) => {
             const lista = (refs ?? []).filter((r) => r.mapa === m.id && r.tema === t);

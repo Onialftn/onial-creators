@@ -11,7 +11,7 @@ Todo o texto do site é em português do Brasil.
 - Fundo preto, destaque dourado da coroa do logo (`#E8B014`), texto claro. Modo claro e escuro com os mesmos tokens do protótipo (`--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--accent-text`, `--ok`, `--warn`...).
 - Fontes: Rajdhani (títulos, números) e Inter (texto).
 - Botão dourado sempre com texto escuro.
-- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Pagamentos, Minhas redes), OTIMIZAÇÕES (Ideias de vídeos, SEO, Áudio, Avaliar vídeo, Pomodoro), EQUIPE (Ranking do mês, Meta coletiva com selo EM BREVE). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
+- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Pagamentos, Minhas redes), OTIMIZAÇÕES (Ideias & roteiros, SEO para vídeos, Limpar narração, Avaliar vídeo, Pomodoro), EQUIPE (Ranking do mês, Meta coletiva com selo EM BREVE). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
 - No celular: barra fixa no topo (logo, BETA, nome da aba e botão ☰) e o menu abre pela lateral (decisão do dono).
 - A Dashboard é só para informações rápidas. Funções novas ganham aba própria, nunca entram na Dashboard.
 
@@ -46,8 +46,8 @@ perfis, contas_plataforma, videos, views_diarias, agenda_postagem, dias_postagem
 
 - YouTube Data API + YouTube Analytics API (OAuth do próprio criador): foto e nome do canal no perfil + views diárias.
 - Coleta automática (aba Minhas redes): cada criador conecta YouTube, TikTok e Instagram (OAuth); a Vercel roda `/api/coletar` todo dia às 06:00 de Brasília. YouTube Analytics dá views por dia; TikTok e Instagram dão o total, e o ganho do dia é a diferença (`src/lib/coleta/ganho.ts`). O lançamento manual do gestor fica como reserva.
-- IA (API do Claude, `src/lib/ia/`): tradução FIEL do roteiro gringo para o português (não reescreve; só troca o nome do mapa citado pelo mapa da Onial e usa o glossário, ex.: cheat → hacker), feita na aba Ideias de vídeos. Aba SEO: títulos, descrições e hashtags para YouTube, TikTok e Instagram (`src/lib/ia/seo.ts`). Avaliação de vídeo na Fase 3. Limite por criador em `src/lib/ia/uso.ts`.
-- Ideias de vídeos: Shorts dos canais de referência que o gestor cadastra por mapa e tema (tabela canais_referencia). O YouTube não deixa baixar legenda de outros canais: o Gemini (API do Google, `GEMINI_API_KEY`, `src/lib/ia/gemini.ts`) assiste o Short público pelo link e transcreve; se falhar, o criador cola a transcrição. Traduções ficam guardadas na tabela traducoes (o próximo clique copia na hora).
+- IA (API do Claude, `src/lib/ia/`): tradução FIEL do roteiro gringo para o português (não reescreve; só troca o nome do mapa citado pelo mapa da Onial e usa o glossário, ex.: cheat → hacker), feita na aba Ideias & roteiros. Aba SEO: títulos, descrições e hashtags para YouTube, TikTok e Instagram (`src/lib/ia/seo.ts`). Avaliação de vídeo na Fase 3. Limite por criador em `src/lib/ia/uso.ts`.
+- Ideias & roteiros: Shorts dos canais de referência que o gestor cadastra por mapa e tema (tabela canais_referencia). O YouTube não deixa baixar legenda de outros canais: o Gemini (API do Google, `GEMINI_API_KEY`, `src/lib/ia/gemini.ts`) assiste o Short público pelo link e transcreve; se falhar, o criador cola a transcrição. Traduções ficam guardadas na tabela traducoes (o próximo clique copia na hora).
 
 ## Como trabalhar neste projeto
 
