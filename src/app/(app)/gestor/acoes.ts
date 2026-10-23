@@ -19,7 +19,7 @@ const texto = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const inteiro = (f: FormData, k: string) => Math.max(0, Math.floor(Number(texto(f, k).replace(/\D/g, "")) || 0));
 function voltar(criadorId: string, aviso: string) {
   revalidatePath("/", "layout");
-  redirect(`/gestor?c=${criadorId}&ok=${encodeURIComponent(aviso)}`);
+  redirect(`/gestor/criador/${criadorId}?ok=${encodeURIComponent(aviso)}`);
 }
 
 export async function criarCriador(f: FormData) {
@@ -27,9 +27,9 @@ export async function criarCriador(f: FormData) {
   const nome = texto(f, "nome");
   const email = texto(f, "email").toLowerCase();
   const senha = texto(f, "senha");
-  if (!nome || !email || senha.length < 8) redirect(`/gestor?erro=${encodeURIComponent("Preencha nome, e-mail e uma senha com pelo menos 8 caracteres.")}`);
+  if (!nome || !email || senha.length < 8) redirect(`/gestor/config?erro=${encodeURIComponent("Preencha nome, e-mail e uma senha com pelo menos 8 caracteres.")}`);
   const { data, error } = await supabaseAdmin().auth.admin.createUser({ email, password: senha, email_confirm: true, user_metadata: { nome } });
-  if (error || !data.user) redirect(`/gestor?erro=${encodeURIComponent(error?.message.includes("already") ? "Esse e-mail já tem cadastro." : "Não consegui criar o criador. Tente de novo.")}`);
+  if (error || !data.user) redirect(`/gestor/config?erro=${encodeURIComponent(error?.message.includes("already") ? "Esse e-mail já tem cadastro." : "Não consegui criar o criador. Tente de novo.")}`);
   const id = data.user!.id;
   await sb.from("perfis").update({ nome }).eq("id", id);
   // padrão: segunda a sexta
@@ -122,7 +122,7 @@ export async function adicionarCanal(f: FormData) {
   const { sb } = await gestor();
   const mapa = MAPAS.find((m) => m.id === texto(f, "mapa"));
   const tema = mapa?.temas.find((t) => t === texto(f, "tema"));
-  const volta = (k: "ok" | "erro", m: string) => { revalidatePath("/", "layout"); redirect(`/gestor?${k}=${encodeURIComponent(m)}#referencias`); };
+  const volta = (k: "ok" | "erro", m: string) => { revalidatePath("/", "layout"); redirect(`/gestor/config?${k}=${encodeURIComponent(m)}#referencias`); };
   if (!mapa || !tema) volta("erro", "Escolha o mapa e o tema.");
   let canal: Awaited<ReturnType<typeof resolverCanal>>;
   try { canal = await resolverCanal(texto(f, "canal")); } catch (e) { return volta("erro", e instanceof Error ? e.message : "Não achei o canal."); }
@@ -134,7 +134,7 @@ export async function removerCanal(f: FormData) {
   const { sb } = await gestor();
   await sb.from("canais_referencia").delete().eq("id", texto(f, "id"));
   revalidatePath("/", "layout");
-  redirect("/gestor?ok=Canal%20removido.#referencias");
+  redirect("/gestor/config?ok=Canal%20removido.#referencias");
 }
 
 export async function salvarMapaSemana(f: FormData) {
@@ -152,5 +152,5 @@ export async function gerarAvisosAgora() {
   await gestor();
   const n = await gerarNotificacoes();
   revalidatePath("/", "layout");
-  redirect(`/gestor?ok=${encodeURIComponent(n ? `${n} notificações conferidas (as que já existiam não se repetem).` : "Nenhuma notificação para hoje.")}`);
+  redirect(`/gestor/config?ok=${encodeURIComponent(n ? `${n} notificações conferidas (as que já existiam não se repetem).` : "Nenhuma notificação para hoje.")}`);
 }

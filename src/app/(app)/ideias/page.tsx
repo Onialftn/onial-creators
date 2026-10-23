@@ -60,7 +60,7 @@ export default async function Ideias({ searchParams }: { searchParams: Promise<{
 
       {!canais?.length ? (
         <section className="card" style={{ color: "var(--muted)" }}>
-          {perfil.papel === "gestor" ? <>Nenhum canal de referência para <b style={{ color: "var(--fg)" }}>{tema}</b> ainda. Cadastre em <Link href="/gestor#referencias" style={{ color: "var(--accent-text)" }}>Painel do gestor → Canais de referência</Link>.</> : <>O gestor ainda não cadastrou os canais de referência de <b style={{ color: "var(--fg)" }}>{tema}</b>.</>}
+          {perfil.papel === "gestor" ? <>Nenhum canal de referência para <b style={{ color: "var(--fg)" }}>{tema}</b> ainda. Cadastre em <Link href="/gestor/config#referencias" style={{ color: "var(--accent-text)" }}>Painel do gestor → Canais de referência</Link>.</> : <>O gestor ainda não cadastrou os canais de referência de <b style={{ color: "var(--fg)" }}>{tema}</b>.</>}
         </section>
       ) : erro ? (
         <section className="card pill-warn" style={{ padding: "14px 16px" }}>{erro}</section>
