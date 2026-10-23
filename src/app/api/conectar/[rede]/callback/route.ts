@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { coletarConta } from "@/lib/coleta/coletar";
+import { anotarSaldo, coletarConta } from "@/lib/coleta/coletar";
 import { NOME_REDE, REDE, REDES, type Rede } from "@/lib/coleta/redes";
 import { supabaseAdmin, supabaseServidor } from "@/lib/supabase/server";
 
@@ -43,6 +43,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     else if (perfil.foto) await admin.from("perfis").update({ foto_url: perfil.foto }).eq("id", user.id).is("canal_youtube", null);
     // primeira coleta já na hora (o ponto de partida dos totais)
     await coletarConta(conta.id, true).catch(() => undefined);
+    await anotarSaldo(user.id).catch(() => undefined);
     volta.searchParams.set("ok", `${NOME_REDE[rede]} conectado: ${perfil.nome}`);
     const res = NextResponse.redirect(volta);
     res.cookies.delete(`oauth_${rede}`);

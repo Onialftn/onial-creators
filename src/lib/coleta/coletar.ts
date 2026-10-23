@@ -170,7 +170,7 @@ export async function coletarConta(contaId: string, completo = false) {
 /** Coleta todas as contas conectadas (uma de cada vez). */
 export async function coletarTodas(completo = false) {
   const admin = supabaseAdmin();
-  const { data: contas } = await admin.from("contas_plataforma").select("id");
+  const { data: contas } = await admin.from("contas_plataforma").select("id, criador_id");
   const resultado: { conta: string; ok: boolean; detalhe: string }[] = [];
   for (const c of contas ?? []) {
     try {
@@ -180,5 +180,20 @@ export async function coletarTodas(completo = false) {
       resultado.push({ conta: c.id, ok: false, detalhe: e instanceof Error ? e.message : String(e) });
     }
   }
+  for (const id of new Set((contas ?? []).map((c) => c.criador_id as string))) await anotarSaldo(id).catch(() => undefined);
   return resultado;
+}
+
+/**
+ * Anota o total de views do mês do criador (a última anotação do dia vale).
+ * O "Desde ontem" da Dashboard é a diferença entre o total de agora e o anotado no dia anterior,
+ * então views atrasadas do YouTube entram uma vez só, no dia em que chegam.
+ */
+export async function anotarSaldo(criadorId: string) {
+  const admin = supabaseAdmin();
+  const hoje = hojeBrasil();
+  const mes = mesDe(hoje);
+  const { data } = await admin.from("ranking_mensal").select("views").eq("criador_id", criadorId).eq("mes", mes);
+  const views = (data ?? []).reduce((a, r) => a + Number(r.views), 0);
+  await admin.from("saldos_diarios").upsert({ criador_id: criadorId, dia: hoje, mes, views_mes: views, atualizado_em: new Date().toISOString() });
 }

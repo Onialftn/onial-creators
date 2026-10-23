@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { coletarTodas } from "@/lib/coleta/coletar";
+import { anotarSaldo, coletarTodas } from "@/lib/coleta/coletar";
 import { MAPAS } from "@/lib/ia/mapas";
 import { resolverCanal } from "@/lib/ideias";
 
@@ -81,6 +81,7 @@ export async function lancarViews(f: FormData) {
   }
   if (!videoId) voltar(criador, "Não consegui salvar o vídeo. Confira os dados.");
   await sb.from("views_diarias").upsert({ video_id: videoId, dia, criador_id: criador, plataforma, views });
+  await anotarSaldo(criador).catch(() => undefined);
   voltar(criador, "Views lançadas.");
 }
 

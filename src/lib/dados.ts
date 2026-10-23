@@ -4,7 +4,7 @@ import { cache } from "react";
 import { supabaseServidor } from "@/lib/supabase/server";
 import { BONUS_META_CENTAVOS_POR_MIL, calcularConstancia, calcularPagamento, fimDaSemana as fimDaSemanaDe, inicioDaSemana as inicioDaSemanaDe, type DiaPostagem } from "@/lib/pagamento";
 import { postagensPorDia, type VideoPostado } from "@/lib/postagens";
-import { diaDaSemana, hojeBrasil, intervalo, mesDe, primeiroDia, somarDias, ultimoDia } from "@/lib/datas";
+import { diaDaSemana, hojeBrasil, intervalo, mesDe, primeiroDia, ultimoDia } from "@/lib/datas";
 
 export type Plataforma = "tiktok" | "youtube" | "instagram";
 export const PLATAFORMAS: Plataforma[] = ["tiktok", "youtube", "instagram"];
@@ -50,8 +50,10 @@ export interface ResumoMes {
   pagamento: ReturnType<typeof calcularPagamento>;
   /** total se as views chegarem à meta */
   totalSeBaterMeta: number | null;
-  /** views ganhas ontem (todas as redes) */
-  viewsOntem: number;
+  /** quanto o total de views do mês subiu desde a última anotação de um dia anterior (null = ainda sem anotação) */
+  viewsDesdeOntem: number | null;
+  /** quanto o ganho bruto subiu desde ontem (diferença entre os dois saldos, em centavos) */
+  centavosDesdeOntem: number | null;
 }
 
 type SB = Awaited<ReturnType<typeof supabaseServidor>>;
@@ -71,9 +73,8 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     sb.from("agenda_postagem").select("dia_semana").eq("criador_id", criadorId),
     sb.from("dias_postagem").select("dia, postagens").eq("criador_id", criadorId).gte("dia", semIni).lte("dia", semFim),
     sb.from("videos").select("plataforma, postado_em, id_externo, titulo").eq("criador_id", criadorId).gte("postado_em", semIni).lte("postado_em", semFim).limit(1000),
-    sb.from("views_diarias").select("views").eq("criador_id", criadorId).eq("dia", somarDias(hoje, -1)).limit(1000),
+    sb.from("saldos_diarios").select("mes, views_mes").eq("criador_id", criadorId).lt("dia", hoje).order("dia", { ascending: false }).limit(1).maybeSingle(),
   ]);
-  const viewsOntem = (ontem.data ?? []).reduce((a, r) => a + Number(r.views), 0);
 
   const viewsPorPlataforma: Record<Plataforma, number> = { tiktok: 0, youtube: 0, instagram: 0 };
   for (const r of views.data ?? []) viewsPorPlataforma[r.plataforma as Plataforma] += Number(r.views);
@@ -123,6 +124,12 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const diasCumpridos = doMes.filter((d) => { const st = statusDe.get(d.data); return st === "postado" || st === "reposto"; }).length;
   const metaViews = meta.data ? Number(meta.data.meta_views) : null;
   const pagamento = calcularPagamento(total, metaViews, constancia.faltas);
+  // "Desde ontem" = saldo de agora − saldo anotado no dia anterior (no mês novo, o anterior conta como zero)
+  const desdeOntem = () => {
+    if (mes !== mesDe(hoje) || !ontem.data) return { viewsDesdeOntem: null, centavosDesdeOntem: null };
+    const antes = ontem.data.mes === mes ? Number(ontem.data.views_mes) : 0;
+    return { viewsDesdeOntem: Math.max(0, total - antes), centavosDesdeOntem: Math.max(0, pagamento.brutoCentavos - calcularPagamento(antes, null, 0).brutoCentavos) };
+  };
   const totalSeBaterMeta = metaViews
     ? pagamento.brutoCentavos + pagamento.constanciaCentavos + Math.round((metaViews * BONUS_META_CENTAVOS_POR_MIL) / 1000)
     : null;
@@ -140,7 +147,8 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     calendario,
     pagamento,
     totalSeBaterMeta,
-    viewsOntem,
+    // mês novo: a anotação anterior é do mês passado, então conta do zero
+    ...desdeOntem(),
   };
 }
 

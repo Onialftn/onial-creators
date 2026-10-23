@@ -37,11 +37,13 @@ export function CardsGanho({ r }: { r: ResumoMes }) {
         <div className="flex items-center gap-2" style={{ color: "var(--muted)" }}><Icone nome="wallet" />Ganho bruto (RPM R$ 5)</div>
         <div className="num" style={{ fontSize: 34, marginTop: 8, color: "var(--ok)" }}>{formatarReais(p.brutoCentavos)}</div>
         <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 6 }}>{formatarNumero(r.views)} views somadas</div>
-        <div className="flex flex-wrap items-baseline gap-x-2" style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)", fontSize: 13 }} title="O YouTube termina de contar o dia de ontem nas próximas atualizações, então esse número ainda pode subir.">
-          <span style={{ color: "var(--muted)" }}>Ontem</span>
-          <span className="num" style={{ fontSize: 18, color: r.viewsOntem ? "var(--ok)" : "var(--muted)" }}>+{formatarReais(Math.round(r.viewsOntem / 2))}</span>
-          <span style={{ color: "var(--muted)" }}>· {formatarNumero(r.viewsOntem)} views</span>
-        </div>
+        {r.viewsDesdeOntem !== null && (
+          <div className="flex flex-wrap items-baseline gap-x-2" style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line)", fontSize: 13 }} title="Quanto o seu ganho bruto subiu desde a última atualização de ontem, somando todas as redes. Inclui views de dias anteriores que o YouTube só entregou agora.">
+            <span style={{ color: "var(--muted)" }}>Desde ontem</span>
+            <span className="num" style={{ fontSize: 18, color: r.viewsDesdeOntem ? "var(--ok)" : "var(--muted)" }}>+{formatarReais(r.centavosDesdeOntem ?? 0)}</span>
+            <span style={{ color: "var(--muted)" }}>· {formatarNumero(r.viewsDesdeOntem)} views</span>
+          </div>
+        )}
       </div>
       <div className="card" style={{ padding: 22 }}>
         <div className="flex items-center gap-2" style={{ color: "var(--muted)" }}><Icone nome="cal" />Bônus de constância ({Math.round(p.percentualConstancia * 100)}%)</div>
