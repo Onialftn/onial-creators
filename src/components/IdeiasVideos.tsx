@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { VideoRef } from "@/lib/ideias";
 import type { RoteiroIA } from "@/lib/ia/roteiro";
 import { CapaVideo } from "./CapaVideo";
@@ -102,7 +102,22 @@ function Traduzir({ v, mapa, iaPronta, pronta, inicio }: { v: VideoRef; mapa: st
 }
 
 export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automatico, traduzidos: iniciais }: { mapa: string; tema: string; melhores: VideoRef[]; recentes: VideoRef[]; iaPronta: boolean; automatico: boolean; traduzidos: Record<string, Pronta> }) {
-  const [assistir, setAssistir] = useState<VideoRef | null>(null);
+  const [assistir, setAssistirV] = useState<VideoRef | null>(null);
+  // lista da seção de onde o vídeo foi aberto: as setas ▲ ▼ andam por ela
+  const [fila, setFila] = useState<VideoRef[]>([]);
+  const setAssistir = (v: VideoRef | null, lista?: VideoRef[]) => { setAssistirV(v); if (lista) setFila(lista); };
+  const pos = assistir ? fila.findIndex((x) => x.id === assistir.id) : -1;
+  const pular = (d: number) => { const n = fila[pos + d]; if (n) setAssistirV(n); };
+  const toque = useRef<number | null>(null);
+  useEffect(() => {
+    if (!assistir) return;
+    const f = (e: KeyboardEvent) => {
+      if (e.key === "ArrowDown") { e.preventDefault(); pular(1); }
+      if (e.key === "ArrowUp") { e.preventDefault(); pular(-1); }
+    };
+    window.addEventListener("keydown", f);
+    return () => window.removeEventListener("keydown", f);
+  });
   const [traduzir, setTraduzir] = useState<VideoRef | null>(null);
   const [mostrar, setMostrar] = useState(10);
   const [traduzidos, setTraduzidos] = useState(iniciais);
@@ -130,9 +145,9 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
     finally { setGerando(null); }
   }
 
-  const Acoes = ({ v }: { v: VideoRef }) => (
+  const Acoes = ({ v, lista }: { v: VideoRef; lista: VideoRef[] }) => (
     <div className="flex gap-2">
-      <button className="btn-line flex-1" onClick={() => setAssistir(v)} style={{ minHeight: 38 }}><Icone nome="play" tamanho={14} />Assistir</button>
+      <button className="btn-line flex-1" onClick={() => setAssistir(v, lista)} style={{ minHeight: 38 }}><Icone nome="play" tamanho={14} />Assistir</button>
     </div>
   );
 
@@ -144,14 +159,14 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
           <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))" }}>
             {melhores.map((v, i) => (
               <div key={v.id} className="flex min-w-0 flex-col gap-2.5" style={{ padding: 10, borderRadius: 8, background: "var(--bg)", border: `1px solid ${i === 0 ? "#E8B014" : "var(--line)"}` }}>
-                <button onClick={() => setAssistir(v)} className="relative overflow-hidden" style={{ aspectRatio: "9/16", borderRadius: 6, background: "#111" }} aria-label={`Assistir ${v.titulo}`}>
+                <button onClick={() => setAssistir(v, melhores)} className="relative overflow-hidden" style={{ aspectRatio: "9/16", borderRadius: 6, background: "#111" }} aria-label={`Assistir ${v.titulo}`}>
                   <CapaVideo src={v.capa} alt="" />
                   <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 60%,rgba(0,0,0,.85))" }} />
                   <span className="pill absolute" style={{ left: 8, top: 8, background: i === 0 ? "#E8B014" : "rgba(10,10,10,.75)", color: i === 0 ? "#0A0A0A" : "#fff", fontSize: 11 }}>#{i + 1}</span>
                   <span className="absolute flex flex-col items-start" style={{ left: 8, bottom: 6, color: "#fff", lineHeight: 1.1 }}><span className="num" style={{ fontSize: 20 }}>{n(v.views)}</span>{v.porDia ? <span style={{ fontSize: 11, color: "#FFCC33", fontWeight: 600 }}>+{n(v.porDia)}/dia</span> : null}</span>
                 </button>
                 <div className="min-w-0"><div style={{ color: "var(--strong)", fontWeight: 600, fontSize: 14, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div><div style={{ color: "var(--muted)", fontSize: 12, marginTop: 2 }}>{v.canal} · {ha(v.publicado)}</div></div>
-                <Acoes v={v} />
+                <Acoes v={v} lista={melhores} />
               </div>
             ))}
           </div>
@@ -163,14 +178,14 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))" }}>
           {recentes.slice(0, mostrar).map((v) => (
             <div key={v.id} className="flex min-w-0 flex-col gap-2">
-              <button onClick={() => setAssistir(v)} className="relative overflow-hidden" style={{ aspectRatio: "9/16", borderRadius: 6, background: "#111" }} aria-label={`Assistir ${v.titulo}`}>
+              <button onClick={() => setAssistir(v, recentes)} className="relative overflow-hidden" style={{ aspectRatio: "9/16", borderRadius: 6, background: "#111" }} aria-label={`Assistir ${v.titulo}`}>
                 <CapaVideo src={v.capa} alt="" />
                 <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 65%,rgba(0,0,0,.85))" }} />
                 <span className="num absolute" style={{ left: 8, bottom: 6, fontSize: 17, color: "#fff" }}>{n(v.views)}</span>
               </button>
               <div style={{ color: "var(--strong)", fontSize: 13, fontWeight: 600, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
               <div style={{ color: "var(--muted)", fontSize: 12 }}>{v.canal} · {ha(v.publicado)}</div>
-              <Acoes v={v} />
+              <Acoes v={v} lista={recentes} />
             </div>
           ))}
         </div>
@@ -179,8 +194,23 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
 
       {assistir && (
         <Janela titulo={assistir.titulo} fechar={() => setAssistir(null)}>
-          <div style={{ width: "100%", maxWidth: 340, margin: "0 auto", aspectRatio: "9/16", borderRadius: 10, overflow: "hidden", background: "#000" }}>
-            <iframe src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&rel=0`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
+          <div className="flex items-center justify-center gap-3"
+            onTouchStart={(e) => (toque.current = e.touches[0].clientY)}
+            onTouchEnd={(e) => { if (toque.current === null) return; const d = toque.current - e.changedTouches[0].clientY; toque.current = null; if (Math.abs(d) > 60) pular(d > 0 ? 1 : -1); }}>
+            <div style={{ flex: "1 1 auto", maxWidth: 340, aspectRatio: "9/16", borderRadius: 10, overflow: "hidden", background: "#000" }}>
+              <iframe key={assistir.id} src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&rel=0`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
+            </div>
+            {fila.length > 1 && (
+              <div className="flex flex-none flex-col items-center gap-3">
+                <button onClick={() => pular(-1)} disabled={pos <= 0} aria-label="Vídeo anterior" className="flex items-center justify-center rounded-full" style={{ width: 48, height: 48, background: "var(--chip)", border: "1px solid var(--line2)", color: "var(--fg)", opacity: pos <= 0 ? 0.35 : 1 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 15l6-6 6 6" /></svg>
+                </button>
+                <span style={{ color: "var(--muted)", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>{pos + 1}/{fila.length}</span>
+                <button onClick={() => pular(1)} disabled={pos >= fila.length - 1} aria-label="Próximo vídeo" className="flex items-center justify-center rounded-full" style={{ width: 48, height: 48, background: "var(--chip)", border: "1px solid var(--line2)", color: "var(--fg)", opacity: pos >= fila.length - 1 ? 0.35 : 1 }}>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6" /></svg>
+                </button>
+              </div>
+            )}
           </div>
           <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1, ...(copiado === assistir.id ? VERDE : {}) }}>
             <Progresso ativo={gerando === assistir.id} terminou={copiado === assistir.id} />
