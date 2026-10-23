@@ -9,7 +9,7 @@ export default async function Pagina() {
   const usados = await usadosNoMes(perfil.id, "seo");
   return (
     <>
-      <Cabecalho icone="hash" titulo="SEO" sub="Conte do que é o vídeo e a IA cria títulos, descrições e hashtags para YouTube, TikTok e Instagram." />
+      <Cabecalho icone="hash" titulo="SEO" sub="Pesquise a palavra-chave, veja a nota do seu título e gere títulos, descrições e hashtags para YouTube, TikTok e Instagram." />
       <Seo pronta={iaConfigurada()} usados={usados} limite={perfil.papel === "gestor" ? null : LIMITE_MES.seo} />
     </>
   );

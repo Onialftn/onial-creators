@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ erro: "Entre de novo no site." }, { status: 401 });
   const { data: perfil } = await sb.from("perfis").select("papel").eq("id", user.id).single();
-  const b = (await req.json().catch(() => ({}))) as { mapa?: string; tema?: string; assunto?: string };
+  const b = (await req.json().catch(() => ({}))) as { mapa?: string; tema?: string; assunto?: string; palavraChave?: string; emAlta?: string[] };
   const mapa = MAPAS.find((m) => m.id === b.mapa);
   const tema = mapa?.temas.find((t) => t === b.tema) ?? mapa?.temas[0];
   const assunto = String(b.assunto ?? "").trim();
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (perfil?.papel !== "gestor" && usados >= LIMITE_MES.seo)
     return NextResponse.json({ erro: `Você já usou os ${LIMITE_MES.seo} pedidos de SEO deste mês. Fale com o gestor se precisar de mais.` }, { status: 429 });
   try {
-    const r = await gerarSeo({ mapa: mapa.nome, tema, assunto });
+    const r = await gerarSeo({ mapa: mapa.nome, tema, assunto, palavraChave: String(b.palavraChave ?? "").slice(0, 80) || undefined, emAlta: Array.isArray(b.emAlta) ? b.emAlta.slice(0, 25).map((x) => String(x).slice(0, 40)) : undefined });
     await registrarUso(user.id, "seo", r);
     return NextResponse.json({ seo: r.dados, usados: usados + 1, limite: LIMITE_MES.seo });
   } catch (e) {

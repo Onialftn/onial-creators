@@ -9,7 +9,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
  */
 export interface VideoRef { id: string; titulo: string; canal: string; publicado: string; views: number; capa: string; segundos: number; porDia?: number }
 
-async function tokenYoutube() {
+export async function tokenYoutube() {
   const admin = supabaseAdmin();
   const { data: contas } = await admin.from("contas_plataforma").select("id").eq("plataforma", "youtube").is("erro", null).limit(5);
   for (const c of contas ?? []) {
@@ -18,7 +18,7 @@ async function tokenYoutube() {
   throw new Error("Nenhuma conta do YouTube conectada no site. Conecte em Minhas redes.");
 }
 
-async function yt<T>(caminho: string, token: string): Promise<T> {
+export async function yt<T>(caminho: string, token: string): Promise<T> {
   const r = await fetch(`https://www.googleapis.com/youtube/v3/${caminho}`, { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" });
   if (!r.ok) throw new Error(`YouTube: ${r.status} ${(await r.text()).slice(0, 200)}`);
   return r.json() as Promise<T>;
