@@ -2,7 +2,7 @@ import "server-only";
 
 /** Gemini (Google) assiste um vídeo PÚBLICO do YouTube pelo link e devolve o que é falado. */
 /** em ordem: se um estiver sobrecarregado (503) ou no limite (429), tenta o próximo */
-const MODELOS_GEMINI = ["gemini-3.8-flash", "gemini-3.6-flash", "gemini-3.5-flash-lite"];
+const MODELOS_GEMINI = ["gemini-3.5-flash-lite", "gemini-3.6-flash", "gemini-3.8-flash"];
 
 export function geminiConfigurado() {
   return !!process.env.GEMINI_API_KEY?.trim();
@@ -21,6 +21,7 @@ export async function transcreverYoutube(videoId: string): Promise<string> {
         const ocupado = (e as { ocupado?: boolean }).ocupado || (e instanceof Error && e.name === "TimeoutError");
         console.error("Gemini falhou", modelo, tentativa, ultimo.message.slice(0, 200));
         if (!ocupado) throw ultimo; // erro de verdade (vídeo sem fala, chave errada...): não adianta repetir
+        if (e instanceof Error && e.name === "TimeoutError") break; // travou: vai direto para o próximo modelo
         if (tentativa === 0) await new Promise((r) => setTimeout(r, 1500));
       }
     }
@@ -32,7 +33,7 @@ async function pedirTranscricao(videoId: string, modelo: string): Promise<string
   const chave = process.env.GEMINI_API_KEY?.trim();
   if (!chave) throw new Error("A transcrição automática ainda não foi configurada.");
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(35_000),
     method: "POST",
     headers: { "content-type": "application/json", "x-goog-api-key": chave },
     body: JSON.stringify({
@@ -42,6 +43,8 @@ async function pedirTranscricao(videoId: string, modelo: string): Promise<string
           { file_data: { file_uri: `https://www.youtube.com/watch?v=${videoId}` } },
         ],
       }],
+      // para transcrever basta o áudio: imagem em baixa resolução deixa o pedido bem mais rápido
+      generationConfig: { mediaResolution: "MEDIA_RESOLUTION_LOW" },
     }),
   });
   const corpo = await r.text();
