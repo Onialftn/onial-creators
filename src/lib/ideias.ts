@@ -7,7 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
  * Vídeos dos canais de referência (YouTube). Usa a autorização de uma conta do YouTube já conectada
  * (dados públicos), e guarda o resultado por 3 horas para não gastar a cota da API.
  */
-export interface VideoRef { id: string; titulo: string; canal: string; publicado: string; views: number; capa: string; segundos: number }
+export interface VideoRef { id: string; titulo: string; canal: string; publicado: string; views: number; capa: string; segundos: number; porDia?: number }
 
 async function tokenYoutube() {
   const admin = supabaseAdmin();

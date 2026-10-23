@@ -20,7 +20,9 @@ export default async function Ideias({ searchParams }: { searchParams: Promise<{
   try { videos = await videosDosCanais((canais ?? []).map((c) => c.canal_id as string)); } catch (e) { erro = e instanceof Error ? e.message : "Não consegui buscar os vídeos agora."; }
 
   const semana = Date.now() - 7 * 86_400_000;
-  const melhores = videos.filter((v) => new Date(v.publicado).getTime() >= semana).sort((a, b) => b.views - a.views).slice(0, 5);
+  // melhores = os que mais crescem: views por dia desde que foram postados (mínimo de 6 horas, para não exagerar vídeos recém-postados)
+  const porDia = (v: VideoRef) => v.views / Math.max(0.25, (Date.now() - new Date(v.publicado).getTime()) / 86_400_000);
+  const melhores = videos.filter((v) => new Date(v.publicado).getTime() >= semana).map((v) => ({ ...v, porDia: Math.round(porDia(v)) })).sort((a, b) => b.porDia - a.porDia).slice(0, 10);
 
   return (
     <>
