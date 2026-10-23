@@ -11,7 +11,7 @@ Todo o texto do site é em português do Brasil.
 - Fundo preto, destaque dourado da coroa do logo (`#E8B014`), texto claro. Modo claro e escuro com os mesmos tokens do protótipo (`--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--accent-text`, `--ok`, `--warn`...).
 - Fontes: Rajdhani (títulos, números) e Inter (texto).
 - Botão dourado sempre com texto escuro.
-- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Pagamentos, Minhas redes), OTIMIZAÇÕES (Ideias & roteiros, Limpar narração, Avaliar vídeo, SEO para vídeos, Pomodoro), EQUIPE (Ranking do mês, Meta coletiva com selo EM BREVE). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
+- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Pagamentos, Minhas redes), OTIMIZAÇÕES (Ideias & roteiros, Limpar narração, Avaliar vídeo, SEO para vídeos, Pomodoro), EQUIPE (Ranking do mês, Gravar juntos, Meta coletiva com selo EM BREVE). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
 - No celular: barra fixa no topo (logo, BETA, nome da aba e botão ☰) e o menu abre pela lateral (decisão do dono).
 - A Dashboard é só para informações rápidas. Funções novas ganham aba própria, nunca entram na Dashboard.
 
@@ -34,7 +34,8 @@ Todo o texto do site é em português do Brasil.
 - Constância: cada criador tem 5 dias de postagem e 2 de folga por semana (definidos pelo gestor).
   - Perdeu um dia de postagem: pode repor postando em outro dia até domingo da mesma semana. Reposto não conta como falta.
   - Faltas no mês (dias não repostos até domingo): 0 faltas = 10% do bruto; 1 falta = 5%; 2 ou mais = 0%.
-- Total = bruto + bruto × constância% + bônus de meta.
+- Gravar juntos (pedido do gestor): R$ 25 fixos por gravação em que o criador ajudou (qualquer duração), quando quem pediu ajuda confirma que ele estava presente. Conta no mês do dia da gravação. Tabelas pedidos_ajuda e ajudas; regras em `src/lib/gravar.ts`.
+- Total = bruto + bruto × constância% + bônus de meta + bônus de ajuda.
 - Valores em reais com duas casas, formato brasileiro (R$ 3.062,00).
 - Toda mudança nessas regras precisa de testes automáticos cobrindo: mês perfeito, falta reposta na semana, 1 falta, 2 faltas, meta batida e não batida.
 

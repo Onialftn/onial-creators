@@ -121,6 +121,27 @@ describe("pagamento", () => {
     expect(calcularPagamento(900_000, null, 0).bonusMetaCentavos).toBe(0);
   });
 
+  it("bônus de ajuda (Gravar juntos): R$ 25 por gravação, somado ao total", () => {
+    const semAjuda = calcularPagamento(612_400, 700_000, 0);
+    const p = calcularPagamento(612_400, 700_000, 0, 3);
+    expect(p.ajudas).toBe(3);
+    expect(p.bonusAjudaCentavos).toBe(7_500);
+    expect(p.totalCentavos).toBe(semAjuda.totalCentavos + 7_500);
+    // não muda constância nem meta
+    expect(p.constanciaCentavos).toBe(semAjuda.constanciaCentavos);
+    expect(p.bonusMetaCentavos).toBe(0);
+  });
+
+  it("bônus de ajuda junto com meta batida e 2 faltas", () => {
+    const p = calcularPagamento(734_900, 700_000, 2, 1);
+    expect(p.totalCentavos).toBe(367_450 + 0 + 70_000 + 2_500);
+  });
+
+  it("sem ajudas (ou número inválido): bônus de ajuda zero", () => {
+    expect(calcularPagamento(500_000, null, 0).bonusAjudaCentavos).toBe(0);
+    expect(calcularPagamento(500_000, null, 0, -2).bonusAjudaCentavos).toBe(0);
+  });
+
   it("formato brasileiro", () => {
     expect(formatarReais(306_200)).toBe("R$ 3.062,00");
   });

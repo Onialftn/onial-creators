@@ -33,6 +33,7 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
     titulo: "Equipe",
     itens: [
       { href: "/ranking", rotulo: "Ranking do mês", icone: "trophy" },
+      { href: "/gravar", rotulo: "Gravar juntos", icone: "users" },
       { href: "/coletiva", rotulo: "Meta coletiva", icone: "users", emBreve: true },
     ],
   },

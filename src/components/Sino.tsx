@@ -12,7 +12,7 @@ function ha(iso: string) {
   const h = Math.round(m / 60);
   return h < 24 ? `${h} h` : `${Math.round(h / 24)} d`;
 }
-const ICONE: Record<string, string> = { postar: "cal", constancia: "cal", meta: "target", video: "zap", ranking: "trophy", pagamento: "wallet", rede: "zap", "boas-vindas": "bell" };
+const ICONE: Record<string, string> = { postar: "cal", constancia: "cal", meta: "target", video: "zap", ranking: "trophy", pagamento: "wallet", rede: "zap", ajuda: "users", "boas-vindas": "bell" };
 
 function base64ParaBytes(b64: string) {
   const s = atob((b64 + "=".repeat((4 - (b64.length % 4)) % 4)).replace(/-/g, "+").replace(/_/g, "/"));

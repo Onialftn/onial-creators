@@ -66,7 +66,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const semIni = inicioDaSemanaDe(ini);
   const semFim = fimDaSemanaDe(fim);
 
-  const [views, meta, agenda, dias, videos, ontem] = await Promise.all([
+  const [views, meta, agenda, dias, videos, ontem, ajudas] = await Promise.all([
     // soma pronta no banco (a leitura direta de views_diarias corta em 1.000 linhas)
     sb.from("ranking_mensal").select("plataforma, views").eq("criador_id", criadorId).eq("mes", mes),
     sb.from("metas").select("meta_views").eq("criador_id", criadorId).eq("mes", mes).maybeSingle(),
@@ -74,6 +74,9 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     sb.from("dias_postagem").select("dia, postagens").eq("criador_id", criadorId).gte("dia", semIni).lte("dia", semFim),
     sb.from("videos").select("plataforma, postado_em, id_externo, titulo").eq("criador_id", criadorId).gte("postado_em", semIni).lte("postado_em", semFim).limit(1000),
     sb.from("saldos_diarios").select("mes, views_mes").eq("criador_id", criadorId).lt("dia", hoje).order("dia", { ascending: false }).limit(1).maybeSingle(),
+    // Gravar juntos: gravações em que ajudou, confirmadas por quem pediu, no mês da gravação
+    sb.from("ajudas").select("pedido_id, pedidos_ajuda!inner(dia, status)", { count: "exact", head: true }).eq("ajudante_id", criadorId).eq("presente", true)
+      .eq("pedidos_ajuda.status", "feito").gte("pedidos_ajuda.dia", ini).lte("pedidos_ajuda.dia", fim),
   ]);
 
   const viewsPorPlataforma: Record<Plataforma, number> = { tiktok: 0, youtube: 0, instagram: 0 };
@@ -123,7 +126,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const doMes = lista.filter((d) => d.data >= ini && d.data <= fim && d.agendado);
   const diasCumpridos = doMes.filter((d) => { const st = statusDe.get(d.data); return st === "postado" || st === "reposto"; }).length;
   const metaViews = meta.data ? Number(meta.data.meta_views) : null;
-  const pagamento = calcularPagamento(total, metaViews, constancia.faltas);
+  const pagamento = calcularPagamento(total, metaViews, constancia.faltas, ajudas.count ?? 0);
   // "Desde ontem" = saldo de agora − saldo anotado no dia anterior (no mês novo, o anterior conta como zero)
   const desdeOntem = () => {
     if (mes !== mesDe(hoje) || !ontem.data) return { viewsDesdeOntem: null, centavosDesdeOntem: null };
@@ -131,7 +134,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     return { viewsDesdeOntem: Math.max(0, total - antes), centavosDesdeOntem: Math.max(0, pagamento.brutoCentavos - calcularPagamento(antes, null, 0).brutoCentavos) };
   };
   const totalSeBaterMeta = metaViews
-    ? pagamento.brutoCentavos + pagamento.constanciaCentavos + Math.round((metaViews * BONUS_META_CENTAVOS_POR_MIL) / 1000)
+    ? pagamento.brutoCentavos + pagamento.constanciaCentavos + Math.round((metaViews * BONUS_META_CENTAVOS_POR_MIL) / 1000) + pagamento.bonusAjudaCentavos
     : null;
 
   return {

@@ -61,6 +61,7 @@ export function CardsGanho({ r }: { r: ResumoMes }) {
         <div className="flex items-center gap-2" style={{ color: "#3A2E08" }}><Icone nome="trophy" />{p.bateuMeta || !r.meta ? "Total do mês até agora" : "Estimativa total do mês"}</div>
         <div className="num" style={{ fontSize: 34, marginTop: 8, color: "#0A0A0A" }}>{formatarReais(p.bateuMeta || !r.totalSeBaterMeta ? p.totalCentavos : r.totalSeBaterMeta)}</div>
         <div style={{ color: "#3A2E08", fontSize: 13, marginTop: 6 }}>{p.bateuMeta || !r.meta ? "Bruto + bônus conquistados" : "Se bater a meta de views"}</div>
+        {p.ajudas > 0 && <div style={{ color: "#3A2E08", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusAjudaCentavos)} de {p.ajudas} {p.ajudas === 1 ? "gravação ajudada" : "gravações ajudadas"}</div>}
       </div>
     </section>
   );

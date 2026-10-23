@@ -31,6 +31,9 @@ export interface ResultadoPagamento {
   brutoCentavos: number;
   constanciaCentavos: number;
   bonusMetaCentavos: number;
+  /** quantas gravações o criador ajudou (confirmadas por quem pediu) */
+  ajudas: number;
+  bonusAjudaCentavos: number;
   totalCentavos: number;
 }
 
@@ -38,6 +41,8 @@ export interface ResultadoPagamento {
 export const CENTAVOS_POR_MIL_VIEWS = 500;
 /** R$ 1 a cada 1.000 views da meta. */
 export const BONUS_META_CENTAVOS_POR_MIL = 100;
+/** R$ 25 por gravação em que o criador ajudou (Gravar juntos), qualquer duração. */
+export const BONUS_AJUDA_CENTAVOS = 2500;
 
 const DIA_MS = 86_400_000;
 
@@ -103,13 +108,15 @@ export function calcularConstancia(dias: DiaPostagem[], hoje: string, mes: strin
 }
 
 /** Pagamento do mês. */
-export function calcularPagamento(views: number, meta: number | null, faltas: number): ResultadoPagamento {
+export function calcularPagamento(views: number, meta: number | null, faltas: number, ajudas = 0): ResultadoPagamento {
   const v = Math.max(0, Math.floor(views));
   const brutoCentavos = Math.round((v * CENTAVOS_POR_MIL_VIEWS) / 1000);
   const percentualConstancia = percentualPorFaltas(faltas);
   const constanciaCentavos = Math.round(brutoCentavos * percentualConstancia);
   const bateuMeta = meta !== null && meta > 0 && v >= meta;
   const bonusMetaCentavos = bateuMeta ? Math.round((meta! * BONUS_META_CENTAVOS_POR_MIL) / 1000) : 0;
+  const nAjudas = Math.max(0, Math.floor(ajudas));
+  const bonusAjudaCentavos = nAjudas * BONUS_AJUDA_CENTAVOS;
   return {
     views: v,
     meta,
@@ -119,7 +126,9 @@ export function calcularPagamento(views: number, meta: number | null, faltas: nu
     brutoCentavos,
     constanciaCentavos,
     bonusMetaCentavos,
-    totalCentavos: brutoCentavos + constanciaCentavos + bonusMetaCentavos,
+    ajudas: nAjudas,
+    bonusAjudaCentavos,
+    totalCentavos: brutoCentavos + constanciaCentavos + bonusMetaCentavos + bonusAjudaCentavos,
   };
 }
 
