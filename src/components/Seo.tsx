@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useState } from "react";
-import { MAPAS } from "@/lib/ia/mapas";
 import { notaTitulo } from "@/lib/seo-nota";
 import { Icone } from "./Icone";
 
@@ -54,9 +53,7 @@ const caixa = { padding: "10px 12px", borderRadius: 6, background: "var(--bg)", 
 type Horarios = { analisados: number; suficiente: boolean; faixas: { faixa: string; mediana: number; videos: number }[]; dias: { dia: string; mediana: number; videos: number }[] };
 
 export function Seo({ pronta, usados: usadosIni, limite }: { pronta: boolean; usados: number; limite: number | null }) {
-  const [mapa, setMapa] = useState<string>(MAPAS[0].id);
   const [titulo, setTitulo] = useState("");
-  const [sobre, setSobre] = useState("");
   const [sugestoes, setSugestoes] = useState<string[]>([]);
   const [escolhido, setEscolhido] = useState("");
   const [resto, setResto] = useState<{ descricao: string; hashtags: string[]; tags: string } | null>(null);
@@ -78,7 +75,7 @@ export function Seo({ pronta, usados: usadosIni, limite }: { pronta: boolean; us
   async function pedir(etapa: "titulos" | "resto", t: string) {
     setCarregando(etapa); setErro("");
     try {
-      const r = await fetch("/api/ia/seo", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ etapa, mapa, titulo: t, sobre }) });
+      const r = await fetch("/api/ia/seo", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ etapa, titulo: t }) });
       const j = await r.json().catch(() => ({ erro: "A IA demorou demais. Tente de novo." }));
       if (!r.ok) { setErro(j.erro); return; }
       setUsados(j.usados);
@@ -97,14 +94,6 @@ export function Seo({ pronta, usados: usadosIni, limite }: { pronta: boolean; us
       {!pronta && <div className="card" style={{ color: "var(--warn)" }}>A IA ainda não está configurada. Fale com o gestor.</div>}
 
       <Passo num={1} titulo="Título" feito={!!escolhido} direita={limite !== null && <span style={{ color: "var(--muted)", fontSize: 13 }}>{usados} / {limite} no mês</span>}>
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))" }}>
-          <label className="flex flex-col gap-1"><span className="label">MAPA</span>
-            <select className="input" value={mapa} onChange={(e) => setMapa(e.target.value)}>{MAPAS.map((m) => <option key={m.id} value={m.id}>{m.emoji} {m.nome}</option>)}</select>
-          </label>
-          <label className="flex flex-col gap-1"><span className="label">DO QUE É O VÍDEO (OPCIONAL)</span>
-            <input className="input" value={sobre} onChange={(e) => setSobre(e.target.value)} maxLength={3000} placeholder="Ex.: mostro onde fica o farm de XP escondido" />
-          </label>
-        </div>
         <label className="flex flex-col gap-1"><span className="label">SEU TÍTULO</span>
           <input className="input" value={titulo} onChange={(e) => setTitulo(e.target.value)} maxLength={150} placeholder="Escreva o título que você pensou" style={{ fontSize: 16 }} />
         </label>

@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { MAPAS } from "@/lib/ia/mapas";
 import { completarSeo, sugerirTitulos } from "@/lib/ia/seo";
 import { LIMITE_MES, registrarUso, usadosNoMes } from "@/lib/ia/uso";
 import { videosDoMeuCanal } from "@/lib/seo-canal";
@@ -13,11 +12,8 @@ export async function POST(req: NextRequest) {
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return NextResponse.json({ erro: "Entre de novo no site." }, { status: 401 });
   const { data: perfil } = await sb.from("perfis").select("papel").eq("id", user.id).single();
-  const b = (await req.json().catch(() => ({}))) as { etapa?: string; mapa?: string; titulo?: string; sobre?: string };
-  const mapa = MAPAS.find((m) => m.id === b.mapa);
+  const b = (await req.json().catch(() => ({}))) as { etapa?: string; titulo?: string };
   const titulo = String(b.titulo ?? "").trim().slice(0, 150);
-  const sobre = String(b.sobre ?? "").trim().slice(0, 3000) || undefined;
-  if (!mapa) return NextResponse.json({ erro: "Escolha o mapa." }, { status: 400 });
   if (titulo.length < 5) return NextResponse.json({ erro: "Escreva o título (ou a ideia) do vídeo." }, { status: 400 });
 
   const usados = await usadosNoMes(user.id, "seo");
@@ -28,11 +24,11 @@ export async function POST(req: NextRequest) {
       // os títulos que mais deram views no canal do próprio criador entram como exemplo
       const meus = await videosDoMeuCanal(user.id).catch(() => null);
       const meusVirais = (meus ?? []).sort((a, c) => c.views - a.views).slice(0, 10).map((v) => v.titulo);
-      const r = await sugerirTitulos({ mapa: mapa.nome, titulo, sobre, meusVirais });
+      const r = await sugerirTitulos({ titulo, meusVirais });
       await registrarUso(user.id, "seo", r);
       return NextResponse.json({ titulos: r.dados.titulos, usados: usados + 1 });
     }
-    const r = await completarSeo({ mapa: mapa.nome, titulo, sobre });
+    const r = await completarSeo({ titulo });
     await registrarUso(user.id, "seo", r);
     return NextResponse.json({ ...r.dados, usados: usados + 1 });
   } catch (e) {
