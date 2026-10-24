@@ -7,8 +7,8 @@ import { anotarSaldo, coletarTodas } from "@/lib/coleta/coletar";
 import { MAPAS } from "@/lib/ia/mapas";
 import { resolverCanal } from "@/lib/ideias";
 import { gerarNotificacoes, notificar } from "@/lib/notificacoes";
-import { formatarReais } from "@/lib/pagamento";
-import { nomeMes } from "@/lib/datas";
+import { formatarReais, inicioDaSemana } from "@/lib/pagamento";
+import { hojeBrasil, nomeMes } from "@/lib/datas";
 
 async function gestor() {
   const ctx = await usuarioAtual();
@@ -140,12 +140,13 @@ export async function removerCanal(f: FormData) {
 export async function salvarMapaSemana(f: FormData) {
   const { sb } = await gestor();
   const criador = texto(f, "criador");
-  const semana = texto(f, "semana");
+  // vale desta semana em diante, todas as semanas, até o gestor trocar ("" = sem mapa)
+  const semana = inicioDaSemana(hojeBrasil());
   const mapa = texto(f, "mapa");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(semana)) voltar(criador, "Semana inválida.");
-  if (!mapa) await sb.from("mapa_semana").delete().eq("criador_id", criador).eq("semana", semana);
-  else if (MAPAS.some((m) => m.id === mapa)) await sb.from("mapa_semana").upsert({ criador_id: criador, semana, mapa });
-  voltar(criador, "Mapa da semana salvo.");
+  if (mapa && !MAPAS.some((m) => m.id === mapa)) voltar(criador, "Mapa inválido.");
+  await sb.from("mapa_semana").delete().eq("criador_id", criador).gt("semana", semana);
+  await sb.from("mapa_semana").upsert({ criador_id: criador, semana, mapa });
+  voltar(criador, mapa ? "Mapa salvo: vale para todas as semanas até você trocar." : "Mapa tirado.");
 }
 
 export async function gerarAvisosAgora() {

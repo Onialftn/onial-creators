@@ -4,6 +4,7 @@ import { marcoMeta, videosBombando, type VideoSemana } from "@/lib/avisos";
 import { rankingDoMes, resumoDoMes } from "@/lib/dados";
 import { hojeBrasil, mesDe, nomeMes, somarDias } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
+import { mapasVigentes, type LinhaMapa } from "@/lib/mapa-semana";
 import { formatarNumero, formatarReais, inicioDaSemana } from "@/lib/pagamento";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
@@ -69,7 +70,8 @@ export async function gerarNotificacoes() {
   const semana = inicioDaSemana(hoje);
   const { data: criadores } = await admin.from("perfis").select("id, nome").eq("papel", "criador");
   const ranking = await rankingDoMes(sb, mes);
-  const { data: mapas } = await admin.from("mapa_semana").select("criador_id, mapa").eq("semana", semana);
+  const { data: linhasMapa } = await admin.from("mapa_semana").select("criador_id, semana, mapa").lte("semana", semana);
+  const vigentes = mapasVigentes((linhasMapa ?? []) as LinhaMapa[], semana);
   let n = 0;
 
   for (const c of criadores ?? []) {
@@ -81,7 +83,7 @@ export async function gerarNotificacoes() {
 
       // 1. dia de postar + mapa da semana
       if (hojeCal?.status === "hoje") {
-        const mapa = MAPAS.find((m) => m.id === mapas?.find((x) => x.criador_id === id)?.mapa);
+        const mapa = MAPAS.find((m) => m.id === vigentes.get(id));
         await avisar({
           tipo: "postar",
           titulo: mapa ? `Hoje é dia de postar no ${mapa.nome} ${mapa.emoji}` : "Hoje é dia de postar 🎬",

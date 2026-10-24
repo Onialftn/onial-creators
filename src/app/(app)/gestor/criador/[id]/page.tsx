@@ -5,15 +5,15 @@ import { Cabecalho, Calendario, CardsGanho, TituloCard } from "@/components/Bloc
 import { Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { REDES } from "@/lib/coleta/redes";
 import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
-import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi, somarDias } from "@/lib/datas";
+import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
+import { mapasVigentes, type LinhaMapa } from "@/lib/mapa-semana";
 import { formatarNumero, formatarReais, inicioDaSemana } from "@/lib/pagamento";
 import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapaSemana, salvarMeta } from "../../acoes";
 import { AbasGestor, Retorno } from "../../comum";
 
 export const maxDuration = 60;
 
-const dmy = (d: string) => `${d.slice(8)}/${d.slice(5, 7)}`;
 
 export default async function CriadorGestor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string }> }) {
   const { sb, perfil } = await usuarioAtual();
@@ -26,12 +26,11 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
   const hoje = hojeBrasil();
   const mes = mesDe(hoje);
   const semanaAtual = inicioDaSemana(hoje);
-  const proximaSemana = somarDias(semanaAtual, 7);
   const [r, { data: agenda }, { data: pags }, { data: mapas }, { data: contas }] = await Promise.all([
     resumoDoMes(sb, id, mes),
     sb.from("agenda_postagem").select("dia_semana").eq("criador_id", id),
     sb.from("pagamentos").select("*").eq("criador_id", id).order("mes", { ascending: false }),
-    sb.from("mapa_semana").select("semana, mapa").eq("criador_id", id).in("semana", [semanaAtual, proximaSemana]),
+    sb.from("mapa_semana").select("criador_id, semana, mapa").eq("criador_id", id).lte("semana", semanaAtual).order("semana", { ascending: false }).limit(1),
     sb.from("contas_plataforma").select("plataforma, nome_conta, ultima_coleta, erro").eq("criador_id", id),
   ]);
   const dias = new Set((agenda ?? []).map((a) => a.dia_semana as number));
@@ -88,19 +87,17 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
         </form>
         <div id="mapa" className="card flex flex-col gap-3">
           <TituloCard icone="bulb">Mapa da semana</TituloCard>
-          <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Vai na notificação &quot;Hoje é dia de postar&quot; das 6h e abre a aba Ideias nesse mapa.</p>
-          {[[semanaAtual, "Esta semana"], [proximaSemana, "Próxima semana"]].map(([sem, rot]) => (
-            <form key={sem} action={salvarMapaSemana} className="flex flex-wrap items-end gap-2">
-              <input type="hidden" name="criador" value={id} /><input type="hidden" name="semana" value={sem} />
-              <label className="flex min-w-0 flex-1 flex-col gap-1.5"><span className="label">{rot} ({dmy(sem)} a {dmy(somarDias(sem, 6))})</span>
-                <select className="input" name="mapa" defaultValue={mapas?.find((x) => x.semana === sem)?.mapa ?? ""}>
-                  <option value="">Sem mapa definido</option>
-                  {MAPAS.map((m) => <option key={m.id} value={m.id}>{m.emoji} {m.nome}</option>)}
-                </select>
-              </label>
-              <button className="btn-line" type="submit">Salvar</button>
-            </form>
-          ))}
+          <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Vale para todas as semanas até você trocar. Vai na notificação &quot;Hoje é dia de postar&quot; das 6h e abre a aba Ideias nesse mapa.</p>
+          <form action={salvarMapaSemana} className="flex flex-wrap items-end gap-2">
+            <input type="hidden" name="criador" value={id} />
+            <label className="flex min-w-0 flex-1 flex-col gap-1.5"><span className="label">MAPA</span>
+              <select className="input" name="mapa" defaultValue={mapasVigentes((mapas ?? []) as LinhaMapa[], semanaAtual).get(id) ?? ""}>
+                <option value="">Sem mapa definido</option>
+                {MAPAS.map((m) => <option key={m.id} value={m.id}>{m.emoji} {m.nome}</option>)}
+              </select>
+            </label>
+            <button className="btn-line" type="submit">Salvar</button>
+          </form>
         </div>
       </section>
 
