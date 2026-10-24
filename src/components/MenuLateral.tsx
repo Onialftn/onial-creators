@@ -40,7 +40,7 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
   { titulo: "Gestão", soGestor: true, itens: [{ href: "/gestor", rotulo: "Painel do gestor", icone: "gear" }] },
 ];
 
-export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush = null }: { nome: string; papel: "criador" | "gestor"; foto?: string | null; avisos?: Notificacao[]; chavePush?: string | null }) {
+export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush = null, precisamAjuda = 0 }: { nome: string; papel: "criador" | "gestor"; foto?: string | null; avisos?: Notificacao[]; chavePush?: string | null; precisamAjuda?: number }) {
   const rota = usePathname();
   const [claro, setClaro] = useState(false);
   useEffect(() => setClaro(document.documentElement.getAttribute("data-mode") === "light"), []);
@@ -75,8 +75,9 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
       </Link>
       <span className="display truncate" style={{ flex: 1, fontSize: 18, letterSpacing: 0.5, color: "var(--strong)", textAlign: "center" }}>{atual?.rotulo ?? "Onial Creators"}</span>
       <Sino itens={avisos} chavePublica={chavePush} compacto />
-      <button type="button" onClick={() => setAberto(true)} aria-label="Abrir menu" aria-expanded={aberto} aria-controls="menu-principal" className="flex items-center justify-center" style={{ width: 44, height: 44, borderRadius: 8, border: "1px solid var(--line)", background: "var(--panel)", color: "var(--fg)" }}>
+      <button type="button" onClick={() => setAberto(true)} aria-label="Abrir menu" aria-expanded={aberto} aria-controls="menu-principal" className="relative flex items-center justify-center" style={{ width: 44, height: 44, borderRadius: 8, border: "1px solid var(--line)", background: "var(--panel)", color: "var(--fg)" }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
+        {precisamAjuda > 0 && <span className="bolinha-ajuda" style={{ position: "absolute", top: -4, right: -4 }} aria-label="Alguém precisa de ajuda para gravar" />}
       </button>
     </header>
     <div className={`menu-fundo ${aberto ? "menu-fundo-on" : ""}`} onClick={() => setAberto(false)} aria-hidden="true" />
@@ -98,6 +99,7 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
               <Icone nome={i.icone} />
               {i.rotulo}
               {i.emBreve && <span className="menu-selo">EM BREVE</span>}
+              {i.href === "/gravar" && precisamAjuda > 0 && <span className="bolinha-ajuda" style={{ marginLeft: "auto" }} title={`${precisamAjuda} ${precisamAjuda === 1 ? "pedido precisa" : "pedidos precisam"} de ajuda`} aria-label={`${precisamAjuda} ${precisamAjuda === 1 ? "pedido precisa" : "pedidos precisam"} de ajuda`} />}
             </Link>
           ))}
         </nav>
