@@ -9,6 +9,7 @@ import { geminiConfigurado } from "@/lib/ia/gemini";
 import { MAPAS } from "@/lib/ia/mapas";
 import { LIMITE_MES, inicioDoMes } from "@/lib/ia/uso";
 import { pushConfigurado } from "@/lib/notificacoes";
+import { marcarLiberado } from "@/app/acoes/liberacao";
 import { adicionarCanal, criarCriador, gerarAvisosAgora, removerCanal } from "../acoes";
 import { AbasGestor, Retorno } from "../comum";
 
@@ -22,11 +23,14 @@ export default async function ConfigGestor({ searchParams }: { searchParams: Pro
   const { sb, perfil } = await usuarioAtual();
   if (perfil.papel !== "gestor") redirect("/");
   const { ok, erro } = await searchParams;
-  const [{ data: criadores }, { data: usoIa }, { data: refs }] = await Promise.all([
+  const [{ data: criadores }, { data: usoIa }, { data: refs }, { data: libs }] = await Promise.all([
     sb.from("perfis").select("id, nome").eq("papel", "criador").order("nome"),
     sb.from("uso_ia").select("criador_id, tipo, custo_usd").gte("criado_em", inicioDoMes()).limit(5000),
     sb.from("canais_referencia").select("id, mapa, tema, nome, canal_id").order("criado_em"),
+    sb.from("liberacoes").select("criador_id, rede, usuario, liberado, pedido_em").order("liberado").order("pedido_em", { ascending: false }),
   ]);
+  const nomeDe = new Map([...(criadores ?? []), { id: perfil.id, nome: perfil.nome }].map((c) => [c.id, c.nome]));
+  const pendentes = (libs ?? []).filter((l) => !l.liberado).length;
   const pessoas = [...(criadores ?? []), { id: perfil.id, nome: `${perfil.nome} (gestor)` }];
   const usoDe = (id: string, tipo?: string) => (usoIa ?? []).filter((u) => u.criador_id === id && (!tipo || u.tipo === tipo));
   const dolar = (v: number) => `US$ ${v.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -50,6 +54,46 @@ export default async function ConfigGestor({ searchParams }: { searchParams: Pro
           <div className="tile flex items-center gap-3"><Icone nome="zap" /><span className="flex-1">Notificações no celular</span><Status ok={pushConfigurado()} /></div>
         </div>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>A coleta de views roda sozinha todo dia às 6h. O TikTok segue no modo de teste (Sandbox) até a aprovação.</p>
+      </section>
+
+      <section id="liberar" className="card flex flex-col gap-3">
+        <TituloCard icone="users" direita={pendentes ? `${pendentes} esperando` : undefined}>Liberar Instagram e TikTok</TituloCard>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Enquanto os apps estão em modo de teste, cada criador precisa ser liberado uma vez. Ele manda o @ em Minhas redes e aparece aqui.</p>
+        <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", fontSize: 13 }}>
+          <div className="tile flex flex-col gap-1.5">
+            <b className="flex items-center gap-2" style={{ color: "var(--strong)" }}><LogoPlataforma p="instagram" tamanho={20} />Instagram</b>
+            <span style={{ color: "var(--text2)" }}>Abra o <a href="https://developers.facebook.com/apps/" target="_blank" rel="noreferrer" style={{ color: "var(--accent-text)", textDecoration: "underline" }}>painel da Meta</a> → app do Onial → <b>Funções do app → Funções → Adicionar pessoas → Testador do Instagram</b> → digite o @ → depois marque aqui.</span>
+          </div>
+          <div className="tile flex flex-col gap-1.5">
+            <b className="flex items-center gap-2" style={{ color: "var(--strong)" }}><LogoPlataforma p="tiktok" tamanho={20} />TikTok</b>
+            <span style={{ color: "var(--text2)" }}>Abra o <a href="https://developers.tiktok.com/apps/" target="_blank" rel="noreferrer" style={{ color: "var(--accent-text)", textDecoration: "underline" }}>painel do TikTok</a> → app do Onial → <b>Sandbox → Target users</b> → adicione a conta → depois marque aqui.</span>
+          </div>
+        </div>
+        {(libs ?? []).length === 0 ? (
+          <p style={{ margin: 0, color: "var(--muted)" }}>Nenhum pedido ainda.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="table" style={{ minWidth: 520 }}>
+              <thead><tr><th scope="col">CRIADOR</th><th scope="col">REDE</th><th scope="col">USUÁRIO</th><th scope="col">SITUAÇÃO</th><th scope="col"></th></tr></thead>
+              <tbody>
+                {(libs ?? []).map((l) => (
+                  <tr key={l.criador_id + l.rede}>
+                    <td style={{ color: "var(--strong)", fontWeight: 600 }}>{nomeDe.get(l.criador_id) ?? "?"}</td>
+                    <td><span className="flex items-center gap-2"><LogoPlataforma p={l.rede as "instagram" | "tiktok"} tamanho={20} />{l.rede === "instagram" ? "Instagram" : "TikTok"}</span></td>
+                    <td><a href={l.rede === "instagram" ? `https://www.instagram.com/${l.usuario}/` : `https://www.tiktok.com/@${l.usuario}`} target="_blank" rel="noreferrer" style={{ color: "var(--accent-text)", userSelect: "all" }}>@{l.usuario}</a></td>
+                    <td>{l.liberado ? <span className="pill-ok">Liberado</span> : <span className="pill-warn">Esperando você</span>}</td>
+                    <td>
+                      <form action={marcarLiberado}>
+                        <input type="hidden" name="criador" value={l.criador_id} /><input type="hidden" name="rede" value={l.rede} /><input type="hidden" name="sim" value={l.liberado ? "0" : "1"} />
+                        <button className={l.liberado ? "btn-line" : "btn-gold"} type="submit" style={{ minHeight: 34, fontSize: 13 }}>{l.liberado ? "Desfazer" : "Já liberei"}</button>
+                      </form>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
 
       <section className="card flex flex-col gap-3">
