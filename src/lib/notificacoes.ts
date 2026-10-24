@@ -2,10 +2,9 @@ import "server-only";
 import webpush from "web-push";
 import { marcoMeta, videosBombando, type VideoSemana } from "@/lib/avisos";
 import { rankingDoMes, resumoDoMes } from "@/lib/dados";
-import { hojeBrasil, mesDe, nomeMes, somarDias } from "@/lib/datas";
+import { diaDaSemana, hojeBrasil, mesDe, nomeMes, somarDias } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
-import { mapasVigentes, type LinhaMapa } from "@/lib/mapa-semana";
-import { formatarNumero, formatarReais, inicioDaSemana } from "@/lib/pagamento";
+import { formatarNumero, formatarReais } from "@/lib/pagamento";
 import { supabaseAdmin } from "@/lib/supabase/server";
 
 export interface Aviso { tipo: string; titulo: string; texto?: string; link?: string; chave: string }
@@ -67,11 +66,9 @@ export async function gerarNotificacoes() {
   const sb = admin as unknown as Parameters<typeof resumoDoMes>[0];
   const hoje = hojeBrasil();
   const mes = mesDe(hoje);
-  const semana = inicioDaSemana(hoje);
   const { data: criadores } = await admin.from("perfis").select("id, nome").eq("papel", "criador");
   const ranking = await rankingDoMes(sb, mes);
-  const { data: linhasMapa } = await admin.from("mapa_semana").select("criador_id, semana, mapa").lte("semana", semana);
-  const vigentes = mapasVigentes((linhasMapa ?? []) as LinhaMapa[], semana);
+  const { data: mapasHoje } = await admin.from("mapa_dia").select("criador_id, mapa").eq("dia_semana", diaDaSemana(hoje));
   let n = 0;
 
   for (const c of criadores ?? []) {
@@ -83,11 +80,11 @@ export async function gerarNotificacoes() {
 
       // 1. dia de postar + mapa da semana
       if (hojeCal?.status === "hoje") {
-        const mapa = MAPAS.find((m) => m.id === vigentes.get(id));
+        const mapa = MAPAS.find((m) => m.id === mapasHoje?.find((x) => x.criador_id === id)?.mapa);
         await avisar({
           tipo: "postar",
           titulo: mapa ? `Hoje é dia de postar no ${mapa.nome} ${mapa.emoji}` : "Hoje é dia de postar 🎬",
-          texto: mapa ? "Esse é o mapa da sua semana. Veja os vídeos em alta em Ideias & roteiros." : "Veja os vídeos em alta em Ideias & roteiros para se inspirar.",
+          texto: mapa ? "Esse é o mapa de hoje. Veja os vídeos em alta em Ideias & roteiros." : "Veja os vídeos em alta em Ideias & roteiros para se inspirar.",
           link: mapa ? `/ideias?mapa=${mapa.id}` : "/ideias",
           chave: `postar:${hoje}`,
         });

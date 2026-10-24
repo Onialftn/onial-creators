@@ -7,9 +7,8 @@ import { REDES } from "@/lib/coleta/redes";
 import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
-import { mapasVigentes, type LinhaMapa } from "@/lib/mapa-semana";
-import { formatarNumero, formatarReais, inicioDaSemana } from "@/lib/pagamento";
-import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapaSemana, salvarMeta } from "../../acoes";
+import { formatarNumero, formatarReais } from "@/lib/pagamento";
+import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta } from "../../acoes";
 import { AbasGestor, Retorno } from "../../comum";
 
 export const maxDuration = 60;
@@ -25,12 +24,11 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
 
   const hoje = hojeBrasil();
   const mes = mesDe(hoje);
-  const semanaAtual = inicioDaSemana(hoje);
   const [r, { data: agenda }, { data: pags }, { data: mapas }, { data: contas }] = await Promise.all([
     resumoDoMes(sb, id, mes),
     sb.from("agenda_postagem").select("dia_semana").eq("criador_id", id),
     sb.from("pagamentos").select("*").eq("criador_id", id).order("mes", { ascending: false }),
-    sb.from("mapa_semana").select("criador_id, semana, mapa").eq("criador_id", id).lte("semana", semanaAtual).order("semana", { ascending: false }).limit(1),
+    sb.from("mapa_dia").select("dia_semana, mapa").eq("criador_id", id),
     sb.from("contas_plataforma").select("plataforma, nome_conta, ultima_coleta, erro").eq("criador_id", id),
   ]);
   const dias = new Set((agenda ?? []).map((a) => a.dia_semana as number));
@@ -86,17 +84,20 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
           <button className="btn-gold" type="submit">Salvar dias (escolha 5)</button>
         </form>
         <div id="mapa" className="card flex flex-col gap-3">
-          <TituloCard icone="bulb">Mapa da semana</TituloCard>
-          <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Vale para todas as semanas até você trocar. Vai na notificação &quot;Hoje é dia de postar&quot; das 6h e abre a aba Ideias nesse mapa.</p>
-          <form action={salvarMapaSemana} className="flex flex-wrap items-end gap-2">
+          <TituloCard icone="bulb">Mapa de cada dia</TituloCard>
+          <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Vale toda semana até você trocar. Vai na notificação &quot;Hoje é dia de postar&quot; das 6h e abre a aba Ideias nesse mapa.</p>
+          <form action={salvarMapasDia} className="flex flex-col gap-2">
             <input type="hidden" name="criador" value={id} />
-            <label className="flex min-w-0 flex-1 flex-col gap-1.5"><span className="label">MAPA</span>
-              <select className="input" name="mapa" defaultValue={mapasVigentes((mapas ?? []) as LinhaMapa[], semanaAtual).get(id) ?? ""}>
-                <option value="">Sem mapa definido</option>
-                {MAPAS.map((m) => <option key={m.id} value={m.id}>{m.emoji} {m.nome}</option>)}
-              </select>
-            </label>
-            <button className="btn-line" type="submit">Salvar</button>
+            {DIAS_NOMES.map((n, i) => (
+              <label key={n} className="flex items-center gap-3">
+                <span style={{ width: 92, flex: "none", color: dias.has(i + 1) ? "var(--strong)" : "var(--muted)", fontWeight: 600, fontSize: 14 }}>{n}{!dias.has(i + 1) && <span style={{ display: "block", fontWeight: 400, fontSize: 11 }}>folga</span>}</span>
+                <select className="input" name={`mapa_${i + 1}`} defaultValue={(mapas ?? []).find((m) => m.dia_semana === i + 1)?.mapa ?? ""} style={{ minHeight: 40 }}>
+                  <option value="">Sem mapa</option>
+                  {MAPAS.map((m) => <option key={m.id} value={m.id}>{m.emoji} {m.nome}</option>)}
+                </select>
+              </label>
+            ))}
+            <button className="btn-gold" type="submit" style={{ alignSelf: "flex-start" }}>Salvar mapas</button>
           </form>
         </div>
       </section>

@@ -41,7 +41,7 @@ Todo o texto do site é em português do Brasil.
 
 ## Banco de dados (Fase 1)
 
-perfis, contas_plataforma, videos, views_diarias, agenda_postagem, dias_postagem, metas, pagamentos. Views ficam por vídeo e por dia; dinheiro é sempre calculado a partir delas.
+perfis, contas_plataforma, videos, views_diarias, agenda_postagem, dias_postagem, metas, pagamentos. Mapa de cada dia da semana por criador: tabela mapa_dia (vale toda semana até o gestor trocar). Views ficam por vídeo e por dia; dinheiro é sempre calculado a partir delas.
 
 ## Integrações
 

@@ -7,8 +7,8 @@ import { anotarSaldo, coletarTodas } from "@/lib/coleta/coletar";
 import { MAPAS } from "@/lib/ia/mapas";
 import { resolverCanal } from "@/lib/ideias";
 import { gerarNotificacoes, notificar } from "@/lib/notificacoes";
-import { formatarReais, inicioDaSemana } from "@/lib/pagamento";
-import { hojeBrasil, nomeMes } from "@/lib/datas";
+import { formatarReais } from "@/lib/pagamento";
+import { nomeMes } from "@/lib/datas";
 
 async function gestor() {
   const ctx = await usuarioAtual();
@@ -137,16 +137,16 @@ export async function removerCanal(f: FormData) {
   redirect("/gestor/config?ok=Canal%20removido.#referencias");
 }
 
-export async function salvarMapaSemana(f: FormData) {
+/** Mapa de cada dia da semana (vale toda semana até o gestor trocar). */
+export async function salvarMapasDia(f: FormData) {
   const { sb } = await gestor();
   const criador = texto(f, "criador");
-  // vale desta semana em diante, todas as semanas, até o gestor trocar ("" = sem mapa)
-  const semana = inicioDaSemana(hojeBrasil());
-  const mapa = texto(f, "mapa");
-  if (mapa && !MAPAS.some((m) => m.id === mapa)) voltar(criador, "Mapa inválido.");
-  await sb.from("mapa_semana").delete().eq("criador_id", criador).gt("semana", semana);
-  await sb.from("mapa_semana").upsert({ criador_id: criador, semana, mapa });
-  voltar(criador, mapa ? "Mapa salvo: vale para todas as semanas até você trocar." : "Mapa tirado.");
+  for (let d = 1; d <= 7; d++) {
+    const mapa = texto(f, `mapa_${d}`);
+    if (!mapa) await sb.from("mapa_dia").delete().eq("criador_id", criador).eq("dia_semana", d);
+    else if (MAPAS.some((m) => m.id === mapa)) await sb.from("mapa_dia").upsert({ criador_id: criador, dia_semana: d, mapa });
+  }
+  voltar(criador, "Mapas salvos: valem toda semana até você trocar.");
 }
 
 export async function gerarAvisosAgora() {

@@ -7,8 +7,7 @@ import { REDES } from "@/lib/coleta/redes";
 import { resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { hojeBrasil, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { inicioDoMes } from "@/lib/ia/uso";
-import { formatarNumero, formatarReais, inicioDaSemana } from "@/lib/pagamento";
-import { mapasVigentes, type LinhaMapa } from "@/lib/mapa-semana";
+import { formatarNumero, formatarReais } from "@/lib/pagamento";
 import { coletarAgora } from "./acoes";
 import { AbasGestor, Numero, Retorno } from "./comum";
 
@@ -20,14 +19,13 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
   const { ok, erro } = await searchParams;
   const hoje = hojeBrasil();
   const mes = mesDe(hoje);
-  const semana = inicioDaSemana(hoje);
 
   const { data: criadores } = await sb.from("perfis").select("id, nome, foto_url").eq("papel", "criador").order("nome");
   const lista = criadores ?? [];
   const [resumos, { data: contas }, { data: mapas }, { data: pags }, { data: usoIa }, ultima] = await Promise.all([
     Promise.all(lista.map((cr) => resumoDoMes(sb, cr.id, mes))),
     sb.from("contas_plataforma").select("criador_id, plataforma, erro"),
-    sb.from("mapa_semana").select("criador_id, semana, mapa").lte("semana", semana),
+    sb.from("mapa_dia").select("criador_id"),
     sb.from("pagamentos").select("criador_id, mes, total_centavos").eq("status", "em_aberto"),
     sb.from("uso_ia").select("custo_usd").gte("criado_em", inicioDoMes()).limit(5000),
     sb.from("contas_plataforma").select("ultima_coleta").not("ultima_coleta", "is", null).order("ultima_coleta", { ascending: false }).limit(1).maybeSingle(),
@@ -37,7 +35,6 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
   const totalMes = resumos.reduce((a, r) => a + r.pagamento.totalCentavos, 0);
   const aPagar = (pags ?? []).reduce((a, p) => a + Number(p.total_centavos), 0);
   const custoIa = (usoIa ?? []).reduce((a, u) => a + Number(u.custo_usd), 0);
-  const vigentes = mapasVigentes((mapas ?? []) as LinhaMapa[], semana);
   const contaDe = (id: string, r: string) => (contas ?? []).find((c) => c.criador_id === id && c.plataforma === r);
 
   // o que precisa da atenção do gestor
@@ -47,7 +44,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
     const primeiro = cr.nome.split(" ")[0];
     for (const rede of REDES) if (contaDe(cr.id, rede)?.erro) atencao.push({ texto: `${primeiro}: ${NOME_PLATAFORMA[rede]} com problema na coleta`, link: `/gestor/criador/${cr.id}`, nivel: "warn" });
     if (!r.meta) atencao.push({ texto: `${primeiro} está sem meta em ${nomeMes(mes).split(" ")[0].toLowerCase()}`, link: `/gestor/criador/${cr.id}#meta`, nivel: "warn" });
-    if (!vigentes.has(cr.id)) atencao.push({ texto: `${primeiro} está sem mapa da semana`, link: `/gestor/criador/${cr.id}#mapa`, nivel: "info" });
+    if (!(mapas ?? []).some((m) => m.criador_id === cr.id)) atencao.push({ texto: `${primeiro} está sem mapa dos dias`, link: `/gestor/criador/${cr.id}#mapa`, nivel: "info" });
     if (r.aRepor > 0) atencao.push({ texto: `${primeiro} tem ${r.aRepor} ${r.aRepor === 1 ? "dia" : "dias"} para repor até domingo`, link: `/gestor/criador/${cr.id}#calendario`, nivel: "info" });
     if (!REDES.some((rede) => contaDe(cr.id, rede))) atencao.push({ texto: `${primeiro} ainda não conectou nenhuma rede`, link: `/gestor/criador/${cr.id}`, nivel: "info" });
   });
