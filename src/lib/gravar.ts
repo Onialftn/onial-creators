@@ -1,6 +1,6 @@
 /** Gravações: regras simples da agenda (sem banco), para poder testar. */
 
-export const DURACOES = [30, 45, 60, 90, 120];
+export const DURACOES = [30, 45, 60];
 export const MAX_AJUDANTES = 5;
 /** horários de 30 em 30 minutos, das 08:00 às 23:30 */
 export const HORARIOS = Array.from({ length: 32 }, (_, i) => `${String(8 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
