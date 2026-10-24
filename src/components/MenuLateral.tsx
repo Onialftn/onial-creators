@@ -15,6 +15,8 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
       { href: "/", rotulo: "Dashboard", icone: "dash" },
       { href: "/dias", rotulo: "Dias de postagem", icone: "cal" },
       { href: "/metas", rotulo: "Metas de views", icone: "target" },
+      { href: "/ranking", rotulo: "Ranking do mês", icone: "trophy" },
+      { href: "/gravar", rotulo: "Gravar juntos", icone: "users" },
     ],
   },
   {
@@ -28,20 +30,13 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
     ],
   },
   {
-    titulo: "Equipe",
-    itens: [
-      { href: "/ranking", rotulo: "Ranking do mês", icone: "trophy" },
-      { href: "/gravar", rotulo: "Gravar juntos", icone: "users" },
-      { href: "/coletiva", rotulo: "Meta coletiva", icone: "users", emBreve: true },
-    ],
-  },
-  {
     titulo: "Informações",
     itens: [
       { href: "/pagamentos", rotulo: "Pagamentos", icone: "wallet" },
       { href: "/redes", rotulo: "Minhas redes", icone: "zap" },
     ],
   },
+  { titulo: "Em breve", itens: [{ href: "/coletiva", rotulo: "Meta coletiva", icone: "users", emBreve: true }] },
   { titulo: "Gestão", soGestor: true, itens: [{ href: "/gestor", rotulo: "Painel do gestor", icone: "gear" }] },
 ];
 

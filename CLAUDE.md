@@ -11,7 +11,7 @@ Todo o texto do site é em português do Brasil.
 - Fundo preto, destaque dourado da coroa do logo (`#E8B014`), texto claro. Modo claro e escuro com os mesmos tokens do protótipo (`--bg`, `--panel`, `--line`, `--fg`, `--muted`, `--accent-text`, `--ok`, `--warn`...).
 - Fontes: Rajdhani (títulos, números) e Inter (texto).
 - Botão dourado sempre com texto escuro.
-- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views), OTIMIZAÇÕES (Ideias & roteiros, Limpar narração, Avaliar vídeo, SEO para vídeos, Pomodoro), EQUIPE (Ranking do mês, Gravar juntos, Meta coletiva com selo EM BREVE), INFORMAÇÕES (Pagamentos, Minhas redes). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
+- Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Ranking do mês, Gravar juntos), OTIMIZAÇÕES (Ideias & roteiros, Limpar narração, Avaliar vídeo, SEO para vídeos, Pomodoro), INFORMAÇÕES (Pagamentos, Minhas redes), EM BREVE (Meta coletiva). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
 - No celular: barra fixa no topo (logo, BETA, nome da aba e botão ☰) e o menu abre pela lateral (decisão do dono).
 - A Dashboard é só para informações rápidas. Funções novas ganham aba própria, nunca entram na Dashboard.
 
