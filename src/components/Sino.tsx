@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { limparNotificacoes, marcarLidas } from "@/app/acoes/notificacoes";
 import { Icone } from "./Icone";
@@ -73,7 +74,16 @@ export function Sino({ itens: iniciais, chavePublica, compacto = false }: { iten
   const [aberto, setAberto] = useState(false);
   const [itens, setItens] = useState(iniciais);
   const [, iniciar] = useTransition();
+  const router = useRouter();
   useEffect(() => setItens(iniciais), [iniciais]);
+  // busca notificações novas a cada 1 minuto (e quando a pessoa volta para a aba), sem precisar recarregar a página
+  useEffect(() => {
+    if (compacto) return; // o menu tem dois sinos (computador e celular): só um busca
+    const buscar = () => { if (document.visibilityState === "visible") router.refresh(); };
+    const t = setInterval(buscar, 60_000);
+    document.addEventListener("visibilitychange", buscar);
+    return () => { clearInterval(t); document.removeEventListener("visibilitychange", buscar); };
+  }, [router, compacto]);
   const naoLidas = itens.filter((i) => !i.lida).length;
   function lidas(ids?: string[]) {
     setItens((l) => l.map((i) => (!ids || ids.includes(i.id) ? { ...i, lida: true } : i)));

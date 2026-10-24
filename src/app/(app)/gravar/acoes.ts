@@ -79,7 +79,7 @@ export async function cancelarPedido(id: string): Promise<Retorno> {
   if (p.criador_id !== perfil.id && perfil.papel !== "gestor") return { erro: "Só quem pediu pode cancelar." };
   if (p.status === "feito") return { erro: "Essa gravação já foi confirmada." };
   await admin.from("pedidos_ajuda").update({ status: "cancelado" }).eq("id", id);
-  await Promise.all(ajudas.map((a) => notificar(a.ajudante_id, { tipo: "ajuda", titulo: "Gravação cancelada", texto: `A gravação de ${diaBr(p.dia)}, ${faixaHorario(p.hora, p.duracao_min)} foi cancelada.`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:cancelado:${id}` }, admin).catch(() => undefined)));
+  await Promise.all(ajudas.map((a) => notificar(a.ajudante_id, { tipo: "ajuda", titulo: `${p.criador_id === perfil.id ? primeiro(perfil.nome) : "O gestor"} cancelou a gravação ❌`, texto: `A gravação de ${diaBr(p.dia)}, ${faixaHorario(p.hora, p.duracao_min)} em que você ia ajudar foi cancelada. Não precisa mais ir.`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:cancelado:${id}` }, admin).catch(() => undefined)));
   atualizar();
   return { ok: "Pedido cancelado." };
 }
