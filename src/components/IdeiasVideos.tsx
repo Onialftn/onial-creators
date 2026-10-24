@@ -218,7 +218,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
             onTouchStart={(e) => (toque.current = e.touches[0].clientY)}
             onTouchEnd={(e) => { if (toque.current === null) return; const d = toque.current - e.changedTouches[0].clientY; toque.current = null; if (Math.abs(d) > 60) pular(d > 0 ? 1 : -1); }}>
             <div style={{ flex: "1 1 auto", maxWidth: 340, aspectRatio: "9/16", borderRadius: 10, overflow: "hidden", background: "#000" }}>
-              <iframe key={assistir.id} src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&playsinline=1&rel=0${celular ? "&mute=1" : ""}`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
+              <iframe key={assistir.id} src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&playsinline=1&rel=0&hl=pt-BR&cc_lang_pref=pt${celular ? "&mute=1" : ""}`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
             </div>
             {fila.length > 1 && (
               <div className="flex flex-none flex-col items-center gap-3">
