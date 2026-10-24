@@ -1,9 +1,9 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
-import { aceitarAjuda, cancelarPedido, confirmarGravacao, desistirAjuda, pedirAjuda } from "@/app/(app)/gravar/acoes";
+import { aceitarAjuda, cancelarPedido, confirmarGravacao, desistirAjuda, pedirAjuda, responderSugestao, sugerirHorario } from "@/app/(app)/gravar/acoes";
 import { DIAS_CURTOS, DIAS_NOMES, diaDaSemana, intervalo, mesAnterior, nomeMes, primeiroDia, somarDias, ultimoDia } from "@/lib/datas";
-import { DURACOES, HORARIOS, MAX_AJUDANTES, ajudasConfirmadas, faixaHorario, situacao, type Ajuda, type Pedido, type Situacao } from "@/lib/gravar";
+import { DURACOES, HORARIOS, MAX_AJUDANTES, ajudasConfirmadas, faixaHorario, situacao, type Ajuda, type Pedido, type Situacao, type Sugestao } from "@/lib/gravar";
 import { MAPAS } from "@/lib/ia/mapas";
 import { BONUS_AJUDA_CENTAVOS, formatarReais } from "@/lib/pagamento";
 import { Avatar } from "./Avatar";
@@ -74,7 +74,33 @@ function NovoPedido({ dia, aoTerminar }: { dia: string; aoTerminar: (msg: string
   );
 }
 
-function CartaoPedido({ p, ajudas, pessoas, eu, aviso }: { p: Pedido; ajudas: Ajuda[]; pessoas: Map<string, Pessoa>; eu: { id: string; gestor: boolean }; aviso: (r: { ok?: string; erro?: string }) => void }) {
+/** Formulário de sugerir outro dia e horário. */
+function SugerirHorario({ p, hoje, aoTerminar }: { p: Pedido; hoje: string; aoTerminar: (r: { ok?: string; erro?: string }) => void }) {
+  const [dia, setDia] = useState(p.dia);
+  const [hora, setHora] = useState(p.hora.slice(0, 5));
+  const [mensagem, setMensagem] = useState("");
+  const [erro, setErro] = useState("");
+  const [enviando, iniciar] = useTransition();
+  return (
+    <div className="flex flex-col gap-2" style={{ paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+      <span className="label">SUGERIR OUTRO HORÁRIO</span>
+      <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(140px,1fr))" }}>
+        <input className="input" type="date" min={hoje} value={dia} onChange={(e) => setDia(e.target.value)} aria-label="Dia" />
+        <select className="input" value={hora} onChange={(e) => setHora(e.target.value)} aria-label="Horário">{HORARIOS.map((h) => <option key={h}>{h}</option>)}</select>
+      </div>
+      <input className="input" maxLength={200} value={mensagem} onChange={(e) => setMensagem(e.target.value)} placeholder="Recado (opcional): ex.: nesse horário eu consigo" />
+      <div className="flex flex-wrap gap-2">
+        <button className="btn-gold" type="button" disabled={enviando} onClick={() => { setErro(""); iniciar(async () => { const r = await sugerirHorario(p.id, { dia, hora, mensagem }); if (r.erro) setErro(r.erro); else aoTerminar(r); }); }}>{enviando ? "Enviando..." : "Enviar sugestão"}</button>
+        <button className="btn-line" type="button" onClick={() => aoTerminar({})}>Voltar</button>
+      </div>
+      {erro && <p role="alert" style={{ margin: 0, color: "var(--warn)", fontSize: 14 }}>{erro}</p>}
+    </div>
+  );
+}
+
+function CartaoPedido({ p, ajudas, sugestoes, pessoas, eu, hoje, aviso }: { p: Pedido; ajudas: Ajuda[]; sugestoes: Sugestao[]; pessoas: Map<string, Pessoa>; eu: { id: string; gestor: boolean }; hoje: string; aviso: (r: { ok?: string; erro?: string }) => void }) {
+  const [sugerindo, setSugerindo] = useState(false);
+  const dele = sugestoes.filter((s) => s.pedido_id === p.id);
   const doPedido = ajudas.filter((a) => a.pedido_id === p.id);
   const sit = situacao(p, doPedido.length);
   const dono = pessoas.get(p.criador_id);
@@ -128,10 +154,37 @@ function CartaoPedido({ p, ajudas, pessoas, eu, aviso }: { p: Pedido; ajudas: Aj
       {sit === "confirmar" && !manda && ajudo && <span style={{ fontSize: 13, color: "var(--muted)" }}>Esperando {dono?.nome.split(" ")[0] ?? "quem pediu"} confirmar para o bônus entrar.</span>}
       {sit === "feito" && ajudo && <span style={{ fontSize: 13, color: doPedido.find((a) => a.ajudante_id === eu.id)?.presente ? "var(--ok)" : "var(--warn)" }}>{doPedido.find((a) => a.ajudante_id === eu.id)?.presente ? `+${formatarReais(BONUS_AJUDA_CENTAVOS)} no seu total do mês` : "Você não foi marcado como presente nessa gravação."}</span>}
 
-      {(sit === "aberto" || sit === "lotado") && (
+      {dele.length > 0 && sit !== "cancelado" && sit !== "feito" && (
+        <div className="flex flex-col gap-2" style={{ paddingTop: 10, borderTop: "1px solid var(--line)" }}>
+          <span className="label">HORÁRIOS SUGERIDOS</span>
+          {dele.map((s) => {
+            const quem = pessoas.get(s.criador_id);
+            return (
+              <div key={s.id} className="flex flex-wrap items-center gap-2" style={{ fontSize: 14 }}>
+                <Avatar foto={quem?.foto_url ?? null} nome={quem?.nome ?? "?"} tamanho={24} />
+                <span className="flex-1" style={{ minWidth: 180 }}>
+                  <b style={{ color: "var(--strong)" }}>{s.criador_id === eu.id ? "Você" : quem?.nome.split(" ")[0]}</b> sugeriu <b style={{ color: "var(--strong)" }}>{s.dia.slice(8)}/{s.dia.slice(5, 7)} às {s.hora.slice(0, 5)}</b>
+                  {s.mensagem && <span style={{ color: "var(--muted)" }}> · “{s.mensagem}”</span>}
+                </span>
+                {manda && (sit === "aberto" || sit === "lotado") ? (
+                  <span className="flex gap-2">
+                    <button className="btn-gold" type="button" disabled={ocupado} style={{ minHeight: 34, fontSize: 13 }} onClick={() => fazer(() => responderSugestao(s.id, true))}>Aceitar</button>
+                    <button className="btn-line" type="button" disabled={ocupado} style={{ minHeight: 34, fontSize: 13 }} onClick={() => fazer(() => responderSugestao(s.id, false))}>Recusar</button>
+                  </span>
+                ) : s.criador_id === eu.id ? <span style={{ color: "var(--muted)", fontSize: 13 }}>Esperando resposta</span> : null}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {sugerindo && <SugerirHorario p={p} hoje={hoje} aoTerminar={(r) => { setSugerindo(false); if (r.ok || r.erro) aviso(r); }} />}
+
+      {(sit === "aberto" || sit === "lotado") && !sugerindo && (
         <div className="flex flex-wrap gap-2">
           {!meu && !ajudo && sit === "aberto" && <button className="btn-gold" type="button" disabled={ocupado} onClick={() => fazer(() => aceitarAjuda(p.id))}><Icone nome="users" tamanho={16} />Vou ajudar (+{formatarReais(BONUS_AJUDA_CENTAVOS)})</button>}
           {ajudo && <button className="btn-line" type="button" disabled={ocupado} onClick={() => fazer(() => desistirAjuda(p.id))}>Não vou poder</button>}
+          {!meu && <button className="btn-line" type="button" disabled={ocupado} onClick={() => setSugerindo(true)}><Icone nome="cal" tamanho={16} />Sugerir outro horário</button>}
           {manda && <button className="btn-line" type="button" disabled={ocupado} onClick={() => fazer(() => cancelarPedido(p.id))}>Cancelar pedido</button>}
         </div>
       )}
@@ -139,7 +192,7 @@ function CartaoPedido({ p, ajudas, pessoas, eu, aviso }: { p: Pedido; ajudas: Aj
   );
 }
 
-export function GravarJuntos({ mes, hoje, diaInicial, eu, pedidos, ajudas, pessoas: lista }: { mes: string; hoje: string; diaInicial: string | null; eu: { id: string; gestor: boolean }; pedidos: Pedido[]; ajudas: Ajuda[]; pessoas: Pessoa[] }) {
+export function GravarJuntos({ mes, hoje, diaInicial, eu, pedidos, ajudas, sugestoes, pessoas: lista }: { mes: string; hoje: string; diaInicial: string | null; eu: { id: string; gestor: boolean }; pedidos: Pedido[]; ajudas: Ajuda[]; sugestoes: Sugestao[]; pessoas: Pessoa[] }) {
   const inicial = diaInicial && diaInicial.startsWith(mes) ? diaInicial : hoje.startsWith(mes) ? hoje : primeiroDia(mes);
   const [dia, setDia] = useState(inicial);
   const [criando, setCriando] = useState(false);
@@ -216,7 +269,7 @@ export function GravarJuntos({ mes, hoje, diaInicial, eu, pedidos, ajudas, pesso
           {msg.erro && <p role="alert" style={{ margin: 0, color: "var(--warn)" }}>{msg.erro}</p>}
           {criando && <NovoPedido dia={dia} aoTerminar={(m) => { setCriando(false); setMsg({ ok: m }); }} />}
           {doDia.length === 0 && !criando && <p style={{ margin: 0, color: "var(--muted)" }}>{dia < hoje ? "Nenhuma gravação nesse dia." : "Ninguém pediu ajuda nesse dia ainda."}</p>}
-          {doDia.map((p) => <CartaoPedido key={p.id} p={p} ajudas={ajudas} pessoas={pessoas} eu={eu} aviso={setMsg} />)}
+          {doDia.map((p) => <CartaoPedido key={p.id} p={p} ajudas={ajudas} sugestoes={sugestoes} pessoas={pessoas} eu={eu} hoje={hoje} aviso={setMsg} />)}
         </section>
       </div>
     </>

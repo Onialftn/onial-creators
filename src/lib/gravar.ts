@@ -40,3 +40,5 @@ export function ajudasConfirmadas(pedidos: Pedido[], ajudas: Ajuda[], quem: stri
   const feitos = new Set(pedidos.filter((p) => p.status === "feito" && p.dia.startsWith(mes)).map((p) => p.id));
   return ajudas.filter((a) => a.ajudante_id === quem && a.presente && feitos.has(a.pedido_id)).length;
 }
+
+export interface Sugestao { id: string; pedido_id: string; criador_id: string; dia: string; hora: string; mensagem: string; status: "pendente" | "aceita" | "recusada" }

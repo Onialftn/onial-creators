@@ -100,3 +100,52 @@ export async function confirmarGravacao(id: string, presentes: string[]): Promis
   atualizar();
   return { ok: presentes.length ? "Gravação confirmada! O bônus entrou para quem ajudou." : "Gravação confirmada (ninguém marcado como presente)." };
 }
+
+/** Alguém da equipe sugere outro dia/horário para o pedido. */
+export async function sugerirHorario(id: string, d: { dia: string; hora: string; mensagem: string }): Promise<Retorno> {
+  const { perfil } = await usuarioAtual();
+  const { admin, p } = await carregar(id);
+  if (!p) return { erro: "Esse pedido não existe mais." };
+  if (p.criador_id === perfil.id) return { erro: "Esse pedido é seu: para mudar o horário, cancele e peça de novo." };
+  if (p.status !== "aberto") return { erro: "Esse pedido não está mais aberto." };
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.dia) || !HORARIOS.includes(d.hora)) return { erro: "Escolha o dia e o horário." };
+  if (inicioDe({ dia: d.dia, hora: d.hora }) <= new Date()) return { erro: "Esse horário já passou." };
+  if (d.dia === p.dia && d.hora === p.hora.slice(0, 5)) return { erro: "Esse já é o horário do pedido." };
+  const mensagem = String(d.mensagem ?? "").trim().slice(0, 200);
+  await admin.from("sugestoes_horario").update({ status: "recusada" }).eq("pedido_id", id).eq("criador_id", perfil.id).eq("status", "pendente");
+  const { data: s, error } = await admin.from("sugestoes_horario").insert({ pedido_id: id, criador_id: perfil.id, dia: d.dia, hora: d.hora, mensagem }).select("id").single();
+  if (error || !s) return { erro: "Não consegui enviar a sugestão. Tente de novo." };
+  await notificar(p.criador_id, { tipo: "ajuda", titulo: `${primeiro(perfil.nome)} sugeriu outro horário 🕒`, texto: `${diaBr(d.dia)} às ${d.hora} (em vez de ${diaBr(p.dia)}, ${p.hora.slice(0, 5)}).${mensagem ? ` "${mensagem}"` : ""}`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:sugestao:${s.id}` }, admin).catch(() => undefined);
+  atualizar();
+  return { ok: "Sugestão enviada! Se aceitar, você já entra como ajudante." };
+}
+
+/** Quem pediu aceita ou recusa a sugestão. Aceitar muda o horário e coloca quem sugeriu como ajudante. */
+export async function responderSugestao(sugestaoId: string, aceitar: boolean): Promise<Retorno> {
+  const { perfil } = await usuarioAtual();
+  const admin = supabaseAdmin();
+  const { data: s } = await admin.from("sugestoes_horario").select("*").eq("id", sugestaoId).maybeSingle();
+  if (!s || s.status !== "pendente") return { erro: "Essa sugestão já foi respondida." };
+  const { p, ajudas } = await carregar(s.pedido_id);
+  if (!p) return { erro: "Esse pedido não existe mais." };
+  if (p.criador_id !== perfil.id && perfil.papel !== "gestor") return { erro: "Só quem pediu pode responder." };
+  const hora = String(s.hora).slice(0, 5);
+  if (!aceitar) {
+    await admin.from("sugestoes_horario").update({ status: "recusada" }).eq("id", sugestaoId);
+    await notificar(s.criador_id, { tipo: "ajuda", titulo: "Sugestão de horário recusada", texto: `${primeiro(perfil.nome)} vai manter ${diaBr(p.dia)}, ${p.hora.slice(0, 5)}.`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:sugestao-nao:${sugestaoId}` }, admin).catch(() => undefined);
+    atualizar();
+    return { ok: "Sugestão recusada." };
+  }
+  if (p.status !== "aberto") return { erro: "Esse pedido não está mais aberto." };
+  if (inicioDe({ dia: s.dia, hora }) <= new Date()) return { erro: "O horário sugerido já passou." };
+  await admin.from("pedidos_ajuda").update({ dia: s.dia, hora }).eq("id", p.id);
+  await admin.from("sugestoes_horario").update({ status: "aceita" }).eq("id", sugestaoId);
+  await admin.from("sugestoes_horario").update({ status: "recusada" }).eq("pedido_id", p.id).eq("status", "pendente");
+  const jaAjuda = ajudas.some((a) => a.ajudante_id === s.criador_id);
+  if (!jaAjuda && ajudas.length < p.vagas) await admin.from("ajudas").insert({ pedido_id: p.id, ajudante_id: s.criador_id });
+  const novo = `${diaBr(s.dia)}, ${faixaHorario(hora, p.duracao_min)}`;
+  await notificar(s.criador_id, { tipo: "ajuda", titulo: "Seu horário foi aceito 🤝", texto: `A gravação ficou para ${novo}.${jaAjuda || ajudas.length < p.vagas ? " Você está na lista de ajudantes." : ""}`, link: `/gravar?dia=${s.dia}`, chave: `ajuda:sugestao-sim:${sugestaoId}` }, admin).catch(() => undefined);
+  await Promise.all(ajudas.filter((a) => a.ajudante_id !== s.criador_id).map((a) => notificar(a.ajudante_id, { tipo: "ajuda", titulo: "A gravação mudou de horário", texto: `Agora é ${novo}. Se não puder, toque em "Não vou poder".`, link: `/gravar?dia=${s.dia}`, chave: `ajuda:mudou:${sugestaoId}` }, admin).catch(() => undefined)));
+  atualizar();
+  return { ok: `Horário mudado para ${novo}.` };
+}
