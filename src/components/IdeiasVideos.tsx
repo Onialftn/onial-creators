@@ -119,9 +119,6 @@ function Traduzir({ v, mapa, iaPronta, pronta, inicio }: { v: VideoRef; mapa: st
 
 export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automatico, traduzidos: iniciais }: { mapa: string; tema: string; melhores: VideoRef[]; recentes: VideoRef[]; iaPronta: boolean; automatico: boolean; traduzidos: Record<string, Pronta> }) {
   const [assistir, setAssistirV] = useState<VideoRef | null>(null);
-  // no celular o navegador só deixa o vídeo começar sozinho se estiver sem som (a pessoa toca no alto-falante para ligar)
-  const [celular, setCelular] = useState(false);
-  useEffect(() => setCelular(window.matchMedia("(pointer: coarse)").matches), []);
   // lista da seção de onde o vídeo foi aberto: as setas ▲ ▼ andam por ela
   const [fila, setFila] = useState<VideoRef[]>([]);
   const setAssistir = (v: VideoRef | null, lista?: VideoRef[]) => { setAssistirV(v); if (lista) setFila(lista); };
@@ -218,7 +215,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
             onTouchStart={(e) => (toque.current = e.touches[0].clientY)}
             onTouchEnd={(e) => { if (toque.current === null) return; const d = toque.current - e.changedTouches[0].clientY; toque.current = null; if (Math.abs(d) > 60) pular(d > 0 ? 1 : -1); }}>
             <div style={{ flex: "1 1 auto", maxWidth: 340, aspectRatio: "9/16", borderRadius: 10, overflow: "hidden", background: "#000" }}>
-              <iframe key={assistir.id} src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&playsinline=1&rel=0&hl=pt-BR&cc_lang_pref=pt${celular ? "&mute=1" : ""}`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
+              <iframe key={assistir.id} src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&playsinline=1&rel=0&hl=pt-BR&cc_lang_pref=pt`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
             </div>
             {fila.length > 1 && (
               <div className="flex flex-none flex-col items-center gap-3">
@@ -233,7 +230,6 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
             )}
           </div>
           <div className="flex justify-center"><Numeros v={assistir} grande /></div>
-          {celular && <p style={{ margin: "-6px 0 0", textAlign: "center", color: "var(--muted)", fontSize: 12 }}>O vídeo começa sem som: toque no alto-falante do vídeo para ouvir.</p>}
           <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1, ...(copiado === assistir.id ? VERDE : {}) }}>
             <Progresso ativo={gerando === assistir.id} terminou={copiado === assistir.id} />
             <span className="relative flex items-center gap-2">{copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português…" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}</span>
