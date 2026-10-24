@@ -19,7 +19,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
   ]);
   return (
     <>
-      <Cabecalho icone="users" titulo="Gravar juntos" sub="Escolha um dia e peça ajuda da equipe para gravar. Quem ajudar ganha R$ 25 por gravação, depois que você confirmar." />
+      <Cabecalho icone="users" titulo="Gravações" sub="Escolha um dia e peça ajuda da equipe para gravar. Quem ajudar ganha R$ 25 por gravação, depois que você confirmar." />
       <GravarJuntos mes={mes} hoje={hoje} diaInicial={dia} eu={{ id: perfil.id, gestor: perfil.papel === "gestor" }}
         pedidos={(pedidos ?? []) as Pedido[]} ajudas={(ajudas ?? []) as Ajuda[]} pessoas={pessoas ?? []} sugestoes={(sugestoes ?? []) as Sugestao[]} />
     </>

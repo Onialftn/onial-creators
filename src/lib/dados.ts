@@ -74,7 +74,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     sb.from("dias_postagem").select("dia, postagens").eq("criador_id", criadorId).gte("dia", semIni).lte("dia", semFim),
     sb.from("videos").select("plataforma, postado_em, id_externo, titulo").eq("criador_id", criadorId).gte("postado_em", semIni).lte("postado_em", semFim).limit(1000),
     sb.from("saldos_diarios").select("mes, views_mes").eq("criador_id", criadorId).lt("dia", hoje).order("dia", { ascending: false }).limit(1).maybeSingle(),
-    // Gravar juntos: gravações em que ajudou, confirmadas por quem pediu, no mês da gravação
+    // Gravações: gravações em que ajudou, confirmadas por quem pediu, no mês da gravação
     sb.from("ajudas").select("pedido_id, pedidos_ajuda!inner(dia, status)", { count: "exact", head: true }).eq("ajudante_id", criadorId).eq("presente", true)
       .eq("pedidos_ajuda.status", "feito").gte("pedidos_ajuda.dia", ini).lte("pedidos_ajuda.dia", fim),
   ]);

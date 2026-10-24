@@ -41,7 +41,7 @@ export interface ResultadoPagamento {
 export const CENTAVOS_POR_MIL_VIEWS = 500;
 /** R$ 1 a cada 1.000 views da meta. */
 export const BONUS_META_CENTAVOS_POR_MIL = 100;
-/** R$ 25 por gravação em que o criador ajudou (Gravar juntos), qualquer duração. */
+/** R$ 25 por gravação em que o criador ajudou (Gravações), qualquer duração. */
 export const BONUS_AJUDA_CENTAVOS = 2500;
 
 const DIA_MS = 86_400_000;

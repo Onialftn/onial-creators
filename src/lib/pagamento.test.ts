@@ -121,7 +121,7 @@ describe("pagamento", () => {
     expect(calcularPagamento(900_000, null, 0).bonusMetaCentavos).toBe(0);
   });
 
-  it("bônus de ajuda (Gravar juntos): R$ 25 por gravação, somado ao total", () => {
+  it("bônus de ajuda (Gravações): R$ 25 por gravação, somado ao total", () => {
     const semAjuda = calcularPagamento(612_400, 700_000, 0);
     const p = calcularPagamento(612_400, 700_000, 0, 3);
     expect(p.ajudas).toBe(3);

@@ -1,4 +1,4 @@
-/** Gravar juntos: regras simples da agenda (sem banco), para poder testar. */
+/** Gravações: regras simples da agenda (sem banco), para poder testar. */
 
 export const DURACOES = [30, 45, 60, 90, 120];
 export const MAX_AJUDANTES = 5;

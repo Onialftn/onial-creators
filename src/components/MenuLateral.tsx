@@ -15,7 +15,7 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
       { href: "/", rotulo: "Dashboard", icone: "dash" },
       { href: "/dias", rotulo: "Dias de postagem", icone: "cal" },
       { href: "/metas", rotulo: "Metas de views", icone: "target" },
-      { href: "/gravar", rotulo: "Gravar juntos", icone: "users" },
+      { href: "/gravar", rotulo: "Gravações", icone: "users" },
       { href: "/ranking", rotulo: "Ranking do mês", icone: "trophy" },
     ],
   },

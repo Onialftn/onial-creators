@@ -5,7 +5,7 @@ const pedido = (x: Partial<Pedido> = {}): Pedido => ({ id: "p1", criador_id: "an
 const antes = new Date("2026-10-25T18:00:00-03:00");
 const depois = new Date("2026-10-25T20:00:00-03:00");
 
-describe("Gravar juntos", () => {
+describe("Gravações", () => {
   it("horário de início e fim", () => {
     expect(faixaHorario("19:00:00", 45)).toBe("19:00 às 19:45");
     expect(faixaHorario("23:30", 60)).toBe("23:30 às 00:30");
