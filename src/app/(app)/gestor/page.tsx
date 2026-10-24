@@ -20,7 +20,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
   const hoje = hojeBrasil();
   const mes = mesDe(hoje);
 
-  const { data: criadores } = await sb.from("perfis").select("id, nome, foto_url").eq("papel", "criador").order("nome");
+  const { data: criadores } = await sb.from("perfis").select("id, nome, foto_url, recebe").eq("papel", "criador").order("nome");
   const lista = criadores ?? [];
   const [resumos, { data: contas }, { data: mapas }, { data: pags }, { data: usoIa }, ultima, { data: libs }] = await Promise.all([
     Promise.all(lista.map((cr) => resumoDoMes(sb, cr.id, mes))),
@@ -33,8 +33,11 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
   ]);
 
   const viewsEquipe = resumos.reduce((a, r) => a + r.views, 0);
-  const totalMes = resumos.reduce((a, r) => a + r.pagamento.totalCentavos, 0);
-  const aPagar = (pags ?? []).reduce((a, p) => a + Number(p.total_centavos), 0);
+  // contas da própria Onial não recebem: ficam fora dos totais a pagar (o gasto com ferramentas continua contando)
+  const recebe = (id: string) => lista.find((c) => c.id === id)?.recebe !== false;
+  const totalMes = resumos.reduce((a, r, i) => a + (recebe(lista[i].id) ? r.pagamento.totalCentavos : 0), 0);
+  const pagsReais = (pags ?? []).filter((p) => recebe(p.criador_id));
+  const aPagar = pagsReais.reduce((a, p) => a + Number(p.total_centavos), 0);
   const custoIa = (usoIa ?? []).reduce((a, u) => a + Number(u.custo_usd), 0);
   const contaDe = (id: string, r: string) => (contas ?? []).find((c) => c.criador_id === id && c.plataforma === r);
 
@@ -53,7 +56,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
     const cr = lista.find((x) => x.id === l.criador_id);
     atencao.unshift({ texto: `Liberar o ${l.rede === "instagram" ? "Instagram" : "TikTok"} de ${cr?.nome.split(" ")[0] ?? "um criador"} (@${l.usuario})`, link: "/gestor/config#liberar", nivel: "warn" });
   }
-  for (const p of pags ?? []) {
+  for (const p of pagsReais) {
     const cr = lista.find((x) => x.id === p.criador_id);
     if (cr) atencao.push({ texto: `Pagar ${cr.nome.split(" ")[0]}: ${formatarReais(Number(p.total_centavos))} de ${nomeMes(String(p.mes)).toLowerCase()}`, link: `/gestor/criador/${cr.id}#pagamentos`, nivel: "warn" });
   }
@@ -67,9 +70,9 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
 
       <section className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
         <Numero rotulo="Views da equipe no mês" valor={formatarNumero(viewsEquipe)} sub="TikTok + YouTube + Instagram" />
-        <Numero rotulo="Total a pagar no mês (até agora)" valor={formatarReais(totalMes)} sub="Bruto + bônus de cada criador" cor="var(--ok)" />
-        <Numero rotulo="Meses fechados a pagar" valor={formatarReais(aPagar)} sub={(pags ?? []).length ? `${(pags ?? []).length} pagamento(s) em aberto` : "Nada em aberto"} cor={aPagar ? "var(--warn)" : undefined} />
-        <Numero rotulo="Gasto com IA no mês" valor={`US$ ${custoIa.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} sub="Roteiros traduzidos" />
+        <Numero rotulo="Total a pagar no mês (até agora)" valor={formatarReais(totalMes)} sub={lista.some((c) => c.recebe === false) ? "Bruto + bônus (sem a conta da Onial)" : "Bruto + bônus de cada criador"} cor="var(--ok)" />
+        <Numero rotulo="Meses fechados a pagar" valor={formatarReais(aPagar)} sub={pagsReais.length ? `${pagsReais.length} pagamento(s) em aberto` : "Nada em aberto"} cor={aPagar ? "var(--warn)" : undefined} />
+        <Numero rotulo="Gasto com ferramentas no mês" valor={`US$ ${custoIa.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} sub="IA de toda a equipe, inclusive a Onial" />
       </section>
 
       <section className="card flex flex-col gap-3">
@@ -121,7 +124,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
                         })}
                       </span>
                     </td>
-                    <td className="num" style={{ fontSize: 16, color: "var(--strong)" }}>{formatarReais(r.pagamento.totalCentavos)}</td>
+                    <td className="num" style={{ fontSize: 16, color: "var(--strong)" }}>{cr.recebe === false ? <span title="Conta da Onial: não entra no total a pagar" style={{ fontFamily: "Inter, sans-serif", fontSize: 12, color: "var(--muted)", fontWeight: 400 }}>Conta da Onial</span> : formatarReais(r.pagamento.totalCentavos)}</td>
                     <td><Link className="btn-line" href={`/gestor/criador/${cr.id}`} style={{ minHeight: 36 }}>Abrir</Link></td>
                   </tr>
                 );

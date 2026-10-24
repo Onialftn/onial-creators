@@ -8,7 +8,7 @@ import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
-import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta } from "../../acoes";
+import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta, salvarRecebe } from "../../acoes";
 import { AbasGestor, Retorno } from "../../comum";
 
 export const maxDuration = 60;
@@ -19,7 +19,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
   if (perfil.papel !== "gestor") redirect("/");
   const { id } = await params;
   const { ok, erro } = await searchParams;
-  const { data: cr } = await sb.from("perfis").select("id, nome, foto_url, canal_youtube").eq("id", id).eq("papel", "criador").maybeSingle();
+  const { data: cr } = await sb.from("perfis").select("id, nome, foto_url, canal_youtube, recebe").eq("id", id).eq("papel", "criador").maybeSingle();
   if (!cr) notFound();
 
   const hoje = hojeBrasil();
@@ -38,6 +38,11 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
     <>
       <Link href="/gestor" style={{ color: "var(--muted)", fontSize: 14 }}>‹ Voltar para a visão geral</Link>
       <Cabecalho titulo={cr.nome} sub={`${nomeMes(mes)} · ${cr.canal_youtube ? `canal ${cr.canal_youtube}` : "Criador de conteúdo"}`} direita={<Avatar foto={cr.foto_url} nome={cr.nome} tamanho={56} />} />
+      <form action={salvarRecebe} className="flex flex-wrap items-center gap-3" style={{ fontSize: 13, color: "var(--muted)" }}>
+        <input type="hidden" name="criador" value={id} /><input type="hidden" name="propria" value={cr.recebe === false ? "0" : "1"} />
+        {cr.recebe === false ? <span className="pill-tint">Conta da Onial · não entra no total a pagar</span> : <span>Recebe pagamento normalmente.</span>}
+        <button type="submit" style={{ textDecoration: "underline", color: "var(--text2)" }}>{cr.recebe === false ? "Voltar a pagar esta conta" : "Marcar como conta da Onial (não recebe)"}</button>
+      </form>
       <AbasGestor ativa="criador" />
       <Retorno ok={ok} erro={erro} />
 

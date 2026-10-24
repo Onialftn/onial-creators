@@ -37,6 +37,15 @@ export async function criarCriador(f: FormData) {
   voltar(id, `${nome} cadastrado. Envie o e-mail e a senha para ele entrar.`);
 }
 
+/** Conta da própria Onial: não recebe pagamento (fica fora dos totais a pagar). */
+export async function salvarRecebe(f: FormData) {
+  const { sb } = await gestor();
+  const criador = texto(f, "criador");
+  const propria = f.get("propria") === "1";
+  await sb.from("perfis").update({ recebe: !propria }).eq("id", criador);
+  voltar(criador, propria ? "Marcada como conta da Onial: fica fora dos totais a pagar." : "Conta volta a receber pagamento.");
+}
+
 export async function salvarMeta(f: FormData) {
   const { sb } = await gestor();
   const criador = texto(f, "criador");
