@@ -6,6 +6,22 @@ import { CapaVideo } from "./CapaVideo";
 import { TituloCard } from "./Blocos";
 import { Icone } from "./Icone";
 
+/** Likes e comentários (o canal pode esconder os likes: aí não aparece). */
+function Numeros({ v, grande = false }: { v: VideoRef; grande?: boolean }) {
+  const t = grande ? 15 : 12;
+  const item = (icone: React.ReactNode, valor: number, rotulo: string) => (
+    <span className="flex items-center gap-1" title={`${valor.toLocaleString("pt-BR")} ${rotulo}`} aria-label={`${valor.toLocaleString("pt-BR")} ${rotulo}`}>{icone}{n(valor)}</span>
+  );
+  const svg = (d: string) => <svg width={t} height={t} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-1" style={{ color: "var(--muted)", fontSize: t, fontVariantNumeric: "tabular-nums" }}>
+      {grande && item(svg("M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"), v.views, "visualizações")}
+      {v.likes != null && item(svg("M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z"), v.likes, "curtidas")}
+      {v.comentarios != null && item(svg("M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"), v.comentarios, "comentários")}
+    </div>
+  );
+}
+
 const n = (v: number) => (v >= 1e6 ? `${(v / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi` : v >= 1e3 ? `${Math.round(v / 1e3)} mil` : String(v));
 function ha(iso: string) {
   const h = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 3_600_000));
@@ -165,7 +181,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
                   <span className="pill absolute" style={{ left: 8, top: 8, background: i === 0 ? "#E8B014" : "rgba(10,10,10,.75)", color: i === 0 ? "#0A0A0A" : "#fff", fontSize: 11 }}>#{i + 1}</span>
                   <span className="absolute flex flex-col items-start" style={{ left: 8, bottom: 6, color: "#fff", lineHeight: 1.1 }}><span className="num" style={{ fontSize: 20 }}>{n(v.views)}</span>{v.porDia ? <span style={{ fontSize: 11, color: "#FFCC33", fontWeight: 600 }}>+{n(v.porDia)}/dia</span> : null}</span>
                 </button>
-                <div className="min-w-0"><div style={{ color: "var(--strong)", fontWeight: 600, fontSize: 14, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div><div style={{ color: "var(--muted)", fontSize: 12, marginTop: 2 }}>{v.canal} · {ha(v.publicado)}</div></div>
+                <div className="min-w-0"><div style={{ color: "var(--strong)", fontWeight: 600, fontSize: 14, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div><div style={{ color: "var(--muted)", fontSize: 12, marginTop: 2 }}>{v.canal} · {ha(v.publicado)}</div><div style={{ marginTop: 4 }}><Numeros v={v} /></div></div>
                 <Acoes v={v} lista={melhores} />
               </div>
             ))}
@@ -185,6 +201,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
               </button>
               <div style={{ color: "var(--strong)", fontSize: 13, fontWeight: 600, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
               <div style={{ color: "var(--muted)", fontSize: 12 }}>{v.canal} · {ha(v.publicado)}</div>
+              <Numeros v={v} />
               <Acoes v={v} lista={recentes} />
             </div>
           ))}
@@ -212,6 +229,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
               </div>
             )}
           </div>
+          <div className="flex justify-center"><Numeros v={assistir} grande /></div>
           <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1, ...(copiado === assistir.id ? VERDE : {}) }}>
             <Progresso ativo={gerando === assistir.id} terminou={copiado === assistir.id} />
             <span className="relative flex items-center gap-2">{copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português…" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}</span>

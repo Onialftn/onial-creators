@@ -7,7 +7,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
  * Vídeos dos canais de referência (YouTube). Usa a autorização de uma conta do YouTube já conectada
  * (dados públicos), e guarda o resultado por 3 horas para não gastar a cota da API.
  */
-export interface VideoRef { id: string; titulo: string; canal: string; publicado: string; views: number; capa: string; segundos: number; porDia?: number }
+export interface VideoRef { id: string; titulo: string; canal: string; publicado: string; views: number; likes: number | null; comentarios: number | null; capa: string; segundos: number; porDia?: number }
 
 export async function tokenYoutube() {
   const admin = supabaseAdmin();
@@ -51,16 +51,16 @@ async function buscar(canais: string[]): Promise<VideoRef[]> {
   }));
   const out: VideoRef[] = [];
   for (let i = 0; i < ids.length; i += 50) {
-    const v = await yt<{ items?: { id: string; snippet: { title: string; channelId: string; publishedAt: string }; statistics?: { viewCount?: string }; contentDetails: { duration: string } }[] }>(`videos?part=snippet,statistics,contentDetails&id=${ids.slice(i, i + 50).join(",")}`, token);
+    const v = await yt<{ items?: { id: string; snippet: { title: string; channelId: string; publishedAt: string }; statistics?: { viewCount?: string; likeCount?: string; commentCount?: string }; contentDetails: { duration: string } }[] }>(`videos?part=snippet,statistics,contentDetails&id=${ids.slice(i, i + 50).join(",")}`, token);
     for (const x of v.items ?? []) {
-      out.push({ id: x.id, titulo: x.snippet.title, canal: nomeCanal.get(x.snippet.channelId) ?? "", publicado: x.snippet.publishedAt, views: Number(x.statistics?.viewCount ?? 0), capa: `https://i.ytimg.com/vi/${x.id}/oardefault.jpg`, segundos: segundosISO(x.contentDetails.duration) });
+      out.push({ id: x.id, titulo: x.snippet.title, canal: nomeCanal.get(x.snippet.channelId) ?? "", publicado: x.snippet.publishedAt, views: Number(x.statistics?.viewCount ?? 0), likes: x.statistics?.likeCount != null ? Number(x.statistics.likeCount) : null, comentarios: x.statistics?.commentCount != null ? Number(x.statistics.commentCount) : null, capa: `https://i.ytimg.com/vi/${x.id}/oardefault.jpg`, segundos: segundosISO(x.contentDetails.duration) });
     }
   }
   // só vídeos curtos (Shorts têm até 3 minutos)
   return out.filter((v) => v.segundos > 0 && v.segundos <= 180).sort((a, b) => b.publicado.localeCompare(a.publicado));
 }
 
-export const videosDosCanais = (canais: string[]) => unstable_cache(() => buscar(canais), ["ideias", ...[...canais].sort()], { revalidate: 10800 })();
+export const videosDosCanais = (canais: string[]) => unstable_cache(() => buscar(canais), ["ideias-v2", ...[...canais].sort()], { revalidate: 10800 })();
 
 /** Acha o canal pelo link (youtube.com/@nome, /channel/UC..., ou só @nome). */
 export async function resolverCanal(entrada: string) {
