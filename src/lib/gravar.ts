@@ -5,8 +5,21 @@ export const MAX_AJUDANTES = 5;
 /** horários de 30 em 30 minutos, das 08:00 às 23:30 */
 export const HORARIOS = Array.from({ length: 32 }, (_, i) => `${String(8 + Math.floor(i / 2)).padStart(2, "0")}:${i % 2 ? "30" : "00"}`);
 
-export interface Pedido { id: string; criador_id: string; dia: string; hora: string; duracao_min: number; vagas: number; mapa: string; descricao: string; status: "aberto" | "feito" | "cancelado" }
+export interface Pedido { id: string; criador_id: string; dia: string; hora: string; duracao_min: number; vagas: number; mapa: string; descricao: string; referencia?: string; status: "aberto" | "feito" | "cancelado" }
 export interface Ajuda { pedido_id: string; ajudante_id: string; presente: boolean }
+
+/** Link de vídeo aceito como referência (http/https) e o id quando é do YouTube. */
+export function linkReferencia(texto: string): { url: string; youtube: string | null } | null {
+  const t = texto.trim();
+  if (!t) return null;
+  let u: URL;
+  try { u = new URL(/^https?:\/\//i.test(t) ? t : `https://${t}`); } catch { return null; }
+  if (!/^https?:$/.test(u.protocol) || !u.hostname.includes(".")) return null;
+  const yt = /(^|\.)youtube\.com$/.test(u.hostname)
+    ? (u.pathname.match(/^\/(?:shorts|embed|live)\/([\w-]{11})/)?.[1] ?? u.searchParams.get("v"))
+    : u.hostname === "youtu.be" ? u.pathname.slice(1, 12) : null;
+  return { url: u.toString(), youtube: yt && /^[\w-]{11}$/.test(yt) ? yt : null };
+}
 
 /** Instante em que a gravação começa (horário de Brasília). */
 export const inicioDe = (p: Pick<Pedido, "dia" | "hora">) => new Date(`${p.dia}T${p.hora.slice(0, 5)}:00-03:00`);

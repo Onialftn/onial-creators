@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { usuarioAtual } from "@/lib/dados";
 import { hojeBrasil } from "@/lib/datas";
-import { DURACOES, HORARIOS, MAX_AJUDANTES, faixaHorario, inicioDe, situacao, type Pedido } from "@/lib/gravar";
+import { DURACOES, HORARIOS, MAX_AJUDANTES, faixaHorario, inicioDe, linkReferencia, situacao, type Pedido } from "@/lib/gravar";
 import { MAPAS } from "@/lib/ia/mapas";
 import { notificar } from "@/lib/notificacoes";
 import { formatarReais, BONUS_AJUDA_CENTAVOS } from "@/lib/pagamento";
@@ -23,7 +23,7 @@ async function carregar(id: string) {
   return { admin, p: p as (Pedido & { dia: string }) | null, ajudas: ajudas ?? [] };
 }
 
-export async function pedirAjuda(d: { dia: string; hora: string; duracao: number; vagas: number; mapa: string; descricao: string }): Promise<Retorno> {
+export async function pedirAjuda(d: { dia: string; hora: string; duracao: number; vagas: number; mapa: string; descricao: string; referencia?: string }): Promise<Retorno> {
   const { perfil } = await usuarioAtual();
   if (!/^\d{4}-\d{2}-\d{2}$/.test(d.dia) || d.dia < hojeBrasil()) return { erro: "Escolha um dia de hoje em diante." };
   if (!HORARIOS.includes(d.hora)) return { erro: "Escolha o horário." };
@@ -33,9 +33,11 @@ export async function pedirAjuda(d: { dia: string; hora: string; duracao: number
   if (!MAPAS.some((m) => m.id === d.mapa)) return { erro: "Escolha o mapa." };
   const descricao = String(d.descricao ?? "").trim().slice(0, 500);
   if (descricao.length < 5) return { erro: "Conte em uma frase o que vai gravar." };
+  const ref = d.referencia?.trim() ? linkReferencia(d.referencia) : null;
+  if (d.referencia?.trim() && !ref) return { erro: "O link do vídeo de referência não parece certo. Cole o link inteiro (ex.: youtube.com/shorts/...)." };
   if (inicioDe({ dia: d.dia, hora: d.hora }) <= new Date()) return { erro: "Esse horário já passou." };
   const admin = supabaseAdmin();
-  const { data: novo, error } = await admin.from("pedidos_ajuda").insert({ criador_id: perfil.id, dia: d.dia, hora: d.hora, duracao_min: Number(d.duracao), vagas, mapa: d.mapa, descricao }).select("id").single();
+  const { data: novo, error } = await admin.from("pedidos_ajuda").insert({ criador_id: perfil.id, dia: d.dia, hora: d.hora, duracao_min: Number(d.duracao), vagas, mapa: d.mapa, descricao, referencia: ref?.url.slice(0, 500) ?? "" }).select("id").single();
   if (error || !novo) return { erro: "Não consegui salvar o pedido. Tente de novo." };
   const { data: equipe } = await admin.from("perfis").select("id").neq("id", perfil.id);
   await Promise.all((equipe ?? []).map((e) => notificar(e.id, {

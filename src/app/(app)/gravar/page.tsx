@@ -10,7 +10,7 @@ export default async function Pagina({ searchParams }: { searchParams: Promise<{
   const hoje = hojeBrasil();
   const dia = /^\d{4}-\d{2}-\d{2}$/.test(q.dia ?? "") ? q.dia! : null;
   const mes = /^\d{4}-\d{2}$/.test(q.mes ?? "") ? q.mes! : dia ? mesDe(dia) : mesDe(hoje);
-  const { data: pedidos } = await sb.from("pedidos_ajuda").select("id, criador_id, dia, hora, duracao_min, vagas, mapa, descricao, status").gte("dia", primeiroDia(mes)).lte("dia", ultimoDia(mes)).order("hora");
+  const { data: pedidos } = await sb.from("pedidos_ajuda").select("id, criador_id, dia, hora, duracao_min, vagas, mapa, descricao, referencia, status").gte("dia", primeiroDia(mes)).lte("dia", ultimoDia(mes)).order("hora");
   const ids = (pedidos ?? []).map((p) => p.id);
   const [{ data: ajudas }, { data: pessoas }, { data: sugestoes }] = await Promise.all([
     ids.length ? sb.from("ajudas").select("pedido_id, ajudante_id, presente").in("pedido_id", ids) : Promise.resolve({ data: [] }),

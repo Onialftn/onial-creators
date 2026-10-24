@@ -117,6 +117,20 @@ function Traduzir({ v, mapa, iaPronta, pronta, inicio }: { v: VideoRef; mapa: st
   );
 }
 
+/** Botão pequeno que copia o link do Short e fica verde por 2 segundos. */
+function CopiarLink({ id }: { id: string }) {
+  const [ok, setOk] = useState(false);
+  useEffect(() => setOk(false), [id]);
+  async function copiar() {
+    if (await copiarTexto(`https://youtube.com/shorts/${id}`)) { setOk(true); setTimeout(() => setOk(false), 2000); }
+  }
+  return (
+    <button type="button" onClick={copiar} className="flex items-center gap-1.5" style={{ minHeight: 32, padding: "0 10px", borderRadius: 16, fontSize: 13, fontWeight: 600, border: `1px solid ${ok ? "#3DDC97" : "var(--line2)"}`, background: ok ? "#3DDC97" : "transparent", color: ok ? "#0A0A0A" : "var(--fg)" }}>
+      {ok ? <><Icone nome="check" tamanho={13} />Link copiado</> : <><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" /></svg>Copiar link</>}
+    </button>
+  );
+}
+
 /**
  * Player do YouTube que começa sozinho. No celular o navegador só deixa começar sem som:
  * aparece "Toque para ligar o som" e, depois de ligado, os próximos vídeos (setas) seguem com som no mesmo player.
@@ -266,7 +280,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
               </div>
             )}
           </div>
-          <div className="flex justify-center"><Numeros v={assistir} grande /></div>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"><Numeros v={assistir} grande /><CopiarLink id={assistir.id} /></div>
           <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1, ...(copiado === assistir.id ? VERDE : {}) }}>
             <Progresso ativo={gerando === assistir.id} terminou={copiado === assistir.id} />
             <span className="relative flex items-center gap-2">{copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português…" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}</span>

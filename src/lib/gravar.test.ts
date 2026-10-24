@@ -37,3 +37,15 @@ describe("Gravações", () => {
     expect(ajudasConfirmadas(pedidos, ajudas, "caio", "2026-10")).toBe(0);
   });
 });
+
+describe("vídeo de referência", () => {
+  it("aceita links e reconhece o YouTube", async () => {
+    const { linkReferencia } = await import("./gravar");
+    expect(linkReferencia("https://youtube.com/shorts/7Lpv0z_2Sqc?si=abc")?.youtube).toBe("7Lpv0z_2Sqc");
+    expect(linkReferencia("youtu.be/7Lpv0z_2Sqc")?.youtube).toBe("7Lpv0z_2Sqc");
+    expect(linkReferencia("https://www.youtube.com/watch?v=7Lpv0z_2Sqc")?.youtube).toBe("7Lpv0z_2Sqc");
+    expect(linkReferencia("https://www.tiktok.com/@x/video/123")?.youtube).toBeNull();
+    expect(linkReferencia("não é link")).toBeNull();
+    expect(linkReferencia("javascript:alert(1)")).toBeNull();
+  });
+});

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { aceitarAjuda, cancelarPedido, confirmarGravacao, desistirAjuda, pedirAjuda, responderSugestao, sugerirHorario } from "@/app/(app)/gravar/acoes";
 import { DIAS_CURTOS, DIAS_NOMES, diaDaSemana, intervalo, mesAnterior, nomeMes, primeiroDia, somarDias, ultimoDia } from "@/lib/datas";
-import { DURACOES, HORARIOS, MAX_AJUDANTES, ajudasConfirmadas, faixaHorario, situacao, type Ajuda, type Pedido, type Situacao, type Sugestao } from "@/lib/gravar";
+import { DURACOES, HORARIOS, MAX_AJUDANTES, ajudasConfirmadas, faixaHorario, situacao, type Ajuda, type Pedido, type Situacao, type Sugestao, linkReferencia } from "@/lib/gravar";
 import { MAPAS } from "@/lib/ia/mapas";
 import { BONUS_AJUDA_CENTAVOS, formatarReais } from "@/lib/pagamento";
 import { Avatar } from "./Avatar";
@@ -36,12 +36,13 @@ function NovoPedido({ dia, aoTerminar }: { dia: string; aoTerminar: (msg: string
   const [vagas, setVagas] = useState(1);
   const [mapa, setMapa] = useState<string>(MAPAS[0].id);
   const [descricao, setDescricao] = useState("");
+  const [referencia, setReferencia] = useState("");
   const [erro, setErro] = useState("");
   const [enviando, iniciar] = useTransition();
   function enviar() {
     setErro("");
     iniciar(async () => {
-      const r = await pedirAjuda({ dia, hora, duracao, vagas, mapa, descricao });
+      const r = await pedirAjuda({ dia, hora, duracao, vagas, mapa, descricao, referencia });
       if (r.erro) setErro(r.erro); else aoTerminar(r.ok ?? "");
     });
   }
@@ -64,6 +65,9 @@ function NovoPedido({ dia, aoTerminar }: { dia: string; aoTerminar: (msg: string
       </div>
       <label className="flex flex-col gap-1"><span className="label">O QUE VAI GRAVAR</span>
         <textarea className="input" rows={3} maxLength={500} value={descricao} onChange={(e) => setDescricao(e.target.value)} placeholder="Ex.: preciso de 2 pessoas para um 1v1 de armas personalizadas, com troca de build" style={{ resize: "vertical", paddingTop: 10 }} />
+      </label>
+      <label className="flex flex-col gap-1"><span className="label">VÍDEO DE REFERÊNCIA (OPCIONAL)</span>
+        <input className="input" type="url" inputMode="url" maxLength={500} value={referencia} onChange={(e) => setReferencia(e.target.value)} placeholder="Cole o link do vídeo (YouTube, TikTok ou Instagram)" />
       </label>
       <div className="flex flex-wrap items-center gap-3">
         <button className="btn-gold" type="button" disabled={enviando} onClick={enviar}>{enviando ? "Enviando..." : "Pedir ajuda"}</button>
@@ -125,7 +129,26 @@ function CartaoPedido({ p, ajudas, sugestoes, pessoas, eu, hoje, aviso }: { p: P
           <div style={{ fontSize: 13, color: "var(--muted)" }}>{mapa ? `${mapa.emoji} ${mapa.nome}` : p.mapa} · {p.duracao_min} min</div>
         </div>
       </div>
-      {p.descricao && <p style={{ margin: 0, lineHeight: 1.45, color: "var(--fg)" }}>{p.descricao}</p>}
+      {p.descricao && <p style={{ margin: 0, lineHeight: 1.45, color: "var(--fg)", wordBreak: "break-word" }}>{p.descricao}</p>}
+      {(() => {
+        const ref = p.referencia ? linkReferencia(p.referencia) : null;
+        if (!ref) return null;
+        return (
+          <a href={ref.url} target="_blank" rel="noreferrer" className="flex items-center gap-3" style={{ padding: 8, borderRadius: 8, border: "1px solid var(--line)", background: "var(--panel)" }}>
+            {ref.youtube ? (
+              <span className="relative flex-none overflow-hidden" style={{ width: 54, height: 96, borderRadius: 6, background: "#111" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={`https://i.ytimg.com/vi/${ref.youtube}/oardefault.jpg`} onError={(e) => { (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${ref.youtube}/hqdefault.jpg`; }} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <span className="absolute inset-0 flex items-center justify-center" style={{ color: "#fff", fontSize: 18, textShadow: "0 1px 4px #000" }}>▶</span>
+              </span>
+            ) : <span className="flex flex-none items-center justify-center" style={{ width: 40, height: 40, borderRadius: 8, background: "var(--chip)", color: "var(--accent-text)" }}><Icone nome="video" tamanho={20} /></span>}
+            <span className="min-w-0 flex-1">
+              <b style={{ display: "block", color: "var(--strong)", fontSize: 14 }}>Vídeo de referência</b>
+              <span className="block truncate" style={{ color: "var(--muted)", fontSize: 12 }}>{new URL(ref.url).hostname.replace(/^www\./, "")} · toque para abrir</span>
+            </span>
+          </a>
+        );
+      })()}
 
       <div className="flex flex-wrap items-center gap-2" style={{ fontSize: 13 }}>
         <span style={{ color: "var(--muted)" }}>Ajudantes: {doPedido.length} de {p.vagas}</span>
