@@ -117,6 +117,43 @@ function Traduzir({ v, mapa, iaPronta, pronta, inicio }: { v: VideoRef; mapa: st
   );
 }
 
+/**
+ * Player do YouTube que começa sozinho. No celular o navegador só deixa começar sem som:
+ * aparece "Toque para ligar o som" e, depois de ligado, os próximos vídeos (setas) seguem com som no mesmo player.
+ */
+function Player({ id, titulo }: { id: string; titulo: string }) {
+  const ref = useRef<HTMLIFrameElement>(null);
+  const [celular] = useState(() => window.matchMedia("(pointer: coarse)").matches);
+  const [som, setSom] = useState(!celular);
+  const [primeiro] = useState(id);
+  const atual = useRef(id);
+  const cmd = (func: string, args: unknown[] = []) => ref.current?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
+  useEffect(() => {
+    if (id === atual.current) return;
+    atual.current = id;
+    cmd("loadVideoById", [id]);
+    if (som) cmd("unMute");
+  }, [id, som]);
+  function ligarSom() {
+    cmd("unMute"); cmd("setVolume", [100]); cmd("playVideo");
+    setSom(true);
+  }
+  const origem = typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
+  return (
+    <div className="relative" style={{ width: "100%", height: "100%" }}>
+      <iframe ref={ref} src={`https://www.youtube-nocookie.com/embed/${primeiro}?autoplay=1&playsinline=1&rel=0&hl=pt-BR&cc_lang_pref=pt&enablejsapi=1${celular ? "&mute=1" : ""}${origem}`}
+        onLoad={() => ref.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*")}
+        title={titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
+      {!som && (
+        <button type="button" onClick={ligarSom} className="absolute flex items-center gap-2"
+          style={{ left: "50%", bottom: "16%", transform: "translateX(-50%)", padding: "10px 16px", borderRadius: 24, background: "#E8B014", color: "#0A0A0A", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 18px rgba(0,0,0,.5)", whiteSpace: "nowrap" }}>
+          🔊 Toque para ligar o som
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automatico, traduzidos: iniciais }: { mapa: string; tema: string; melhores: VideoRef[]; recentes: VideoRef[]; iaPronta: boolean; automatico: boolean; traduzidos: Record<string, Pronta> }) {
   const [assistir, setAssistirV] = useState<VideoRef | null>(null);
   // lista da seção de onde o vídeo foi aberto: as setas ▲ ▼ andam por ela
@@ -215,7 +252,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
             onTouchStart={(e) => (toque.current = e.touches[0].clientY)}
             onTouchEnd={(e) => { if (toque.current === null) return; const d = toque.current - e.changedTouches[0].clientY; toque.current = null; if (Math.abs(d) > 60) pular(d > 0 ? 1 : -1); }}>
             <div style={{ flex: "1 1 auto", maxWidth: 340, aspectRatio: "9/16", borderRadius: 10, overflow: "hidden", background: "#000" }}>
-              <iframe key={assistir.id} src={`https://www.youtube-nocookie.com/embed/${assistir.id}?autoplay=1&playsinline=1&rel=0&hl=pt-BR&cc_lang_pref=pt`} title={assistir.titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
+              <Player id={assistir.id} titulo={assistir.titulo} />
             </div>
             {fila.length > 1 && (
               <div className="flex flex-none flex-col items-center gap-3">
