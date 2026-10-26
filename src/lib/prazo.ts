@@ -1,11 +1,13 @@
 import { DIAS_NOMES, diaDaSemana } from "./datas";
 
-/** Texto do prazo: vence no fim do dia escolhido (23:59, horário de Brasília). */
-export function textoPrazo(prazo: string, hoje: string): { texto: string; faltam: string; urgente: boolean } {
-  const dias = Math.round((Date.UTC(+prazo.slice(0, 4), +prazo.slice(5, 7) - 1, +prazo.slice(8)) - Date.UTC(+hoje.slice(0, 4), +hoje.slice(5, 7) - 1, +hoje.slice(8))) / 86_400_000);
-  const dia = `${DIAS_NOMES[diaDaSemana(prazo) - 1].toLowerCase()}, ${prazo.slice(8)}/${prazo.slice(5, 7)}`;
-  if (dias < 0) return { texto: `Venceu ${dia}`, faltam: "encerrado", urgente: true };
-  if (dias === 0) return { texto: "Vence HOJE às 23:59", faltam: "último dia", urgente: true };
-  if (dias === 1) return { texto: `Vence amanhã (${dia}) às 23:59`, faltam: "falta 1 dia", urgente: true };
-  return { texto: `Vence ${dia} às 23:59`, faltam: `faltam ${dias} dias`, urgente: false };
+/**
+ * Vídeo extra vale só no dia escolhido pelo gestor: 24 horas, das 00:00 às 23:59 (Brasília).
+ * Antes do dia aparece como "em breve"; no dia dá para mandar o link; depois some.
+ */
+export function janelaExtra(dia: string, hoje: string): { fase: "antes" | "hoje" | "passou"; texto: string; detalhe: string } {
+  const n = Math.round((Date.UTC(+dia.slice(0, 4), +dia.slice(5, 7) - 1, +dia.slice(8)) - Date.UTC(+hoje.slice(0, 4), +hoje.slice(5, 7) - 1, +hoje.slice(8))) / 86_400_000);
+  const nome = `${DIAS_NOMES[diaDaSemana(dia) - 1].toLowerCase()}, ${dia.slice(8)}/${dia.slice(5, 7)}`;
+  if (n < 0) return { fase: "passou", texto: `Era ${nome}`, detalhe: "encerrado" };
+  if (n === 0) return { fase: "hoje", texto: "Vale HOJE: poste até 23:59", detalhe: "só hoje" };
+  return { fase: "antes", texto: `Vale só ${n === 1 ? `amanhã (${nome})` : nome}, das 00:00 às 23:59`, detalhe: n === 1 ? "começa amanhã" : `começa em ${n} dias` };
 }

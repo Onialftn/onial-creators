@@ -31,17 +31,24 @@ export async function criarExtra(f: FormData) {
   await soGestor();
   const titulo = t(f, "titulo").slice(0, 120);
   const descricao = t(f, "descricao").slice(0, 1000);
+  const regras = t(f, "regras").slice(0, 2000);
   const valor = await lerReais(t(f, "valor"));
   const prazo = t(f, "prazo");
   const volta = (e: string) => irPara(`/gestor/extras?erro=${encodeURIComponent(e)}`);
   if (titulo.length < 3) volta("Dê um título para o extra.");
   if (!(valor >= 100)) volta("Coloque o valor do extra (mínimo R$ 1,00).");
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(prazo) || prazo < hojeBrasil()) volta("Escolha um prazo de hoje em diante.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(prazo) || prazo < hojeBrasil()) volta("Escolha o dia do vídeo (de hoje em diante).");
   const admin = supabaseAdmin();
-  const { data: novo } = await admin.from("extras").insert({ titulo, descricao, valor_centavos: valor, prazo }).select("id").single();
+  const { data: novo } = await admin.from("extras").insert({ titulo, descricao, regras, valor_centavos: valor, prazo }).select("id").single();
   const { data: criadores } = await admin.from("perfis").select("id").eq("papel", "criador");
-  await Promise.all((criadores ?? []).map((c) => notificar(c.id, { tipo: "pagamento", titulo: `Vídeo extra: +${formatarReais(valor)} 💰`, texto: `${titulo}. Poste até ${diaBr(prazo)} e mande o link em Dias de postagem.`, link: "/dias#extras", chave: `extra:novo:${novo?.id}` }, admin).catch(() => undefined)));
+  await Promise.all((criadores ?? []).map((c) => notificar(c.id, { tipo: "pagamento", titulo: `Vídeo extra: +${formatarReais(valor)} 💰`, texto: `${titulo}. Vale só ${prazo === hojeBrasil() ? "HOJE" : `no dia ${diaBr(prazo)}`} (24h): poste nesse dia e mande o link em Dias de postagem.`, link: "/dias#extras", chave: `extra:novo:${novo?.id}` }, admin).catch(() => undefined)));
   irPara(`/gestor/extras?ok=${encodeURIComponent("Extra criado! A equipe foi avisada.")}`);
+}
+
+export async function salvarRegras(f: FormData) {
+  await soGestor();
+  await supabaseAdmin().from("extras").update({ regras: t(f, "regras").slice(0, 2000), descricao: t(f, "descricao").slice(0, 1000) }).eq("id", t(f, "extra"));
+  irPara(`/gestor/extras?ok=${encodeURIComponent("Descrição e regras salvas.")}`);
 }
 
 export async function encerrarExtra(f: FormData) {
@@ -57,6 +64,7 @@ export async function enviarExtra(f: FormData) {
   const admin = supabaseAdmin();
   const { data: ex } = await admin.from("extras").select("*").eq("id", t(f, "extra")).maybeSingle();
   if (!ex || !ex.ativo || ex.prazo < hojeBrasil()) volta("Esse extra não está mais aberto.");
+  if (ex.prazo > hojeBrasil()) volta(`Esse extra vale só no dia ${diaBr(ex.prazo)}: poste nesse dia e mande o link.`);
   const ref = linkReferencia(t(f, "link"));
   if (!ref) volta("Cole o link do vídeo que você postou.");
   const { data: atual } = await admin.from("entregas_extra").select("status").eq("extra_id", ex.id).eq("criador_id", perfil.id).maybeSingle();

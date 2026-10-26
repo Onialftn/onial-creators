@@ -4,7 +4,8 @@ import Link from "next/link";
 import { CapaVideo } from "@/components/CapaVideo";
 import { enviarExtra } from "@/app/acoes/extras";
 import { formatarReais } from "@/lib/pagamento";
-import { textoPrazo } from "@/lib/prazo";
+import { janelaExtra } from "@/lib/prazo";
+import { Regras } from "@/components/RegrasExtra";
 import { diaDaSemana, hojeBrasil, mesDe, nomeMes } from "@/lib/datas";
 import { MAPAS, NOME_CURTO, mapasDasOpcoes } from "@/lib/ia/mapas";
 import { maisCrescem, videosDosCanais, type VideoRef } from "@/lib/ideias";
@@ -21,7 +22,7 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
   const [r, { data: mapaHoje }, { data: extras }, { data: minhas }] = await Promise.all([
     resumoDoMes(sb, perfil.id, mes),
     sb.from("mapa_dia").select("mapa").eq("criador_id", perfil.id).eq("dia_semana", diaDaSemana(hoje)).maybeSingle(),
-    sb.from("extras").select("id, titulo, descricao, valor_centavos, prazo").eq("ativo", true).gte("prazo", hoje).order("prazo"),
+    sb.from("extras").select("id, titulo, descricao, regras, valor_centavos, prazo").eq("ativo", true).gte("prazo", hoje).order("prazo"),
     sb.from("entregas_extra").select("extra_id, link, status, motivo").eq("criador_id", perfil.id),
   ]);
   const entrega = (id: string) => (minhas ?? []).find((e) => e.extra_id === id);
@@ -55,7 +56,7 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
 
       {(extras ?? []).length > 0 && (
         <section id="extras" className="card flex flex-col gap-3">
-          <TituloCard icone="wallet" direita="Faça, mande o link e ganhe o valor">Vídeos extras</TituloCard>
+          <TituloCard icone="wallet" direita="Poste no dia marcado e mande o link">Vídeos extras</TituloCard>
           {(extras ?? []).map((x) => {
             const e = entrega(x.id);
             return (
@@ -63,27 +64,32 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
                 <div className="flex flex-wrap items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <b style={{ color: "var(--strong)", fontSize: 16 }}>{x.titulo}</b>
-                    {(() => { const p = textoPrazo(x.prazo, hoje); return (
+                    {(() => { const p = janelaExtra(x.prazo, hoje); return (
                       <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 6 }}>
-                        <span className="flex items-center gap-1.5" style={{ padding: "5px 10px", borderRadius: 6, fontSize: 14, fontWeight: 700, background: p.urgente ? "var(--warn)" : "#E8B014", color: "#0A0A0A" }}>⏰ {p.texto}</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: p.urgente ? "var(--warn)" : "var(--accent-text)" }}>{p.faltam}</span>
+                        <span className="flex items-center gap-1.5" style={{ padding: "5px 10px", borderRadius: 6, fontSize: 14, fontWeight: 700, background: p.fase === "hoje" ? "var(--ok)" : "#E8B014", color: "#0A0A0A" }}>⏰ {p.texto}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: p.fase === "hoje" ? "var(--ok)" : "var(--accent-text)" }}>{p.detalhe}</span>
                       </div>
                     ); })()}
                   </div>
                   <span className="num" style={{ fontSize: 24, color: "var(--ok)" }}>+{formatarReais(x.valor_centavos)}</span>
                 </div>
                 {x.descricao && <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.45 }}>{x.descricao}</p>}
+                {x.regras && <Regras texto={x.regras} />}
                 {e?.status === "aprovado" ? (
                   <span className="pill-ok" style={{ alignSelf: "flex-start" }}>Aprovado: o valor entrou no seu total do mês</span>
                 ) : (
                   <>
                     {e?.status === "enviado" && <span style={{ color: "var(--accent-text)", fontSize: 13 }}>Link enviado. Esperando o gestor aprovar.</span>}
                     {e?.status === "recusado" && <span style={{ color: "var(--warn)", fontSize: 13 }}>Não aprovado{e.motivo ? `: ${e.motivo}` : ""}. Você pode mandar outro link.</span>}
+                    {janelaExtra(x.prazo, hoje).fase === "antes" ? (
+                      <span style={{ fontSize: 13, color: "var(--muted)" }}>Poste o vídeo nesse dia e mande o link aqui (o envio abre às 00:00 do dia).</span>
+                    ) : (
                     <form action={enviarExtra} className="flex flex-wrap gap-2">
                       <input type="hidden" name="extra" value={x.id} />
                       <input className="input" name="link" type="url" inputMode="url" defaultValue={e?.link ?? ""} placeholder="Link do vídeo que você postou" aria-label="Link do vídeo extra" style={{ flex: "1 1 220px", minHeight: 40 }} required />
                       <button className="btn-gold" type="submit" style={{ minHeight: 40 }}>{e ? "Mandar de novo" : "Mandar link"}</button>
                     </form>
+                    )}
                   </>
                 )}
               </div>

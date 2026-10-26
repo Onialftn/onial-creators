@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { Cabecalho, TituloCard } from "@/components/Blocos";
-import { avaliarEntrega, criarExtra, encerrarExtra } from "@/app/acoes/extras";
+import { avaliarEntrega, criarExtra, encerrarExtra, salvarRegras } from "@/app/acoes/extras";
 import { usuarioAtual } from "@/lib/dados";
 import { hojeBrasil, somarDias } from "@/lib/datas";
 import { formatarReais } from "@/lib/pagamento";
-import { textoPrazo } from "@/lib/prazo";
+import { janelaExtra } from "@/lib/prazo";
+import { Regras } from "@/components/RegrasExtra";
 import { AbasGestor, Retorno } from "../comum";
 
 const diaBr = (d: string) => d.split("-").reverse().join("/");
@@ -25,7 +26,7 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
 
   return (
     <>
-      <Cabecalho icone="gear" titulo="Painel do gestor" sub="Vídeos extras: você sugere um vídeo com valor e prazo. Quem fizer manda o link, você aprova e o valor entra no total do mês do criador." />
+      <Cabecalho icone="gear" titulo="Painel do gestor" sub="Vídeos extras: você escolhe o dia e o valor; o vídeo tem que ser postado nesse dia (vale 24h). Quem fizer manda o link, você aprova e o valor entra no total do mês do criador." />
       <AbasGestor ativa="extras" />
       <Retorno ok={ok} erro={erro} />
 
@@ -34,10 +35,11 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
           <label className="flex flex-col gap-1.5" style={{ gridColumn: "span 2" }}><span className="label">TÍTULO</span><input className="input" name="titulo" maxLength={120} placeholder="Ex.: Short mostrando o farm de XP do 1v1" required /></label>
           <label className="flex flex-col gap-1.5"><span className="label">VALOR (R$)</span><input className="input" name="valor" inputMode="decimal" placeholder="25,00" required /></label>
-          <label className="flex flex-col gap-1.5"><span className="label">VENCE NO DIA (ATÉ 23:59)</span><input className="input" type="date" name="prazo" min={hoje} defaultValue={somarDias(hoje, 6)} required /></label>
+          <label className="flex flex-col gap-1.5"><span className="label">DIA DO VÍDEO (VALE SÓ NESSE DIA, 24H)</span><input className="input" type="date" name="prazo" min={hoje} defaultValue={somarDias(hoje, 1)} required /></label>
         </div>
-        <label className="flex flex-col gap-1.5"><span className="label">DESCRIÇÃO</span><textarea className="input" name="descricao" rows={3} maxLength={1000} placeholder="O que precisa ter no vídeo, em qual rede postar, link de referência..." style={{ paddingTop: 10, resize: "vertical" }} /></label>
-        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todos os criadores recebem uma notificação. Cada um que fizer e for aprovado ganha o valor.</p>
+        <label className="flex flex-col gap-1.5"><span className="label">DESCRIÇÃO</span><textarea className="input" name="descricao" rows={3} maxLength={1000} placeholder="O que precisa ter no vídeo, link de referência..." style={{ paddingTop: 10, resize: "vertical" }} /></label>
+        <label className="flex flex-col gap-1.5"><span className="label">REGRAS</span><textarea className="input" name="regras" rows={4} maxLength={2000} placeholder={"Uma regra por linha. Ex.:\nPostar no YouTube, TikTok e Instagram\nFalar o código do mapa no vídeo\nMínimo de 30 segundos"} style={{ paddingTop: 10, resize: "vertical" }} /></label>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todos os criadores recebem uma notificação agora e outra no dia. O extra vale só no dia escolhido, das 00:00 às 23:59. Cada um que postar nesse dia e for aprovado ganha o valor.</p>
         <button className="btn-gold" type="submit" style={{ alignSelf: "flex-start" }}>Criar extra</button>
       </form>
 
@@ -53,14 +55,24 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
                 <div className="min-w-0 flex-1">
                   <b style={{ color: "var(--strong)", fontSize: 16 }}>{x.titulo}</b>
                   <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 6 }}>
-                    <span style={{ padding: "4px 9px", borderRadius: 6, fontSize: 13, fontWeight: 700, background: !aberto ? "var(--chip)" : textoPrazo(x.prazo, hoje).urgente ? "var(--warn)" : "#E8B014", color: aberto ? "#0A0A0A" : "var(--muted)" }}>⏰ {x.ativo ? textoPrazo(x.prazo, hoje).texto : `Encerrado (prazo ${diaBr(x.prazo)})`}</span>
-                    {aberto && <span style={{ fontSize: 13, color: "var(--muted)" }}>{textoPrazo(x.prazo, hoje).faltam}</span>}
+                    <span style={{ padding: "4px 9px", borderRadius: 6, fontSize: 13, fontWeight: 700, background: !aberto ? "var(--chip)" : janelaExtra(x.prazo, hoje).fase === "hoje" ? "var(--ok)" : "#E8B014", color: aberto ? "#0A0A0A" : "var(--muted)" }}>⏰ {x.ativo ? janelaExtra(x.prazo, hoje).texto : `Encerrado (dia ${diaBr(x.prazo)})`}</span>
+                    {aberto && <span style={{ fontSize: 13, color: "var(--muted)" }}>{janelaExtra(x.prazo, hoje).detalhe}</span>}
                   </div>
                 </div>
                 <span className="num" style={{ fontSize: 22, color: "var(--ok)" }}>{formatarReais(x.valor_centavos)}</span>
                 <form action={encerrarExtra}><input type="hidden" name="extra" value={x.id} /><input type="hidden" name="ativo" value={x.ativo ? "0" : "1"} /><button className="btn-line" type="submit" style={{ minHeight: 34, fontSize: 13 }}>{x.ativo ? "Encerrar" : "Reabrir"}</button></form>
               </div>
               {x.descricao && <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.45 }}>{x.descricao}</p>}
+              {x.regras && <Regras texto={x.regras} />}
+              <details style={{ fontSize: 13 }}>
+                <summary style={{ cursor: "pointer", color: "var(--accent-text)" }}>Editar descrição e regras</summary>
+                <form action={salvarRegras} className="flex flex-col gap-2" style={{ marginTop: 8 }}>
+                  <input type="hidden" name="extra" value={x.id} />
+                  <textarea className="input" name="descricao" rows={2} maxLength={1000} defaultValue={x.descricao} placeholder="Descrição" style={{ paddingTop: 8, resize: "vertical" }} />
+                  <textarea className="input" name="regras" rows={4} maxLength={2000} defaultValue={x.regras ?? ""} placeholder="Regras (uma por linha)" style={{ paddingTop: 8, resize: "vertical" }} />
+                  <button className="btn-line" type="submit" style={{ alignSelf: "flex-start", minHeight: 34 }}>Salvar</button>
+                </form>
+              </details>
               {doExtra.length === 0 ? <span style={{ color: "var(--muted)", fontSize: 13 }}>Ninguém mandou ainda.</span> : doExtra.map((e) => {
                 const p = pessoa.get(e.criador_id);
                 return (

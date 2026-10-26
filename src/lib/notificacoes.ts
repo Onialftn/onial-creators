@@ -118,5 +118,13 @@ export async function gerarNotificacoes() {
       console.error("notificações", id, e);
     }
   }
+  // vídeo extra que vale hoje (24h): avisa todos os criadores
+  const { data: extrasHoje } = await admin.from("extras").select("id, titulo, valor_centavos").eq("ativo", true).eq("prazo", hoje);
+  for (const x of extrasHoje ?? []) {
+    for (const c of criadores ?? []) {
+      await notificar(c.id as string, { tipo: "pagamento", titulo: `Hoje vale o extra: +${formatarReais(x.valor_centavos)} ⏰`, texto: `${x.titulo}. Poste hoje até 23:59 e mande o link em Dias de postagem.`, link: "/dias#extras", chave: `extra:hoje:${x.id}` }, admin).catch(() => undefined);
+      n++;
+    }
+  }
   return n;
 }
