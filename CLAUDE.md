@@ -35,7 +35,8 @@ Todo o texto do site é em português do Brasil.
   - Perdeu um dia de postagem: pode repor postando em outro dia até domingo da mesma semana. Reposto não conta como falta.
   - Faltas no mês (dias não repostos até domingo): 0 faltas = 10% do bruto; 1 falta = 5%; 2 ou mais = 0%.
 - Gravações (pedido do gestor): R$ 25 fixos por gravação em que o criador ajudou (qualquer duração), quando quem pediu ajuda confirma que ele estava presente. Conta no mês do dia da gravação. Tabelas pedidos_ajuda e ajudas; regras em `src/lib/gravar.ts`.
-- Total = bruto + bruto × constância% + bônus de meta + bônus de ajuda.
+- Vídeos extras (pedido do gestor): o gestor cria um extra com valor, descrição e prazo; qualquer criador pode fazer, manda o link e o gestor aprova. O valor entra no mês da aprovação. Tabelas extras e entregas_extra.
+- Total = bruto + bruto × constância% + bônus de meta + bônus de ajuda + extras aprovados.
 - Valores em reais com duas casas, formato brasileiro (R$ 3.062,00).
 - Toda mudança nessas regras precisa de testes automáticos cobrindo: mês perfeito, falta reposta na semana, 1 falta, 2 faltas, meta batida e não batida.
 

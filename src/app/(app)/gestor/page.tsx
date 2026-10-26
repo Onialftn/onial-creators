@@ -22,7 +22,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
 
   const { data: criadores } = await sb.from("perfis").select("id, nome, foto_url, recebe").eq("papel", "criador").order("nome");
   const lista = criadores ?? [];
-  const [resumos, { data: contas }, { data: mapas }, { data: pags }, { data: usoIa }, ultima, { data: libs }] = await Promise.all([
+  const [resumos, { data: contas }, { data: mapas }, { data: pags }, { data: usoIa }, ultima, { data: libs }, { count: extrasEsperando }] = await Promise.all([
     Promise.all(lista.map((cr) => resumoDoMes(sb, cr.id, mes))),
     sb.from("contas_plataforma").select("criador_id, plataforma, erro"),
     sb.from("mapa_dia").select("criador_id"),
@@ -30,6 +30,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
     sb.from("uso_ia").select("custo_usd").gte("criado_em", inicioDoMes()).limit(5000),
     sb.from("contas_plataforma").select("ultima_coleta").not("ultima_coleta", "is", null).order("ultima_coleta", { ascending: false }).limit(1).maybeSingle(),
     sb.from("liberacoes").select("criador_id, rede, usuario").eq("liberado", false),
+    sb.from("entregas_extra").select("extra_id", { count: "exact", head: true }).eq("status", "enviado"),
   ]);
 
   const viewsEquipe = resumos.reduce((a, r) => a + r.views, 0);
@@ -52,6 +53,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
     if (r.aRepor > 0) atencao.push({ texto: `${primeiro} tem ${r.aRepor} ${r.aRepor === 1 ? "dia" : "dias"} para repor até domingo`, link: `/gestor/criador/${cr.id}#calendario`, nivel: "info" });
     if (!REDES.some((rede) => contaDe(cr.id, rede))) atencao.push({ texto: `${primeiro} ainda não conectou nenhuma rede`, link: `/gestor/criador/${cr.id}`, nivel: "info" });
   });
+  if (extrasEsperando) atencao.unshift({ texto: `${extrasEsperando} ${extrasEsperando === 1 ? "vídeo extra" : "vídeos extras"} para aprovar`, link: "/gestor/extras", nivel: "warn" });
   for (const l of libs ?? []) {
     const cr = lista.find((x) => x.id === l.criador_id);
     atencao.unshift({ texto: `Liberar o ${l.rede === "instagram" ? "Instagram" : "TikTok"} de ${cr?.nome.split(" ")[0] ?? "um criador"} (@${l.usuario})`, link: "/gestor/config#liberar", nivel: "warn" });

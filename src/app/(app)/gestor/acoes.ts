@@ -104,7 +104,7 @@ export async function fecharMes(f: FormData) {
   const r = await resumoDoMes(sb, criador, mes);
   const p = r.pagamento;
   await sb.from("pagamentos").upsert(
-    { criador_id: criador, mes, views: p.views, faltas: p.faltas, bruto_centavos: p.brutoCentavos, constancia_centavos: p.constanciaCentavos, bonus_meta_centavos: p.bonusMetaCentavos, bonus_ajuda_centavos: p.bonusAjudaCentavos, total_centavos: p.totalCentavos, status: "em_aberto" },
+    { criador_id: criador, mes, views: p.views, faltas: p.faltas, bruto_centavos: p.brutoCentavos, constancia_centavos: p.constanciaCentavos, bonus_meta_centavos: p.bonusMetaCentavos, bonus_ajuda_centavos: p.bonusAjudaCentavos, bonus_extra_centavos: p.bonusExtraCentavos, total_centavos: p.totalCentavos, status: "em_aberto" },
     { onConflict: "criador_id,mes" },
   );
   await notificar(criador, { tipo: "pagamento", titulo: `Seu mês de ${nomeMes(mes).split(" ")[0].toLowerCase()} foi fechado`, texto: `Você vai receber ${formatarReais(p.totalCentavos)}. Veja os detalhes em Pagamentos.`, link: "/pagamentos", chave: `fechado:${mes}:${p.totalCentavos}` }).catch(() => undefined);

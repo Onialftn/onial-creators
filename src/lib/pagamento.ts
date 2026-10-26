@@ -34,6 +34,8 @@ export interface ResultadoPagamento {
   /** quantas gravações o criador ajudou (confirmadas por quem pediu) */
   ajudas: number;
   bonusAjudaCentavos: number;
+  /** vídeos extras aprovados pelo gestor (valor de cada extra somado) */
+  bonusExtraCentavos: number;
   totalCentavos: number;
 }
 
@@ -108,7 +110,7 @@ export function calcularConstancia(dias: DiaPostagem[], hoje: string, mes: strin
 }
 
 /** Pagamento do mês. */
-export function calcularPagamento(views: number, meta: number | null, faltas: number, ajudas = 0): ResultadoPagamento {
+export function calcularPagamento(views: number, meta: number | null, faltas: number, ajudas = 0, extrasCentavos = 0): ResultadoPagamento {
   const v = Math.max(0, Math.floor(views));
   const brutoCentavos = Math.round((v * CENTAVOS_POR_MIL_VIEWS) / 1000);
   const percentualConstancia = percentualPorFaltas(faltas);
@@ -117,6 +119,7 @@ export function calcularPagamento(views: number, meta: number | null, faltas: nu
   const bonusMetaCentavos = bateuMeta ? Math.round((meta! * BONUS_META_CENTAVOS_POR_MIL) / 1000) : 0;
   const nAjudas = Math.max(0, Math.floor(ajudas));
   const bonusAjudaCentavos = nAjudas * BONUS_AJUDA_CENTAVOS;
+  const bonusExtraCentavos = Math.max(0, Math.round(extrasCentavos));
   return {
     views: v,
     meta,
@@ -128,7 +131,8 @@ export function calcularPagamento(views: number, meta: number | null, faltas: nu
     bonusMetaCentavos,
     ajudas: nAjudas,
     bonusAjudaCentavos,
-    totalCentavos: brutoCentavos + constanciaCentavos + bonusMetaCentavos + bonusAjudaCentavos,
+    bonusExtraCentavos,
+    totalCentavos: brutoCentavos + constanciaCentavos + bonusMetaCentavos + bonusAjudaCentavos + bonusExtraCentavos,
   };
 }
 

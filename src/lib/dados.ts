@@ -66,7 +66,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const semIni = inicioDaSemanaDe(ini);
   const semFim = fimDaSemanaDe(fim);
 
-  const [views, meta, agenda, dias, videos, ontem, ajudas] = await Promise.all([
+  const [views, meta, agenda, dias, videos, ontem, ajudas, extras] = await Promise.all([
     // soma pronta no banco (a leitura direta de views_diarias corta em 1.000 linhas)
     sb.from("ranking_mensal").select("plataforma, views").eq("criador_id", criadorId).eq("mes", mes),
     sb.from("metas").select("meta_views").eq("criador_id", criadorId).eq("mes", mes).maybeSingle(),
@@ -77,7 +77,11 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     // Gravações: gravações em que ajudou, confirmadas por quem pediu, no mês da gravação
     sb.from("ajudas").select("pedido_id, pedidos_ajuda!inner(dia, status)", { count: "exact", head: true }).eq("ajudante_id", criadorId).eq("presente", true)
       .eq("pedidos_ajuda.status", "feito").gte("pedidos_ajuda.dia", ini).lte("pedidos_ajuda.dia", fim),
+    // vídeos extras aprovados pelo gestor neste mês
+    sb.from("entregas_extra").select("extras!inner(valor_centavos)").eq("criador_id", criadorId).eq("status", "aprovado").eq("mes", mes),
   ]);
+  const extrasCentavos = ((extras.data ?? []) as unknown as { extras: { valor_centavos: number } | { valor_centavos: number }[] }[])
+    .reduce((a, e) => a + (Array.isArray(e.extras) ? e.extras.reduce((x, y) => x + Number(y.valor_centavos), 0) : Number(e.extras?.valor_centavos ?? 0)), 0);
 
   const viewsPorPlataforma: Record<Plataforma, number> = { tiktok: 0, youtube: 0, instagram: 0 };
   for (const r of views.data ?? []) viewsPorPlataforma[r.plataforma as Plataforma] += Number(r.views);
@@ -126,7 +130,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const doMes = lista.filter((d) => d.data >= ini && d.data <= fim && d.agendado);
   const diasCumpridos = doMes.filter((d) => { const st = statusDe.get(d.data); return st === "postado" || st === "reposto"; }).length;
   const metaViews = meta.data ? Number(meta.data.meta_views) : null;
-  const pagamento = calcularPagamento(total, metaViews, constancia.faltas, ajudas.count ?? 0);
+  const pagamento = calcularPagamento(total, metaViews, constancia.faltas, ajudas.count ?? 0, extrasCentavos);
   // "Desde ontem" = saldo de agora − saldo anotado no dia anterior (no mês novo, o anterior conta como zero)
   const desdeOntem = () => {
     if (mes !== mesDe(hoje) || !ontem.data) return { viewsDesdeOntem: null, centavosDesdeOntem: null };
@@ -134,7 +138,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     return { viewsDesdeOntem: Math.max(0, total - antes), centavosDesdeOntem: Math.max(0, pagamento.brutoCentavos - calcularPagamento(antes, null, 0).brutoCentavos) };
   };
   const totalSeBaterMeta = metaViews
-    ? pagamento.brutoCentavos + pagamento.constanciaCentavos + Math.round((metaViews * BONUS_META_CENTAVOS_POR_MIL) / 1000) + pagamento.bonusAjudaCentavos
+    ? pagamento.brutoCentavos + pagamento.constanciaCentavos + Math.round((metaViews * BONUS_META_CENTAVOS_POR_MIL) / 1000) + pagamento.bonusAjudaCentavos + pagamento.bonusExtraCentavos
     : null;
 
   return {

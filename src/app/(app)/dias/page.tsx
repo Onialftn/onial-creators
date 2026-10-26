@@ -2,6 +2,8 @@ import { Cabecalho, Calendario, TituloCard } from "@/components/Blocos";
 import { resumoDoMes, usuarioAtual } from "@/lib/dados";
 import Link from "next/link";
 import { CapaVideo } from "@/components/CapaVideo";
+import { enviarExtra } from "@/app/acoes/extras";
+import { formatarReais } from "@/lib/pagamento";
 import { diaDaSemana, hojeBrasil, mesDe, nomeMes } from "@/lib/datas";
 import { MAPAS, NOME_CURTO, mapasDasOpcoes } from "@/lib/ia/mapas";
 import { maisCrescem, videosDosCanais, type VideoRef } from "@/lib/ideias";
@@ -10,14 +12,18 @@ export const maxDuration = 60;
 
 const mil = (v: number) => (v >= 1e6 ? `${(v / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi` : v >= 1e3 ? `${Math.round(v / 1e3)} mil` : String(v));
 
-export default async function DiasDePostagem() {
+export default async function DiasDePostagem({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
+  const { ok, erro } = await searchParams;
   const { sb, perfil } = await usuarioAtual();
   const mes = mesDe(hojeBrasil());
   const hoje = hojeBrasil();
-  const [r, { data: mapaHoje }] = await Promise.all([
+  const [r, { data: mapaHoje }, { data: extras }, { data: minhas }] = await Promise.all([
     resumoDoMes(sb, perfil.id, mes),
     sb.from("mapa_dia").select("mapa").eq("criador_id", perfil.id).eq("dia_semana", diaDaSemana(hoje)).maybeSingle(),
+    sb.from("extras").select("id, titulo, descricao, valor_centavos, prazo").eq("ativo", true).gte("prazo", hoje).order("prazo"),
+    sb.from("entregas_extra").select("extra_id, link, status, motivo").eq("criador_id", perfil.id),
   ]);
+  const entrega = (id: string) => (minhas ?? []).find((e) => e.extra_id === id);
   // 3 opções de hoje pelo mapa do dia: mapa do dia, o outro mapa e o mapa do dia de novo (vídeos que mais crescem em Ideias & roteiros)
   const hojeDePostar = ["hoje", "postado", "reposto"].includes(r.calendario.find((d) => d.data === hoje)?.status ?? "") && !!mapaHoje?.mapa && MAPAS.some((m) => m.id === mapaHoje.mapa);
   const opcoes: { mapa: string; video: VideoRef | null }[] = [];
@@ -43,6 +49,43 @@ export default async function DiasDePostagem() {
   return (
     <>
       <Cabecalho titulo="Dias de postagem" sub="Seu mês inteiro: o que já foi postado, o que falta e as folgas. Siga todos os dias de postagem para ganhar +10% no valor bruto." />
+      {ok && <div role="status" className="pill-ok" style={{ padding: "10px 14px", fontSize: 14 }}>{ok}</div>}
+      {erro && <div role="alert" className="pill-warn" style={{ padding: "10px 14px", fontSize: 14 }}>{erro}</div>}
+
+      {(extras ?? []).length > 0 && (
+        <section id="extras" className="card flex flex-col gap-3">
+          <TituloCard icone="wallet" direita="Faça, mande o link e ganhe o valor">Vídeos extras</TituloCard>
+          {(extras ?? []).map((x) => {
+            const e = entrega(x.id);
+            return (
+              <div key={x.id} className="flex flex-col gap-2.5" style={{ padding: 14, borderRadius: 8, background: "var(--bg)", border: `1px solid ${e?.status === "aprovado" ? "var(--ok)" : "#E8B014"}` }}>
+                <div className="flex flex-wrap items-start gap-3">
+                  <div className="min-w-0 flex-1">
+                    <b style={{ color: "var(--strong)", fontSize: 16 }}>{x.titulo}</b>
+                    <div style={{ color: "var(--muted)", fontSize: 13 }}>Poste até {x.prazo.split("-").reverse().slice(0, 2).join("/")}</div>
+                  </div>
+                  <span className="num" style={{ fontSize: 24, color: "var(--ok)" }}>+{formatarReais(x.valor_centavos)}</span>
+                </div>
+                {x.descricao && <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.45 }}>{x.descricao}</p>}
+                {e?.status === "aprovado" ? (
+                  <span className="pill-ok" style={{ alignSelf: "flex-start" }}>Aprovado: o valor entrou no seu total do mês</span>
+                ) : (
+                  <>
+                    {e?.status === "enviado" && <span style={{ color: "var(--accent-text)", fontSize: 13 }}>Link enviado. Esperando o gestor aprovar.</span>}
+                    {e?.status === "recusado" && <span style={{ color: "var(--warn)", fontSize: 13 }}>Não aprovado{e.motivo ? `: ${e.motivo}` : ""}. Você pode mandar outro link.</span>}
+                    <form action={enviarExtra} className="flex flex-wrap gap-2">
+                      <input type="hidden" name="extra" value={x.id} />
+                      <input className="input" name="link" type="url" inputMode="url" defaultValue={e?.link ?? ""} placeholder="Link do vídeo que você postou" aria-label="Link do vídeo extra" style={{ flex: "1 1 220px", minHeight: 40 }} required />
+                      <button className="btn-gold" type="submit" style={{ minHeight: 40 }}>{e ? "Mandar de novo" : "Mandar link"}</button>
+                    </form>
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </section>
+      )}
+
       {hojeDePostar && (
         <section className="card flex flex-col gap-4">
           <TituloCard icone="video" direita={`Hoje é dia de ${NOME_CURTO[mapaHoje!.mapa]}`}>Opções de vídeo para hoje</TituloCard>

@@ -142,6 +142,23 @@ describe("pagamento", () => {
     expect(calcularPagamento(500_000, null, 0, -2).bonusAjudaCentavos).toBe(0);
   });
 
+  it("vídeos extras aprovados: valor somado ao total, sem mudar constância e meta", () => {
+    const base = calcularPagamento(612_400, 700_000, 0);
+    const p = calcularPagamento(612_400, 700_000, 0, 0, 15_000);
+    expect(p.bonusExtraCentavos).toBe(15_000);
+    expect(p.totalCentavos).toBe(base.totalCentavos + 15_000);
+    expect(p.constanciaCentavos).toBe(base.constanciaCentavos);
+  });
+
+  it("extras junto com ajuda, meta batida e 1 falta", () => {
+    const p = calcularPagamento(734_900, 700_000, 1, 2, 10_000);
+    expect(p.totalCentavos).toBe(367_450 + 18_373 + 70_000 + 5_000 + 10_000);
+  });
+
+  it("extras negativos não descontam", () => {
+    expect(calcularPagamento(500_000, null, 2, 0, -500).bonusExtraCentavos).toBe(0);
+  });
+
   it("formato brasileiro", () => {
     expect(formatarReais(306_200)).toBe("R$ 3.062,00");
   });
