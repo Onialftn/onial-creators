@@ -5,6 +5,7 @@ import { avaliarEntrega, criarExtra, encerrarExtra } from "@/app/acoes/extras";
 import { usuarioAtual } from "@/lib/dados";
 import { hojeBrasil, somarDias } from "@/lib/datas";
 import { formatarReais } from "@/lib/pagamento";
+import { textoPrazo } from "@/lib/prazo";
 import { AbasGestor, Retorno } from "../comum";
 
 const diaBr = (d: string) => d.split("-").reverse().join("/");
@@ -33,7 +34,7 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
           <label className="flex flex-col gap-1.5" style={{ gridColumn: "span 2" }}><span className="label">TÍTULO</span><input className="input" name="titulo" maxLength={120} placeholder="Ex.: Short mostrando o farm de XP do 1v1" required /></label>
           <label className="flex flex-col gap-1.5"><span className="label">VALOR (R$)</span><input className="input" name="valor" inputMode="decimal" placeholder="25,00" required /></label>
-          <label className="flex flex-col gap-1.5"><span className="label">PRAZO (POSTAR ATÉ)</span><input className="input" type="date" name="prazo" min={hoje} defaultValue={somarDias(hoje, 6)} required /></label>
+          <label className="flex flex-col gap-1.5"><span className="label">VENCE NO DIA (ATÉ 23:59)</span><input className="input" type="date" name="prazo" min={hoje} defaultValue={somarDias(hoje, 6)} required /></label>
         </div>
         <label className="flex flex-col gap-1.5"><span className="label">DESCRIÇÃO</span><textarea className="input" name="descricao" rows={3} maxLength={1000} placeholder="O que precisa ter no vídeo, em qual rede postar, link de referência..." style={{ paddingTop: 10, resize: "vertical" }} /></label>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todos os criadores recebem uma notificação. Cada um que fizer e for aprovado ganha o valor.</p>
@@ -51,7 +52,10 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
               <div className="flex flex-wrap items-start gap-3">
                 <div className="min-w-0 flex-1">
                   <b style={{ color: "var(--strong)", fontSize: 16 }}>{x.titulo}</b>
-                  <div style={{ color: "var(--muted)", fontSize: 13 }}>Até {diaBr(x.prazo)} · {aberto ? "aberto" : x.ativo ? "prazo acabou" : "encerrado"}</div>
+                  <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 6 }}>
+                    <span style={{ padding: "4px 9px", borderRadius: 6, fontSize: 13, fontWeight: 700, background: !aberto ? "var(--chip)" : textoPrazo(x.prazo, hoje).urgente ? "var(--warn)" : "#E8B014", color: aberto ? "#0A0A0A" : "var(--muted)" }}>⏰ {x.ativo ? textoPrazo(x.prazo, hoje).texto : `Encerrado (prazo ${diaBr(x.prazo)})`}</span>
+                    {aberto && <span style={{ fontSize: 13, color: "var(--muted)" }}>{textoPrazo(x.prazo, hoje).faltam}</span>}
+                  </div>
                 </div>
                 <span className="num" style={{ fontSize: 22, color: "var(--ok)" }}>{formatarReais(x.valor_centavos)}</span>
                 <form action={encerrarExtra}><input type="hidden" name="extra" value={x.id} /><input type="hidden" name="ativo" value={x.ativo ? "0" : "1"} /><button className="btn-line" type="submit" style={{ minHeight: 34, fontSize: 13 }}>{x.ativo ? "Encerrar" : "Reabrir"}</button></form>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { CapaVideo } from "@/components/CapaVideo";
 import { enviarExtra } from "@/app/acoes/extras";
 import { formatarReais } from "@/lib/pagamento";
+import { textoPrazo } from "@/lib/prazo";
 import { diaDaSemana, hojeBrasil, mesDe, nomeMes } from "@/lib/datas";
 import { MAPAS, NOME_CURTO, mapasDasOpcoes } from "@/lib/ia/mapas";
 import { maisCrescem, videosDosCanais, type VideoRef } from "@/lib/ideias";
@@ -62,7 +63,12 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
                 <div className="flex flex-wrap items-start gap-3">
                   <div className="min-w-0 flex-1">
                     <b style={{ color: "var(--strong)", fontSize: 16 }}>{x.titulo}</b>
-                    <div style={{ color: "var(--muted)", fontSize: 13 }}>Poste até {x.prazo.split("-").reverse().slice(0, 2).join("/")}</div>
+                    {(() => { const p = textoPrazo(x.prazo, hoje); return (
+                      <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 6 }}>
+                        <span className="flex items-center gap-1.5" style={{ padding: "5px 10px", borderRadius: 6, fontSize: 14, fontWeight: 700, background: p.urgente ? "var(--warn)" : "#E8B014", color: "#0A0A0A" }}>⏰ {p.texto}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: p.urgente ? "var(--warn)" : "var(--accent-text)" }}>{p.faltam}</span>
+                      </div>
+                    ); })()}
                   </div>
                   <span className="num" style={{ fontSize: 24, color: "var(--ok)" }}>+{formatarReais(x.valor_centavos)}</span>
                 </div>
