@@ -1,3 +1,4 @@
+-- (não usada: a ideia mudou para as 3 opções automáticas pelo mapa do dia)
 -- Dias de postagem: até 3 opções de vídeo que o gestor escolhe para o criador em cada dia
 create table if not exists public.videos_dia (
   criador_id uuid not null references public.perfis (id) on delete cascade,

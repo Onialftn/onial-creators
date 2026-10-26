@@ -74,3 +74,12 @@ export async function resolverCanal(entrada: string) {
   if (!c) throw new Error("Não achei esse canal no YouTube. Confira o link.");
   return { canal_id: c.id, nome: c.snippet.title, foto_url: c.snippet.thumbnails?.default?.url ?? null };
 }
+
+/** Os que mais crescem: views por dia desde que foram postados (mínimo de 6 horas). Primeiro os da última semana. */
+export function maisCrescem(videos: VideoRef[], agora = Date.now()): VideoRef[] {
+  const porDia = (v: VideoRef) => Math.round(v.views / Math.max(0.25, (agora - new Date(v.publicado).getTime()) / 86_400_000));
+  const semana = agora - 7 * 86_400_000;
+  const novos = (v: VideoRef) => new Date(v.publicado).getTime() >= semana;
+  const ordenar = (l: VideoRef[]) => l.map((v) => ({ ...v, porDia: porDia(v) })).sort((a, b) => b.porDia - a.porDia);
+  return [...ordenar(videos.filter(novos)), ...ordenar(videos.filter((v) => !novos(v)))];
+}

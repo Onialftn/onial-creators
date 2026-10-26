@@ -5,42 +5,34 @@ import { Cabecalho, Calendario, CardsGanho, TituloCard } from "@/components/Bloc
 import { Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { REDES } from "@/lib/coleta/redes";
 import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
-import { DIAS_NOMES, diaDaSemana, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi, somarDias } from "@/lib/datas";
+import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
-import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta, salvarRecebe, salvarVideosDia } from "../../acoes";
+import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta, salvarRecebe } from "../../acoes";
 import { AbasGestor, Retorno } from "../../comum";
 
 export const maxDuration = 60;
 
 
-export default async function CriadorGestor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string; dia?: string }> }) {
+export default async function CriadorGestor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string }> }) {
   const { sb, perfil } = await usuarioAtual();
   if (perfil.papel !== "gestor") redirect("/");
   const { id } = await params;
-  const { ok, erro, dia: diaPedido } = await searchParams;
+  const { ok, erro } = await searchParams;
   const { data: cr } = await sb.from("perfis").select("id, nome, foto_url, canal_youtube, recebe").eq("id", id).eq("papel", "criador").maybeSingle();
   if (!cr) notFound();
 
   const hoje = hojeBrasil();
   const mes = mesDe(hoje);
-  const [r, { data: agenda }, { data: pags }, { data: mapas }, { data: contas }, { data: videosDia }] = await Promise.all([
+  const [r, { data: agenda }, { data: pags }, { data: mapas }, { data: contas }] = await Promise.all([
     resumoDoMes(sb, id, mes),
     sb.from("agenda_postagem").select("dia_semana").eq("criador_id", id),
     sb.from("pagamentos").select("*").eq("criador_id", id).order("mes", { ascending: false }),
     sb.from("mapa_dia").select("dia_semana, mapa").eq("criador_id", id),
     sb.from("contas_plataforma").select("plataforma, nome_conta, ultima_coleta, erro").eq("criador_id", id),
-    sb.from("videos_dia").select("dia, ordem, link, recado").eq("criador_id", id).gte("dia", hojeBrasil()).order("dia").order("ordem"),
   ]);
   const dias = new Set((agenda ?? []).map((a) => a.dia_semana as number));
   const fechados = new Set((pags ?? []).map((p) => p.mes as string));
-  // dia aberto no card "Vídeos do dia": o escolhido, ou o próximo dia de postagem
-  let proximoDia = hoje;
-  for (let i = 0; i < 7 && dias.size; i++) { const d = somarDias(hoje, i); if (dias.has(diaDaSemana(d))) { proximoDia = d; break; } }
-  const diaVideos = diaPedido && /^\d{4}-\d{2}-\d{2}$/.test(diaPedido) ? diaPedido : proximoDia;
-  const opcoesDoDia = (videosDia ?? []).filter((v) => v.dia === diaVideos);
-  const diasComVideos = [...new Set((videosDia ?? []).map((v) => v.dia as string))];
-  const dmy = (d: string) => `${DIAS_NOMES[diaDaSemana(d) - 1]}, ${d.slice(8)}/${d.slice(5, 7)}`;
 
   return (
     <>
@@ -113,34 +105,6 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
             <button className="btn-gold" type="submit" style={{ alignSelf: "flex-start" }}>Salvar mapas</button>
           </form>
         </div>
-      </section>
-
-      <section id="videos" className="card flex flex-col gap-4">
-        <TituloCard icone="video" direita={diasComVideos.length ? `${diasComVideos.length} ${diasComVideos.length === 1 ? "dia configurado" : "dias configurados"}` : undefined}>Vídeos do dia (3 opções)</TituloCard>
-        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>O criador vê essas opções em Dias de postagem, no dia escolhido. Cole o link do vídeo (YouTube, TikTok ou Instagram) e, se quiser, um recado.</p>
-        <form method="get" action="#videos" className="flex flex-wrap items-end gap-2">
-          <label className="flex flex-col gap-1.5"><span className="label">DIA</span><input className="input" type="date" name="dia" defaultValue={diaVideos} min={hoje} style={{ minHeight: 40 }} /></label>
-          <button className="btn-line" type="submit" style={{ minHeight: 40 }}>Abrir dia</button>
-        </form>
-        {diasComVideos.length > 0 && (
-          <div className="flex flex-wrap gap-2" style={{ fontSize: 13 }}>
-            {diasComVideos.map((d) => <Link key={d} href={`/gestor/criador/${id}?dia=${d}#videos`} className={d === diaVideos ? "pill-tint" : "pill"} style={{ border: "1px solid var(--line2)" }}>{dmy(d)} · {(videosDia ?? []).filter((v) => v.dia === d).length}</Link>)}
-          </div>
-        )}
-        <form action={salvarVideosDia} className="flex flex-col gap-3">
-          <input type="hidden" name="criador" value={id} /><input type="hidden" name="dia" value={diaVideos} />
-          <b style={{ color: "var(--strong)" }}>{dmy(diaVideos)}{!dias.has(diaDaSemana(diaVideos)) && <span style={{ color: "var(--muted)", fontWeight: 400, fontSize: 13 }}> · dia de folga</span>}</b>
-          {[1, 2, 3].map((o) => {
-            const v = opcoesDoDia.find((x) => x.ordem === o);
-            return (
-              <div key={o} className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" }}>
-                <input className="input" name={`link_${o}`} type="url" inputMode="url" defaultValue={v?.link ?? ""} placeholder={`Opção ${o}: link do vídeo`} aria-label={`Link da opção ${o}`} />
-                <input className="input" name={`recado_${o}`} maxLength={200} defaultValue={v?.recado ?? ""} placeholder="Recado (opcional): ex.: grave no mapa 1v1" aria-label={`Recado da opção ${o}`} />
-              </div>
-            );
-          })}
-          <button className="btn-gold" type="submit" style={{ alignSelf: "flex-start" }}>Salvar vídeos do dia</button>
-        </form>
       </section>
 
       <section id="calendario" className="card flex flex-col gap-4">
