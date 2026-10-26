@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { anotarSaldo, coletarTodas } from "@/lib/coleta/coletar";
+import { linkReferencia } from "@/lib/gravar";
 import { MAPAS } from "@/lib/ia/mapas";
 import { resolverCanal } from "@/lib/ideias";
 import { gerarNotificacoes, notificar } from "@/lib/notificacoes";
@@ -17,6 +18,10 @@ async function gestor() {
 }
 const texto = (f: FormData, k: string) => String(f.get(k) ?? "").trim();
 const inteiro = (f: FormData, k: string) => Math.max(0, Math.floor(Number(texto(f, k).replace(/\D/g, "")) || 0));
+function voltarPara(url: string): never {
+  revalidatePath("/", "layout");
+  redirect(url);
+}
 function voltar(criadorId: string, aviso: string) {
   revalidatePath("/", "layout");
   redirect(`/gestor/criador/${criadorId}?ok=${encodeURIComponent(aviso)}`);
@@ -44,6 +49,22 @@ export async function salvarRecebe(f: FormData) {
   const propria = f.get("propria") === "1";
   await sb.from("perfis").update({ recebe: !propria }).eq("id", criador);
   voltar(criador, propria ? "Marcada como conta da Onial: fica fora dos totais a pagar." : "Conta volta a receber pagamento.");
+}
+
+/** Até 3 opções de vídeo para o criador postar num dia (link vazio = tira a opção). */
+export async function salvarVideosDia(f: FormData) {
+  const { sb } = await gestor();
+  const criador = texto(f, "criador");
+  const dia = texto(f, "dia");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dia)) voltarPara(`/gestor/criador/${criador}?erro=${encodeURIComponent("Escolha o dia.")}#videos`);
+  for (let o = 1; o <= 3; o++) {
+    const bruto = texto(f, `link_${o}`);
+    const ref = bruto ? linkReferencia(bruto) : null;
+    if (bruto && !ref) voltarPara(`/gestor/criador/${criador}?dia=${dia}&erro=${encodeURIComponent(`O link da opção ${o} não parece certo.`)}#videos`);
+    if (!ref) await sb.from("videos_dia").delete().eq("criador_id", criador).eq("dia", dia).eq("ordem", o);
+    else await sb.from("videos_dia").upsert({ criador_id: criador, dia, ordem: o, link: ref.url.slice(0, 500), recado: texto(f, `recado_${o}`).slice(0, 200) });
+  }
+  voltarPara(`/gestor/criador/${criador}?dia=${dia}&ok=${encodeURIComponent(`Vídeos de ${dia.split("-").reverse().slice(0, 2).join("/")} salvos.`)}#videos`);
 }
 
 export async function salvarMeta(f: FormData) {
