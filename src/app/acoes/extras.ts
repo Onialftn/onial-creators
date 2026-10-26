@@ -45,10 +45,24 @@ export async function criarExtra(f: FormData) {
   irPara(`/gestor/extras?ok=${encodeURIComponent("Extra criado! A equipe foi avisada.")}`);
 }
 
-export async function salvarRegras(f: FormData) {
+/** Edita um extra. O valor só muda se ninguém foi aprovado ainda (para não mexer em pagamento já aprovado). */
+export async function editarExtra(f: FormData) {
   await soGestor();
-  await supabaseAdmin().from("extras").update({ regras: t(f, "regras").slice(0, 2000), descricao: t(f, "descricao").slice(0, 1000) }).eq("id", t(f, "extra"));
-  irPara(`/gestor/extras?ok=${encodeURIComponent("Descrição e regras salvas.")}`);
+  const id = t(f, "extra");
+  const volta = (e: string, ok = false) => irPara(`/gestor/extras?${ok ? "ok" : "erro"}=${encodeURIComponent(e)}`);
+  const titulo = t(f, "titulo").slice(0, 120);
+  const prazo = t(f, "prazo");
+  const valor = await lerReais(t(f, "valor"));
+  if (titulo.length < 3) volta("Dê um título para o extra.");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(prazo)) volta("Escolha o dia do vídeo.");
+  if (!(valor >= 100)) volta("Coloque o valor do extra (mínimo R$ 1,00).");
+  const admin = supabaseAdmin();
+  const { data: atual } = await admin.from("extras").select("valor_centavos").eq("id", id).maybeSingle();
+  if (!atual) volta("Extra não encontrado.");
+  const { count: aprovados } = await admin.from("entregas_extra").select("extra_id", { count: "exact", head: true }).eq("extra_id", id).eq("status", "aprovado");
+  if (aprovados && valor !== atual!.valor_centavos) volta("Esse extra já tem vídeo aprovado: o valor não pode mudar. Duplique o extra para criar um com outro valor.");
+  await admin.from("extras").update({ titulo, prazo, valor_centavos: valor, descricao: t(f, "descricao").slice(0, 1000), regras: t(f, "regras").slice(0, 2000) }).eq("id", id);
+  volta("Extra atualizado.", true);
 }
 
 export async function encerrarExtra(f: FormData) {
