@@ -2,10 +2,7 @@ import { Cabecalho, Calendario, TituloCard } from "@/components/Blocos";
 import { resumoDoMes, usuarioAtual } from "@/lib/dados";
 import Link from "next/link";
 import { CapaVideo } from "@/components/CapaVideo";
-import { enviarExtra } from "@/app/acoes/extras";
-import { formatarReais } from "@/lib/pagamento";
-import { janelaExtra } from "@/lib/prazo";
-import { Regras } from "@/components/RegrasExtra";
+import { ExtrasCriador, type EntregaCriador, type ExtraCriador } from "@/components/ExtrasCriador";
 import { diaDaSemana, hojeBrasil, mesDe, nomeMes } from "@/lib/datas";
 import { MAPAS, NOME_CURTO, mapasDasOpcoes } from "@/lib/ia/mapas";
 import { maisCrescem, videosDosCanais, type VideoRef } from "@/lib/ideias";
@@ -25,7 +22,6 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
     sb.from("extras").select("id, titulo, descricao, regras, valor_centavos, prazo").eq("ativo", true).gte("prazo", hoje).order("prazo"),
     sb.from("entregas_extra").select("extra_id, link, status, motivo").eq("criador_id", perfil.id),
   ]);
-  const entrega = (id: string) => (minhas ?? []).find((e) => e.extra_id === id);
   // 3 opções de hoje pelo mapa do dia: mapa do dia, o outro mapa e o mapa do dia de novo (vídeos que mais crescem em Ideias & roteiros)
   const hojeDePostar = ["hoje", "postado", "reposto"].includes(r.calendario.find((d) => d.data === hoje)?.status ?? "") && !!mapaHoje?.mapa && MAPAS.some((m) => m.id === mapaHoje.mapa);
   const opcoes: { mapa: string; video: VideoRef | null }[] = [];
@@ -54,49 +50,7 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
       {ok && <div role="status" className="pill-ok" style={{ padding: "10px 14px", fontSize: 14 }}>{ok}</div>}
       {erro && <div role="alert" className="pill-warn" style={{ padding: "10px 14px", fontSize: 14 }}>{erro}</div>}
 
-      {(extras ?? []).length > 0 && (
-        <section id="extras" className="card flex flex-col gap-3">
-          <TituloCard icone="wallet" direita="Poste no dia marcado e mande o link">Vídeos extras</TituloCard>
-          {(extras ?? []).map((x) => {
-            const e = entrega(x.id);
-            return (
-              <div key={x.id} className="flex flex-col gap-2.5" style={{ padding: 14, borderRadius: 8, background: "var(--bg)", border: `1px solid ${e?.status === "aprovado" ? "var(--ok)" : "#E8B014"}` }}>
-                <div className="flex flex-wrap items-start gap-3">
-                  <div className="min-w-0 flex-1">
-                    <b style={{ color: "var(--strong)", fontSize: 16 }}>{x.titulo}</b>
-                    {(() => { const p = janelaExtra(x.prazo, hoje); return (
-                      <div className="flex flex-wrap items-center gap-2" style={{ marginTop: 6 }}>
-                        <span className="flex items-center gap-1.5" style={{ padding: "5px 10px", borderRadius: 6, fontSize: 14, fontWeight: 700, background: p.fase === "hoje" ? "var(--ok)" : "#E8B014", color: "#0A0A0A" }}>⏰ {p.texto}</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: p.fase === "hoje" ? "var(--ok)" : "var(--accent-text)" }}>{p.detalhe}</span>
-                      </div>
-                    ); })()}
-                  </div>
-                  <span className="num" style={{ fontSize: 24, color: "var(--ok)" }}>+{formatarReais(x.valor_centavos)}</span>
-                </div>
-                {x.descricao && <p style={{ margin: 0, whiteSpace: "pre-wrap", fontSize: 14, lineHeight: 1.45 }}>{x.descricao}</p>}
-                {x.regras && <Regras texto={x.regras} />}
-                {e?.status === "aprovado" ? (
-                  <span className="pill-ok" style={{ alignSelf: "flex-start" }}>Aprovado: o valor entrou no seu total do mês</span>
-                ) : (
-                  <>
-                    {e?.status === "enviado" && <span style={{ color: "var(--accent-text)", fontSize: 13 }}>Link enviado. Esperando o gestor aprovar.</span>}
-                    {e?.status === "recusado" && <span style={{ color: "var(--warn)", fontSize: 13 }}>Não aprovado{e.motivo ? `: ${e.motivo}` : ""}. Você pode mandar outro link.</span>}
-                    {janelaExtra(x.prazo, hoje).fase === "antes" ? (
-                      <span style={{ fontSize: 13, color: "var(--muted)" }}>Poste o vídeo nesse dia e mande o link aqui (o envio abre às 00:00 do dia).</span>
-                    ) : (
-                    <form action={enviarExtra} className="flex flex-wrap gap-2">
-                      <input type="hidden" name="extra" value={x.id} />
-                      <input className="input" name="link" type="url" inputMode="url" defaultValue={e?.link ?? ""} placeholder="Link do vídeo que você postou" aria-label="Link do vídeo extra" style={{ flex: "1 1 220px", minHeight: 40 }} required />
-                      <button className="btn-gold" type="submit" style={{ minHeight: 40 }}>{e ? "Mandar de novo" : "Mandar link"}</button>
-                    </form>
-                    )}
-                  </>
-                )}
-              </div>
-            );
-          })}
-        </section>
-      )}
+      <ExtrasCriador extras={(extras ?? []) as ExtraCriador[]} entregas={(minhas ?? []) as EntregaCriador[]} hoje={hoje} />
 
       {hojeDePostar && (
         <section className="card flex flex-col gap-4">

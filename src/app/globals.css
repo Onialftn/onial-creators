@@ -98,3 +98,8 @@ a { color: inherit; text-decoration: none; }
 .linha-extra > summary::-webkit-details-marker { display: none; }
 .linha-extra > summary:hover { background: var(--chip); }
 .linha-extra[open] > summary .chev { transform: rotate(180deg); }
+.mais-extras > summary::-webkit-details-marker { display: none; }
+.mais-extras .txt-menos { display: none; }
+.mais-extras[open] .txt-mais { display: none; }
+.mais-extras[open] .txt-menos { display: inline; }
+.mais-extras[open] > summary .chev { transform: rotate(180deg); }
