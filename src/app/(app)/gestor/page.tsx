@@ -37,6 +37,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
   // contas da própria Onial não recebem: ficam fora dos totais a pagar (o gasto com ferramentas continua contando)
   const recebe = (id: string) => lista.find((c) => c.id === id)?.recebe !== false;
   const totalMes = resumos.reduce((a, r, i) => a + (recebe(lista[i].id) ? r.pagamento.totalCentavos : 0), 0);
+  const extrasMes = resumos.reduce((a, r, i) => a + (recebe(lista[i].id) ? r.pagamento.bonusExtraCentavos : 0), 0);
   const pagsReais = (pags ?? []).filter((p) => recebe(p.criador_id));
   const aPagar = pagsReais.reduce((a, p) => a + Number(p.total_centavos), 0);
   const custoIa = (usoIa ?? []).reduce((a, u) => a + Number(u.custo_usd), 0);
@@ -72,7 +73,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
 
       <section className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
         <Numero rotulo="Views da equipe no mês" valor={formatarNumero(viewsEquipe)} sub="TikTok + YouTube + Instagram" />
-        <Numero rotulo="Total a pagar no mês (até agora)" valor={formatarReais(totalMes)} sub={lista.some((c) => c.recebe === false) ? "Bruto + bônus (sem a conta da Onial)" : "Bruto + bônus de cada criador"} cor="var(--accent-text)" />
+        <Numero rotulo="Total a pagar no mês (até agora)" valor={formatarReais(totalMes)} sub={`Bruto + bônus${extrasMes ? ` + ${formatarReais(extrasMes)} de extras aprovados` : " + extras aprovados"}${lista.some((c) => c.recebe === false) ? " (sem a conta da Onial)" : ""}`} cor="var(--accent-text)" />
         <Numero rotulo="Meses fechados a pagar" valor={formatarReais(aPagar)} sub={pagsReais.length ? `${pagsReais.length} pagamento(s) em aberto` : "Nada em aberto"} cor={aPagar ? "var(--warn)" : undefined} />
         <Numero rotulo="Gasto com ferramentas no mês" valor={`US$ ${custoIa.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} sub="IA de toda a equipe, inclusive a Onial" />
       </section>
