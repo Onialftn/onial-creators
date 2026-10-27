@@ -99,7 +99,7 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
               <Icone nome={i.icone} />
               {i.rotulo}
               {i.emBreve && <span className="menu-selo">EM BREVE</span>}
-              {i.href === "/gravar" && precisamAjuda > 0 && <span className="bolinha-ajuda" style={{ marginLeft: "auto" }} title={`${precisamAjuda} ${precisamAjuda === 1 ? "pedido precisa" : "pedidos precisam"} de ajuda`} aria-label={`${precisamAjuda} ${precisamAjuda === 1 ? "pedido precisa" : "pedidos precisam"} de ajuda`} />}
+              {i.href === "/gravar" && precisamAjuda > 0 && <span className="bolinha-ajuda" style={{ marginLeft: 2 }} title={`${precisamAjuda} ${precisamAjuda === 1 ? "pedido precisa" : "pedidos precisam"} de ajuda`} aria-label={`${precisamAjuda} ${precisamAjuda === 1 ? "pedido precisa" : "pedidos precisam"} de ajuda`} />}
             </Link>
           ))}
         </nav>
