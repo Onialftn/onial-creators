@@ -171,15 +171,6 @@ function HistoricoAno({ ano, anoAtual, mesAtual, hist, todos }: { ano: number; a
             <tr><th scope="col">MÊS</th>{PLATAFORMAS.map((p) => <th key={p} scope="col">{NOME_PLATAFORMA[p].toUpperCase()}</th>)}<th scope="col">TOTAL</th><th scope="col">META</th><th scope="col">STATUS</th></tr>
           </thead>
           <tbody>
-            {escondidos > 0 && (
-              <tr>
-                <td colSpan={PLATAFORMAS.length + 4} style={{ padding: 8 }}>
-                  <Link href={`/metas?ano=${ano}&todos=1#historico`} className="flex items-center justify-center gap-2" style={{ minHeight: 40, borderRadius: 8, border: "1px dashed var(--line2)", color: "var(--accent-text)", fontWeight: 600, fontSize: 14 }}>
-                    Ver os outros {escondidos} {escondidos === 1 ? "mês" : "meses"} de {ano} ▾
-                  </Link>
-                </td>
-              </tr>
-            )}
             {visiveis.map((m) => {
               const atual = m.mes === mesAtual;
               const bateu = m.meta !== null && m.total >= m.meta;
@@ -206,6 +197,9 @@ function HistoricoAno({ ano, anoAtual, mesAtual, hist, todos }: { ano: number; a
             )}
           </tbody>
         </table>
+        {escondidos > 0 && (
+          <Link href={`/metas?ano=${ano}&todos=1#historico`} className="flex items-center justify-center gap-2" style={{ minHeight: 40, marginTop: 8, borderRadius: 8, border: "1px dashed var(--line2)", color: "var(--accent-text)", fontWeight: 600, fontSize: 14 }}>Ver os outros {escondidos} {escondidos === 1 ? "mês" : "meses"} de {ano} ▾</Link>
+        )}
         {todos && meses.length > 3 && (
           <Link href={`/metas?ano=${ano}#historico`} className="flex items-center justify-center gap-2" style={{ minHeight: 40, marginTop: 8, borderRadius: 8, border: "1px dashed var(--line2)", color: "var(--accent-text)", fontWeight: 600, fontSize: 14 }}>Mostrar só os últimos 3 meses ▴</Link>
         )}
