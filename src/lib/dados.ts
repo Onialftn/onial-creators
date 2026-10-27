@@ -2,7 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { BONUS_META_CENTAVOS_POR_MIL, calcularConstancia, calcularPagamento, fimDaSemana as fimDaSemanaDe, inicioDaSemana as inicioDaSemanaDe, type DiaPostagem } from "@/lib/pagamento";
+import { BONUS_META_CENTAVOS_POR_MIL, calcularConstancia, calcularPagamento, sobraParaRepor, fimDaSemana as fimDaSemanaDe, inicioDaSemana as inicioDaSemanaDe, type DiaPostagem } from "@/lib/pagamento";
 import { postagensPorDia, type VideoPostado } from "@/lib/postagens";
 import { diaDaSemana, hojeBrasil, intervalo, mesDe, primeiroDia, ultimoDia } from "@/lib/datas";
 
@@ -66,7 +66,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const semIni = inicioDaSemanaDe(ini);
   const semFim = fimDaSemanaDe(fim);
 
-  const [views, meta, agenda, dias, videos, ontem, ajudas, extras] = await Promise.all([
+  const [views, meta, agenda, dias, videos, ontem, ajudas, extras, extrasNaSemana] = await Promise.all([
     // soma pronta no banco (a leitura direta de views_diarias corta em 1.000 linhas)
     sb.from("ranking_mensal").select("plataforma, views").eq("criador_id", criadorId).eq("mes", mes),
     sb.from("metas").select("meta_views").eq("criador_id", criadorId).eq("mes", mes).maybeSingle(),
@@ -79,7 +79,13 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
       .eq("pedidos_ajuda.status", "feito").gte("pedidos_ajuda.dia", ini).lte("pedidos_ajuda.dia", fim),
     // vídeos extras aprovados pelo gestor neste mês
     sb.from("entregas_extra").select("extras!inner(valor_centavos)").eq("criador_id", criadorId).eq("status", "aprovado").eq("mes", mes),
+    // vídeos extras postados (enviados ou aprovados) em cada dia: não contam como reposição de falta
+    sb.from("entregas_extra").select("status, extras!inner(prazo)").eq("criador_id", criadorId).in("status", ["enviado", "aprovado"]).gte("extras.prazo", semIni).lte("extras.prazo", semFim),
   ]);
+  const extrasPorDia = new Map<string, number>();
+  for (const e of (extrasNaSemana.data ?? []) as unknown as { extras: { prazo: string } | { prazo: string }[] }[]) {
+    for (const x of Array.isArray(e.extras) ? e.extras : [e.extras]) if (x?.prazo) extrasPorDia.set(x.prazo, (extrasPorDia.get(x.prazo) ?? 0) + 1);
+  }
   const extrasCentavos = ((extras.data ?? []) as unknown as { extras: { valor_centavos: number } | { valor_centavos: number }[] }[])
     .reduce((a, e) => a + (Array.isArray(e.extras) ? e.extras.reduce((x, y) => x + Number(y.valor_centavos), 0) : Number(e.extras?.valor_centavos ?? 0)), 0);
 
@@ -95,6 +101,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     data,
     agendado: agendados.has(diaDaSemana(data)),
     postagens: postagens.get(data) ?? 0,
+    extras: Math.min(extrasPorDia.get(data) ?? 0, postagens.get(data) ?? 0),
   }));
   const constancia = calcularConstancia(lista, hoje, mes);
 
@@ -102,7 +109,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const extrasPorSemana = new Map<string, number>();
   for (const d of lista) {
     const k = inicioDaSemanaDe(d.data);
-    extrasPorSemana.set(k, (extrasPorSemana.get(k) ?? 0) + Math.max(0, d.postagens - (d.agendado ? 1 : 0)));
+    extrasPorSemana.set(k, (extrasPorSemana.get(k) ?? 0) + sobraParaRepor(d));
   }
   const statusDe = new Map<string, StatusDia>();
   for (const d of lista) {

@@ -33,6 +33,7 @@ Todo o texto do site é em português do Brasil.
 - Meta: individual por criador e por mês, definida pelo gestor. Se as views do mês ≥ meta, bônus = meta ÷ 1.000 × R$ 1. Se não bater, bônus = 0.
 - Constância: cada criador tem 5 dias de postagem e 2 de folga por semana (definidos pelo gestor).
   - Perdeu um dia de postagem: pode repor postando em outro dia até domingo da mesma semana. Reposto não conta como falta.
+  - Mínimo de 1 vídeo por dia de postagem. Vídeo a mais (2º vídeo no dia ou vídeo na folga) repõe uma falta da semana, mas vídeo extra (pago à parte) não conta como reposição (`sobraParaRepor` em `src/lib/pagamento.ts`).
   - Faltas no mês (dias não repostos até domingo): 0 faltas = 10% do bruto; 1 falta = 5%; 2 ou mais = 0%.
 - Gravações (pedido do gestor): R$ 25 fixos por gravação em que o criador ajudou (qualquer duração), quando quem pediu ajuda confirma que ele estava presente. Conta no mês do dia da gravação. Tabelas pedidos_ajuda e ajudas; regras em `src/lib/gravar.ts`.
 - Vídeos extras (pedido do gestor): o gestor cria um extra com valor, descrição, regras e o dia do vídeo (vale só nesse dia, 24h, 00:00–23:59); qualquer criador pode fazer, manda o link e o gestor aprova. O valor entra no mês da aprovação. Tabelas extras e entregas_extra.

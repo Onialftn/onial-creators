@@ -56,6 +56,24 @@ describe("constância", () => {
     expect(calcularConstancia(dias, FIM_DO_MES, "2026-10").faltas).toBe(1);
   });
 
+  it("2º vídeo que é vídeo extra NÃO repõe a falta", () => {
+    let dias = mudar(outubroPerfeito(), "2026-10-08", 0); // quinta perdida
+    dias = dias.map((d) => (d.data === "2026-10-09" ? { ...d, postagens: 2, extras: 1 } : d)); // sexta: 2 vídeos, 1 é extra
+    expect(calcularConstancia(dias, FIM_DO_MES, "2026-10").faltas).toBe(1);
+  });
+
+  it("2º vídeo normal repõe; o extra além dele não atrapalha", () => {
+    let dias = mudar(outubroPerfeito(), "2026-10-08", 0);
+    dias = dias.map((d) => (d.data === "2026-10-09" ? { ...d, postagens: 3, extras: 1 } : d)); // 3 vídeos: 1 obrigatório + 1 extra + 1 que repõe
+    expect(calcularConstancia(dias, FIM_DO_MES, "2026-10").faltas).toBe(0);
+  });
+
+  it("vídeo extra na folga não repõe", () => {
+    let dias = mudar(outubroPerfeito(), "2026-10-08", 0);
+    dias = dias.map((d) => (d.data === "2026-10-10" ? { ...d, postagens: 1, extras: 1 } : d)); // sábado (folga): só o extra
+    expect(calcularConstancia(dias, FIM_DO_MES, "2026-10").percentual).toBe(0.05);
+  });
+
   it("1 falta: 5%", () => {
     const dias = mudar(outubroPerfeito(), "2026-10-08", 0);
     expect(calcularConstancia(dias, FIM_DO_MES, "2026-10")).toEqual({ faltas: 1, aRepor: 0, percentual: 0.05 });

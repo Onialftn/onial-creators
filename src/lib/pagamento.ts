@@ -11,6 +11,13 @@ export interface DiaPostagem {
   agendado: boolean;
   /** Quantos vídeos o criador postou nesse dia. */
   postagens: number;
+  /** Quantos desses vídeos foram vídeos extras (pagos à parte): não contam como reposição de falta. */
+  extras?: number;
+}
+
+/** Postagens a mais do dia que repõem falta: o que passou do 1 obrigatório, sem contar os vídeos extras. */
+export function sobraParaRepor(d: DiaPostagem): number {
+  return Math.max(0, d.postagens - (d.agendado ? 1 : 0) - (d.extras ?? 0));
 }
 
 export interface ResultadoConstancia {
@@ -76,6 +83,7 @@ export function percentualPorFaltas(faltas: number): number {
  * Constância do mês.
  * Um dia agendado sem postagem pode ser reposto com uma postagem extra
  * (em dia de folga, ou um segundo vídeo em qualquer dia) até domingo da mesma semana.
+ * Vídeo extra (pago à parte) não conta como reposição.
  * Só vira falta depois que a semana termina sem reposição.
  *
  * @param dias   dias do mês (podem incluir dias da semana vizinha, para contar reposições)
@@ -96,7 +104,7 @@ export function calcularConstancia(dias: DiaPostagem[], hoje: string, mes: strin
     const encerrada = domingo < hoje;
     // dias perdidos: agendados, sem postagem, que já passaram (hoje ainda dá para postar)
     const perdidos = ds.filter((d) => d.agendado && d.postagens === 0 && d.data < hoje);
-    const extras = ds.reduce((s, d) => s + Math.max(0, d.postagens - (d.agendado ? 1 : 0)), 0);
+    const extras = ds.reduce((s, d) => s + sobraParaRepor(d), 0);
     const naoRepostos = Math.max(0, perdidos.length - extras);
     if (naoRepostos === 0) continue;
     // só conta no mês os dias perdidos que são deste mês (os primeiros não cobertos pela reposição)
