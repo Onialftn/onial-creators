@@ -24,7 +24,7 @@ export default async function Dashboard() {
         <Link href="/ranking" style={{ display: "inline-block", marginTop: 12, color: "var(--accent-text)", fontSize: 13 }}>Ver ranking completo</Link>
       </section>
       <section className="card flex flex-col gap-4">
-        <TituloCard icone="cal" direita={`5 dias de postagem e 2 de folga por semana · ${r.diasCumpridos} de ${r.diasAgendados} dias cumpridos no mês`}>Dias de postagem · esta semana</TituloCard>
+        <TituloCard icone="cal" direita={`${r.diasPorSemana} dias de postagem e ${7 - r.diasPorSemana} de folga por semana · ${r.diasCumpridos} de ${r.diasAgendados} dias cumpridos no mês`}>Dias de postagem · esta semana</TituloCard>
         <SemanaAtual dias={r.calendario} hoje={r.hoje} />
       </section>
       <section className="flex justify-center"><Pomodoro /></section>

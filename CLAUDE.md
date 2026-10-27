@@ -31,7 +31,7 @@ Todo o texto do site é em português do Brasil.
 
 - Bruto = views do mês ÷ 1.000 × R$ 5. Conta toda view ganha no mês, em TikTok + YouTube + Instagram, inclusive de vídeos antigos.
 - Meta: individual por criador e por mês, definida pelo gestor. Se as views do mês ≥ meta, bônus = meta ÷ 1.000 × R$ 1. Se não bater, bônus = 0.
-- Constância: cada criador tem 5 dias de postagem e 2 de folga por semana (definidos pelo gestor).
+- Constância: cada criador tem de 3 a 5 dias de postagem por semana (o resto é folga), definidos pelo gestor.
   - Perdeu um dia de postagem: pode repor postando em outro dia até domingo da mesma semana. Reposto não conta como falta.
   - Mínimo de 1 vídeo por dia de postagem. Vídeo a mais (2º vídeo no dia ou vídeo na folga) repõe uma falta da semana, mas vídeo extra (pago à parte) não conta como reposição (`sobraParaRepor` em `src/lib/pagamento.ts`).
   - Faltas no mês (dias não repostos até domingo): 0 faltas = 10% do bruto; 1 falta = 5%; 2 ou mais = 0%.

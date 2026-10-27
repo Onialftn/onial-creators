@@ -45,6 +45,8 @@ export interface ResumoMes {
   faltas: number;
   aRepor: number;
   diasAgendados: number;
+  /** quantos dias de postagem por semana o gestor definiu (3 a 5) */
+  diasPorSemana: number;
   diasCumpridos: number;
   calendario: DiaCalendario[];
   pagamento: ReturnType<typeof calcularPagamento>;
@@ -157,6 +159,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     faltas: constancia.faltas,
     aRepor: constancia.aRepor,
     diasAgendados: doMes.length,
+    diasPorSemana: agendados.size,
     diasCumpridos,
     calendario,
     pagamento,

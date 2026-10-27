@@ -34,7 +34,7 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
 
 
       <section className="card flex flex-col gap-5">
-        <TituloCard icone="cal" direita="5 dias de postagem e 2 de folga por semana">{nomeMes(mes)}</TituloCard>
+        <TituloCard icone="cal" direita={`${r.diasPorSemana} dias de postagem e ${7 - r.diasPorSemana} de folga por semana`}>{nomeMes(mes)}</TituloCard>
         <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(130px,1fr))" }}>
           {stats.map((s) => (
             <div key={s.t} className="tile"><div className="num" style={{ fontSize: 28, color: s.c, lineHeight: 1 }}>{s.n}</div><div style={{ color: "var(--muted)", fontSize: 13 }}>{s.t}</div></div>

@@ -86,7 +86,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
               </label>
             ))}
           </div>
-          <button className="btn-gold" type="submit">Salvar dias (escolha 5)</button>
+          <button className="btn-gold" type="submit">Salvar dias (escolha de 3 a 5)</button>
         </form>
         <div id="mapa" className="card flex flex-col gap-3">
           <TituloCard icone="bulb">Mapa de cada dia</TituloCard>

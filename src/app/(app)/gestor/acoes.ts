@@ -59,7 +59,7 @@ export async function salvarAgenda(f: FormData) {
   const { sb } = await gestor();
   const criador = texto(f, "criador");
   const dias = f.getAll("dia").map(Number).filter((d) => d >= 1 && d <= 7);
-  if (dias.length !== 5) voltar(criador, `Escolha exatamente 5 dias de postagem (você marcou ${dias.length}).`);
+  if (dias.length < 3 || dias.length > 5) voltar(criador, `Escolha de 3 a 5 dias de postagem (você marcou ${dias.length}).`);
   await sb.from("agenda_postagem").delete().eq("criador_id", criador);
   await sb.from("agenda_postagem").insert(dias.map((d) => ({ criador_id: criador, dia_semana: d })));
   voltar(criador, "Dias de postagem salvos.");
