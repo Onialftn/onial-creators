@@ -86,11 +86,10 @@ const fmtT = (t: number) => `${String(Math.floor(t / 60)).padStart(2, "0")}:${St
 type DocPiP = { requestWindow: (o: { width: number; height: number }) => Promise<Window> };
 const docPiP = () => (typeof window !== "undefined" ? (window as unknown as { documentPictureInPicture?: DocPiP }).documentPictureInPicture : undefined);
 
-/** O pomodoro compacto da janela flutuante: voltar, cadeado, tempo e play/pausar (mesmo timer da página). */
-function MiniPomodoro({ voltar }: { voltar: () => void }) {
+/** O pomodoro compacto da janela flutuante: voltar, sino (som), tempo e play/pausar (mesmo timer da página). */
+function MiniPomodoro({ voltar, som, alternarSom }: { voltar: () => void; som: boolean; alternarSom: () => void }) {
   const e = useEstadoTimer();
   const rodando = e.ativo === e.modo;
-  const [travado, setTravado] = useState(false);
   const ico = { width: 26, height: 26, border: 0, background: "transparent", color: "#8f897b", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", borderRadius: 6, padding: 0 } as const;
   return (
     <div style={{ height: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#0E0E0E", fontFamily: "Inter, system-ui, sans-serif", userSelect: "none" }}>
@@ -99,13 +98,13 @@ function MiniPomodoro({ voltar }: { voltar: () => void }) {
           <button style={ico} aria-label="Voltar para o site" title="Voltar para o site" onClick={voltar}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6l-6 6 6 6" /></svg>
           </button>
-          <button style={{ ...ico, color: travado ? OURO : "#8f897b" }} aria-pressed={travado} aria-label={travado ? "Destravar" : "Travar"} title={travado ? "Travado: os botões não respondem a cliques sem querer. Clique para destravar." : "Travar (evita pausar sem querer)"} onClick={() => setTravado(!travado)}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">{travado ? <path d="M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z" /> : <path d="M7 11V8a5 5 0 0 1 9.6-2M5 11h14v10H5z" />}</svg>
+          <button style={{ ...ico, color: som ? OURO : "#8f897b" }} aria-pressed={som} aria-label={som ? "Som ao concluir: ligado" : "Som ao concluir: desligado"} title={som ? "Som ligado (toca no fim do ciclo). Clique para desligar." : "Som desligado. Clique para ligar."} onClick={alternarSom}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">{som ? <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4" /> : <path d="M8.7 3.7A6 6 0 0 1 18 8c0 3.2.6 5.4 1.3 6.8M6.3 6.3A6 6 0 0 0 6 8c0 7-3 9-3 9h14M10 21h4M3 3l18 18" />}</svg>
           </button>
         </div>
         <div style={{ fontSize: 34, fontWeight: 300, letterSpacing: 0.5, color: e.modo === "foco" ? "#F5F1E6" : AZUL, fontVariantNumeric: "tabular-nums", lineHeight: 1, minWidth: 98, textAlign: "center" }} title={e.modo === "foco" ? "Foco" : "Pausa"}>{fmtT(e.restante[e.modo])}</div>
-        <button aria-label={rodando ? "Pausar" : "Iniciar"} disabled={travado} onClick={() => (rodando ? parar() : iniciar())}
-          style={{ width: 40, height: 40, borderRadius: 20, border: 0, cursor: travado ? "not-allowed" : "pointer", opacity: travado ? 0.55 : 1, background: rodando ? "#FF5C5C" : OURO, color: "#0A0A0A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <button aria-label={rodando ? "Pausar" : "Iniciar"} onClick={() => (rodando ? parar() : iniciar())}
+          style={{ width: 40, height: 40, borderRadius: 20, border: 0, cursor: "pointer", background: rodando ? "#FF5C5C" : OURO, color: "#0A0A0A", display: "flex", alignItems: "center", justifyContent: "center" }}>
           {rodando ? <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round"><path d="M9 5v14M15 5v14" /></svg> : <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l12 7-12 7z" /></svg>}
         </button>
       </div>
@@ -216,7 +215,7 @@ export function Pomodoro() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" /><rect x="12" y="11" width="8" height="7" rx="1" fill="currentColor" /></svg>
         </button>
       </div>
-      {pip && createPortal(<MiniPomodoro voltar={() => { window.focus(); pip.close(); }} />, pip.document.body)}
+      {pip && createPortal(<MiniPomodoro voltar={() => { window.focus(); pip.close(); }} som={cfg.som} alternarSom={() => { mudarCfg({ ...cfg, som: !cfg.som }); if (!cfg.som) tocar(); }} />, pip.document.body)}
       {erroPip && <p className="relative" style={{ margin: 0, marginTop: 56, color: "var(--warn)", fontSize: 13, textAlign: "center" }}>{erroPip}</p>}
       {painel && (
         <div className="absolute z-10 flex flex-col gap-1" style={{ left: 16, top: 70, width: "min(300px, calc(100% - 32px))", padding: 16, borderRadius: 12, background: "var(--chip)", border: "1px solid var(--line2)", boxShadow: "0 12px 40px rgba(0,0,0,.5)" }}>
