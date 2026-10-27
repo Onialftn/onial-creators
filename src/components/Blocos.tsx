@@ -158,7 +158,11 @@ const CLASSE: Record<DiaCalendario["status"], string> = {
 };
 const ICONE: Partial<Record<DiaCalendario["status"], string>> = { postado: "check", reposto: "check", nao_postado: "x", a_repor: "up", folga: "zz", hoje: "up" };
 
-function Dia({ d, comRotulo = true }: { d: DiaCalendario; comRotulo?: boolean }) {
+/** Mapa a gravar no dia: aparece nos dias de postagem de hoje em diante (e nos que ainda dá para repor). */
+const MAPA_CURTO: Record<string, { emoji: string; nome: string }> = { "1v1": { emoji: "⭐", nome: "Onial 1v1" }, aim: { emoji: "🎯", nome: "Treino" } };
+
+function Dia({ d, comRotulo = true, mapa }: { d: DiaCalendario; comRotulo?: boolean; mapa?: string }) {
+  const m = mapa && ["hoje", "a_postar", "a_repor"].includes(d.status) ? MAPA_CURTO[mapa] : undefined;
   return (
     <div className={`cal-c ${CLASSE[d.status]}`}>
       <span className="num" style={{ fontSize: 18, color: "var(--fg)", lineHeight: 1 }}>{Number(d.data.slice(8))}</span>
@@ -166,18 +170,19 @@ function Dia({ d, comRotulo = true }: { d: DiaCalendario; comRotulo?: boolean })
         {ICONE[d.status] && <Icone nome={ICONE[d.status]!} tamanho={14} />}
         {comRotulo && <span className="cal-l">{ROTULO[d.status]}</span>}
       </span>
+      {m && <span className="flex items-center gap-1 truncate" title={`Mapa: ${m.nome}`} style={{ fontSize: 11, fontWeight: 700, color: d.status === "hoje" ? "var(--accent-text)" : "var(--text2)" }}>{m.emoji}<span className="cal-l truncate">{m.nome}</span></span>}
     </div>
   );
 }
 
-export function Calendario({ dias }: { dias: DiaCalendario[] }) {
+export function Calendario({ dias, mapas }: { dias: DiaCalendario[]; mapas?: Record<number, string> }) {
   const vazios = diaDaSemana(dias[0].data) - 1;
   return (
     <div className="overflow-x-auto">
       <div className="cal">
         {DIAS_CURTOS.map((d) => <div key={d} style={{ fontSize: 11, letterSpacing: 1.2, color: "var(--muted)", padding: "0 4px" }}>{d}</div>)}
         {Array.from({ length: vazios }, (_, i) => <div key={`v${i}`} />)}
-        {dias.map((d) => <Dia key={d.data} d={d} />)}
+        {dias.map((d) => <Dia key={d.data} d={d} mapa={mapas?.[diaDaSemana(d.data)]} />)}
       </div>
     </div>
   );

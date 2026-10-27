@@ -8,11 +8,13 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
   const { sb, perfil } = await usuarioAtual();
   const mes = mesDe(hojeBrasil());
   const hoje = hojeBrasil();
-  const [r, { data: extras }, { data: minhas }] = await Promise.all([
+  const [r, { data: extras }, { data: minhas }, { data: mapasDia }] = await Promise.all([
     resumoDoMes(sb, perfil.id, mes),
     sb.from("extras").select("id, titulo, descricao, regras, valor_centavos, prazo").eq("ativo", true).gte("prazo", hoje).order("prazo"),
     sb.from("entregas_extra").select("extra_id, link, status, motivo").eq("criador_id", perfil.id),
+    sb.from("mapa_dia").select("dia_semana, mapa").eq("criador_id", perfil.id),
   ]);
+  const mapas = Object.fromEntries((mapasDia ?? []).map((m) => [m.dia_semana as number, m.mapa as string]));
   const conta = (s: string[]) => r.calendario.filter((d) => s.includes(d.status)).length;
   const pct = r.diasAgendados ? Math.round((r.diasCumpridos / r.diasAgendados) * 100) : 0;
   const stats = [
@@ -42,9 +44,9 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
           <div className="flex justify-between" style={{ color: "var(--muted)", fontSize: 13 }}><span>{r.diasCumpridos} de {r.diasAgendados} dias de postagem cumpridos</span><span>{pct}%</span></div>
           <div className="bar" style={{ height: 10, marginTop: 8 }}><span style={{ width: `${pct}%`, background: "var(--ok)" }} /></div>
         </div>
-        <Calendario dias={r.calendario} />
+        <Calendario dias={r.calendario} mapas={mapas} />
         <div className="flex flex-wrap gap-x-5 gap-y-2" style={{ color: "var(--muted)", fontSize: 12 }}>
-          <span>Verde: postado ou reposto</span><span>Laranja: não postado</span><span>Tracejado laranja: repor até domingo</span><span>Dourado: hoje</span><span>Tracejado: folga</span>
+          <span>Verde: postado ou reposto</span><span>Laranja: não postado</span><span>Tracejado laranja: repor até domingo</span><span>Dourado: hoje</span><span>⭐ Onial 1v1 · 🎯 Mapa de treino: mapa a gravar</span><span>Tracejado: folga</span>
         </div>
         <p style={{ margin: 0, fontSize: 13, color: r.faltas ? "var(--warn)" : "var(--muted)" }}>
           {r.faltas === 0 ? "Perdeu um dia? Poste em outro dia até domingo e ele conta como reposto." : r.faltas === 1 ? "1 falta no mês: o bônus de constância caiu para 5%. Mais uma e ele zera." : `${r.faltas} faltas no mês: sem bônus de constância.`}
