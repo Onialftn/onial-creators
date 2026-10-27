@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { Cabecalho, TituloCard } from "@/components/Blocos";
 import Link from "next/link";
-import { avaliarEntrega, criarExtra, editarExtra, encerrarExtra } from "@/app/acoes/extras";
+import { avaliarEntrega, criarExtra, editarExtra, encerrarExtra, excluirExtra } from "@/app/acoes/extras";
 import { usuarioAtual } from "@/lib/dados";
 import { hojeBrasil, somarDias } from "@/lib/datas";
 import { formatarReais } from "@/lib/pagamento";
@@ -70,6 +70,16 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
               {x.regras && <Regras texto={x.regras} />}
               <div className="flex flex-wrap items-start gap-3" style={{ fontSize: 13 }}>
                 <Link href={`/gestor/extras?duplicar=${x.id}#novo`} className="btn-line" style={{ minHeight: 34, fontSize: 13 }}>Duplicar</Link>
+                {doExtra.length === 0 && (
+                  <details>
+                    <summary className="btn-line" style={{ minHeight: 34, fontSize: 13, display: "inline-flex", cursor: "pointer", listStyle: "none", color: "var(--warn)" }}>Excluir</summary>
+                    <form action={excluirExtra} className="flex flex-wrap items-center gap-2" style={{ marginTop: 8 }}>
+                      <input type="hidden" name="extra" value={x.id} />
+                      <span style={{ color: "var(--muted)" }}>Apagar de vez?</span>
+                      <button type="submit" className="btn-line" style={{ minHeight: 34, fontSize: 13, borderColor: "var(--warn)", color: "var(--warn)" }}>Sim, excluir</button>
+                    </form>
+                  </details>
+                )}
                 <details className="flex-1" style={{ minWidth: 240 }}>
                   <summary className="btn-line" style={{ minHeight: 34, fontSize: 13, display: "inline-flex", cursor: "pointer", listStyle: "none" }}>Editar</summary>
                   <form action={editarExtra} className="flex flex-col gap-2" style={{ marginTop: 10 }}>

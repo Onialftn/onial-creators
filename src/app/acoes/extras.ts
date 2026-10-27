@@ -65,6 +65,18 @@ export async function editarExtra(f: FormData) {
   volta("Extra atualizado.", true);
 }
 
+/** Apaga um extra criado sem querer. Só deixa se ninguém mandou vídeo para ele (para não sumir com entregas). */
+export async function excluirExtra(f: FormData) {
+  await soGestor();
+  const id = t(f, "extra");
+  const admin = supabaseAdmin();
+  const { count } = await admin.from("entregas_extra").select("extra_id", { count: "exact", head: true }).eq("extra_id", id);
+  if (count) irPara(`/gestor/extras?erro=${encodeURIComponent("Esse extra já tem vídeo enviado: use Encerrar em vez de excluir.")}`);
+  await admin.from("extras").delete().eq("id", id);
+  await admin.from("notificacoes").update({ oculta: true }).like("chave", `extra:%:${id}%`);
+  irPara(`/gestor/extras?ok=${encodeURIComponent("Extra excluído.")}`);
+}
+
 export async function encerrarExtra(f: FormData) {
   await soGestor();
   await supabaseAdmin().from("extras").update({ ativo: f.get("ativo") === "1" }).eq("id", t(f, "extra"));
