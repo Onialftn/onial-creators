@@ -148,9 +148,10 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
 
 function HistoricoAno({ ano, anoAtual, mesAtual, hist, todos }: { ano: number; anoAtual: number; mesAtual: string; hist: Awaited<ReturnType<typeof historicoDoAno>>; todos: boolean }) {
   const meses = hist.meses.filter((m) => m.mes <= mesAtual);
-  // mostra só os últimos 3 meses; os outros aparecem ao expandir
-  const escondidos = todos ? 0 : Math.max(0, meses.length - 3);
-  const visiveis = meses.slice(escondidos);
+    // do mês atual para os anteriores; mostra os 3 mais recentes e os outros aparecem embaixo ao expandir
+  const recentes = [...meses].reverse();
+  const escondidos = todos ? 0 : Math.max(0, recentes.length - 3);
+  const visiveis = todos ? recentes : recentes.slice(0, 3);
   const maior = Math.max(1, ...meses.map((m) => m.total));
   const soma = (f: (m: (typeof meses)[number]) => number) => meses.reduce((a, m) => a + f(m), 0);
   const seta = (alvo: number, rotulo: string, ativo: boolean) =>
