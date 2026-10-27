@@ -7,6 +7,16 @@ import { Icone } from "./Icone";
 
 export interface Notificacao { id: string; tipo: string; titulo: string; texto: string; link: string | null; lida: boolean; criado_em: string }
 
+/** Separa as notificações em Hoje, Ontem e Antigas (pelo dia em Brasília). */
+const diaBr = (d: Date) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo" }).format(d);
+function grupoDe(iso: string): "hoje" | "ontem" | "antigas" {
+  const dia = diaBr(new Date(iso));
+  const hoje = diaBr(new Date());
+  if (dia === hoje) return "hoje";
+  return dia === diaBr(new Date(Date.now() - 86_400_000)) ? "ontem" : "antigas";
+}
+const GRUPOS_DATA = [{ id: "hoje", rotulo: "Hoje" }, { id: "ontem", rotulo: "Ontem" }, { id: "antigas", rotulo: "Antigas" }] as const;
+
 function ha(iso: string) {
   const m = Math.max(1, Math.round((Date.now() - new Date(iso).getTime()) / 60_000));
   if (m < 60) return `${m} min`;
@@ -124,7 +134,16 @@ export function Sino({ itens: iniciais, chavePublica, compacto = false }: { iten
               </div>
             )}
             {itens.length === 0 && <p style={{ margin: 0, color: "var(--muted)" }}>Você não tem notificações ainda.</p>}
-            {itens.map((n) => {
+            {GRUPOS_DATA.map((g) => {
+              const doGrupo = itens.filter((n) => grupoDe(n.criado_em) === g.id);
+              if (!doGrupo.length) return null;
+              return (
+                <section key={g.id} className="flex flex-col gap-2" aria-label={g.rotulo}>
+                  <div className="flex items-center justify-between" style={{ marginTop: 4 }}>
+                    <span className="label" style={{ fontSize: 11 }}>{g.rotulo.toUpperCase()} · {doGrupo.length}</span>
+                    <button type="button" onClick={() => limpar(doGrupo.map((n) => n.id))} style={{ fontSize: 12, color: "var(--muted)", textDecoration: "underline", minHeight: 28 }}>Limpar {g.id === "antigas" ? "antigas" : g.rotulo.toLowerCase()}</button>
+                  </div>
+            {doGrupo.map((n) => {
               const corpo = (
                 <div className="flex gap-3" style={{ padding: 12, paddingRight: 40, borderRadius: 8, background: n.lida ? "transparent" : "var(--tint)", border: "1px solid var(--line)" }}>
                   <span style={{ color: "var(--accent-text)", display: "flex", paddingTop: 2 }}><Icone nome={ICONE[n.tipo] ?? "zap"} tamanho={18} /></span>
@@ -140,6 +159,9 @@ export function Sino({ itens: iniciais, chavePublica, compacto = false }: { iten
                   {n.link ? <Link href={n.link} onClick={() => { abrirItem(); setAberto(false); }}>{corpo}</Link> : <div onClick={abrirItem}>{corpo}</div>}
                   <button type="button" aria-label="Limpar esta notificação" title="Limpar" onClick={() => limpar([n.id])} className="absolute flex items-center justify-center" style={{ right: 4, bottom: 4, width: 32, height: 32, color: "var(--muted)" }}><Icone nome="x" tamanho={14} /></button>
                 </div>
+              );
+            })}
+                </section>
               );
             })}
           </aside>
