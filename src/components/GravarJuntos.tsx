@@ -242,7 +242,12 @@ export function GravarJuntos({ mes, hoje, diaInicial, eu, pedidos, ajudas, suges
         </div>
         <div className="card" style={{ padding: 20 }}>
           <div style={{ color: "var(--muted)", fontSize: 13 }}>Pedidos da equipe no mês</div>
-          <div className="num" style={{ fontSize: 30, color: "var(--strong)", marginTop: 4 }}>{ativos.length}</div>
+          <div className="num" style={{ fontSize: 30, color: "var(--strong)", marginTop: 4 }}>{pedidos.length} <span style={{ fontSize: 15, color: "var(--muted)" }}>{pedidos.length === 1 ? "pedido" : "pedidos"} no total</span></div>
+          <div className="flex flex-wrap gap-x-3 gap-y-1" style={{ fontSize: 12, marginBottom: 2 }}>
+            <span style={{ color: "var(--accent-text)" }}>{pedidos.filter((p) => p.status === "aberto").length} abertos</span>
+            <span style={{ color: "var(--ok)" }}>{pedidos.filter((p) => p.status === "feito").length} feitos</span>
+            <span style={{ color: "var(--muted)" }}>{pedidos.filter((p) => p.status === "cancelado").length} cancelados</span>
+          </div>
           <div style={{ color: meusAbertos ? "var(--warn)" : "var(--muted)", fontSize: 13 }}>{meusAbertos ? `Você tem ${meusAbertos} ${meusAbertos === 1 ? "gravação" : "gravações"} para confirmar` : "Toque num dia para ver ou pedir ajuda"}</div>
         </div>
       </section>
