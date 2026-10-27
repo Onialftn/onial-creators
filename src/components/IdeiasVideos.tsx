@@ -155,7 +155,7 @@ function Player({ id, titulo }: { id: string; titulo: string }) {
   const origem = typeof window !== "undefined" ? `&origin=${encodeURIComponent(window.location.origin)}` : "";
   return (
     <div className="relative" style={{ width: "100%", height: "100%" }}>
-      <iframe ref={ref} src={`https://www.youtube-nocookie.com/embed/${primeiro}?autoplay=1&playsinline=1&rel=0&hl=pt-BR&cc_lang_pref=pt&enablejsapi=1${celular ? "&mute=1" : ""}${origem}`}
+      <iframe ref={ref} src={`https://www.youtube.com/embed/${primeiro}?autoplay=1&playsinline=1&rel=0&hl=pt-BR&cc_lang_pref=pt&enablejsapi=1${celular ? "&mute=1" : ""}${origem}`}
         onLoad={() => ref.current?.contentWindow?.postMessage(JSON.stringify({ event: "listening", id: 1, channel: "widget" }), "*")}
         title={titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
       {!som && (
@@ -280,7 +280,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"><Numeros v={assistir} grande /><CopiarLink id={assistir.id} /></div>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"><Numeros v={assistir} grande /><CopiarLink id={assistir.id} /><a href={`https://www.youtube.com/shorts/${assistir.id}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5" style={{ minHeight: 32, padding: "0 10px", borderRadius: 16, fontSize: 13, fontWeight: 600, border: "1px solid var(--line2)", color: "var(--fg)" }}>▶ Abrir no YouTube</a></div>
           <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1, ...(copiado === assistir.id ? VERDE : {}) }}>
             <Progresso ativo={gerando === assistir.id} terminou={copiado === assistir.id} />
             <span className="relative flex items-center gap-2">{copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português…" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}</span>
