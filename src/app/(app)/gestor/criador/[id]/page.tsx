@@ -8,7 +8,7 @@ import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
-import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta, salvarRecebe } from "../../acoes";
+import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta, salvarRecebe, renomearCriador } from "../../acoes";
 import { AbasGestor, Retorno } from "../../comum";
 
 export const maxDuration = 60;
@@ -38,6 +38,14 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
     <>
       <Link href="/gestor" style={{ color: "var(--muted)", fontSize: 14 }}>‹ Voltar para a visão geral</Link>
       <Cabecalho titulo={cr.nome} sub={`${nomeMes(mes)} · ${cr.canal_youtube ? `canal ${cr.canal_youtube}` : "Criador de conteúdo"}`} direita={<Avatar foto={cr.foto_url} nome={cr.nome} tamanho={56} />} />
+      <details style={{ fontSize: 13 }}>
+        <summary style={{ cursor: "pointer", color: "var(--accent-text)", width: "fit-content" }}>Corrigir nome</summary>
+        <form action={renomearCriador} className="flex flex-wrap items-center gap-2" style={{ marginTop: 8 }}>
+          <input type="hidden" name="criador" value={id} />
+          <input className="input" name="nome" defaultValue={cr.nome} maxLength={60} aria-label="Nome do criador" style={{ minHeight: 38, maxWidth: 260 }} required />
+          <button className="btn-gold" type="submit" style={{ minHeight: 38 }}>Salvar nome</button>
+        </form>
+      </details>
       <form action={salvarRecebe} className="flex flex-wrap items-center gap-3" style={{ fontSize: 13, color: "var(--muted)" }}>
         <input type="hidden" name="criador" value={id} /><input type="hidden" name="propria" value={cr.recebe === false ? "0" : "1"} />
         {cr.recebe === false ? <span className="pill-tint">Conta da Onial · não entra no total a pagar</span> : <span>Recebe pagamento normalmente.</span>}

@@ -37,6 +37,16 @@ export async function criarCriador(f: FormData) {
   voltar(id, `${nome} cadastrado. Envie o e-mail e a senha para ele entrar.`);
 }
 
+/** Corrige o nome do criador (aparece no ranking, nas gravações e no painel). */
+export async function renomearCriador(f: FormData) {
+  const { sb } = await gestor();
+  const criador = texto(f, "criador");
+  const nome = texto(f, "nome").replace(/\s+/g, " ").slice(0, 60);
+  if (nome.length < 2) voltar(criador, "Escreva o nome do criador.");
+  await sb.from("perfis").update({ nome }).eq("id", criador).eq("papel", "criador");
+  voltar(criador, `Nome alterado para ${nome}.`);
+}
+
 /** Conta da própria Onial: não recebe pagamento (fica fora dos totais a pagar). */
 export async function salvarRecebe(f: FormData) {
   const { sb } = await gestor();
