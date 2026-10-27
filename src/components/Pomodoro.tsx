@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { Icone } from "./Icone";
 
 /* ---------- estado do timer: fica fora do React para continuar rodando ao trocar de aba ---------- */
@@ -80,12 +81,104 @@ const useEstadoTimer = () => useSyncExternalStore((f) => { ouvintes.add(f); retu
 const AZUL = "#4DA3FF", OURO = "#E8B014";
 const IB = { width: 44, height: 44, borderRadius: 10, background: "var(--chip)", border: "1px solid var(--line)", color: "var(--muted)", display: "flex", alignItems: "center", justifyContent: "center" } as const;
 
+/* ---------- janela flutuante (fica por cima das outras janelas do computador) ---------- */
+const fmtT = (t: number) => `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`;
+type DocPiP = { requestWindow: (o: { width: number; height: number }) => Promise<Window> };
+const docPiP = () => (typeof window !== "undefined" ? (window as unknown as { documentPictureInPicture?: DocPiP }).documentPictureInPicture : undefined);
+
+/** O pomodoro pequeno que aparece dentro da janela flutuante (mesmo timer da página). */
+function MiniPomodoro() {
+  const e = useEstadoTimer();
+  const cor = e.modo === "foco" ? OURO : AZUL;
+  const rodando = e.ativo === e.modo;
+  const r = 70, C = 2 * Math.PI * r, frac = Math.min(1, e.restante[e.modo] / ESCALA);
+  const botao = { width: 40, height: 40, borderRadius: 10, border: "1px solid #3a3420", background: "#1a1a1a", color: "#E8E2D0", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" } as const;
+  return (
+    <div style={{ height: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, background: "#0E0E0E", color: "#F5F1E6", fontFamily: "Inter, system-ui, sans-serif", userSelect: "none" }}>
+      <div style={{ display: "flex", padding: 3, borderRadius: 10, background: "#1a1a1a", border: "1px solid #2a2a2a" }}>
+        {(["foco", "pausa"] as Modo[]).map((m) => (
+          <button key={m} onClick={() => verModo(m)} style={{ border: 0, cursor: "pointer", minHeight: 30, padding: "0 16px", borderRadius: 8, fontSize: 13, background: e.modo === m ? (m === "foco" ? OURO : AZUL) : "transparent", color: e.modo === m ? "#0A0A0A" : "#9a9384", fontWeight: e.modo === m ? 700 : 400 }}>{m === "foco" ? "Foco" : "Pausa"}</button>
+        ))}
+      </div>
+      <div style={{ position: "relative", width: 160, height: 160 }}>
+        <svg width="160" height="160" viewBox="0 0 160 160" aria-hidden="true">
+          <circle cx="80" cy="80" r={r} fill="none" stroke="#2a2618" strokeWidth="8" />
+          <circle cx="80" cy="80" r={r} fill="none" stroke={cor} strokeWidth="8" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - frac)} transform="rotate(-90 80 80)" />
+        </svg>
+        <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ fontSize: 40, fontWeight: 300, fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{fmtT(e.restante[e.modo])}</div>
+          <div style={{ marginTop: 6, fontSize: 10, letterSpacing: 2, color: "#9a9384" }}>{e.modo === "foco" ? "FOCO" : "PAUSA"}</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button style={botao} aria-label="Reiniciar" onClick={reiniciarTela}>↺</button>
+        <button aria-label={rodando ? "Pausar" : "Iniciar"} onClick={() => (rodando ? parar() : iniciar())} style={{ width: 52, height: 52, borderRadius: 26, border: 0, cursor: "pointer", background: cor, color: "#0A0A0A", display: "flex", alignItems: "center", justifyContent: "center" }}>
+          {rodando ? <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M9 5v14M15 5v14" /></svg> : <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l12 7-12 7z" /></svg>}
+        </button>
+        <button style={botao} aria-label="Pular" onClick={pular}>⏭</button>
+      </div>
+    </div>
+  );
+}
+
+/** Plano B (navegadores sem janela flutuante de página): desenha o tempo num vídeo e usa o "picture-in-picture" de vídeo. */
+async function abrirPiPVideo(): Promise<() => void> {
+  const canvas = document.createElement("canvas");
+  canvas.width = 320; canvas.height = 180;
+  const ctx = canvas.getContext("2d")!;
+  const desenhar = () => {
+    const e = estado;
+    ctx.fillStyle = "#0E0E0E"; ctx.fillRect(0, 0, 320, 180);
+    ctx.fillStyle = e.modo === "foco" ? OURO : AZUL; ctx.font = "600 18px Inter, sans-serif"; ctx.textAlign = "center";
+    ctx.fillText(`${e.modo === "foco" ? "FOCO" : "PAUSA"}${e.ativo === e.modo ? "" : " · pausado"}`, 160, 44);
+    ctx.fillStyle = "#F5F1E6"; ctx.font = "300 72px Inter, sans-serif"; ctx.fillText(fmtT(e.restante[e.modo]), 160, 125);
+    const frac = Math.min(1, e.restante[e.modo] / ESCALA);
+    ctx.fillStyle = "#2a2618"; ctx.fillRect(40, 150, 240, 6); ctx.fillStyle = e.modo === "foco" ? OURO : AZUL; ctx.fillRect(40, 150, 240 * frac, 6);
+  };
+  desenhar();
+  const video = document.createElement("video");
+  video.muted = true; video.playsInline = true;
+  video.srcObject = canvas.captureStream(4);
+  await video.play();
+  const desinscrever = (() => { ouvintes.add(desenhar); return () => ouvintes.delete(desenhar); })();
+  const t = setInterval(desenhar, 1000);
+  try {
+    navigator.mediaSession.setActionHandler("play", () => iniciar());
+    navigator.mediaSession.setActionHandler("pause", () => parar());
+  } catch {}
+  await video.requestPictureInPicture();
+  const fechar = () => { clearInterval(t); desinscrever(); video.pause(); };
+  video.addEventListener("leavepictureinpicture", fechar, { once: true });
+  return () => { if (document.pictureInPictureElement) void document.exitPictureInPicture(); fechar(); };
+}
+
 export function Pomodoro() {
   const e = useEstadoTimer();
   const [cfg, setCfg] = useState<Config>({ auto: false, som: true });
   const [painel, setPainel] = useState(false);
   const [stats, setStats] = useState(false);
   const svg = useRef<SVGSVGElement>(null);
+  const [pip, setPip] = useState<Window | null>(null);
+  const fecharVideo = useRef<(() => void) | null>(null);
+  const [erroPip, setErroPip] = useState("");
+  async function janelaFlutuante() {
+    setErroPip("");
+    if (pip) { pip.close(); return; }
+    const api = docPiP();
+    try {
+      if (api) {
+        const w = await api.requestWindow({ width: 260, height: 300 });
+        w.document.title = "Pomodoro · Onial";
+        w.document.body.style.margin = "0";
+        w.addEventListener("pagehide", () => setPip(null));
+        setPip(w);
+        return;
+      }
+      if (document.pictureInPictureEnabled) { fecharVideo.current = await abrirPiPVideo(); return; }
+      setErroPip("Seu navegador não abre janela flutuante. Use o Google Chrome ou o Edge no computador.");
+    } catch { setErroPip("Não consegui abrir a janela flutuante. Tente de novo."); }
+  }
+  useEffect(() => () => { pip?.close(); fecharVideo.current?.(); }, [pip]);
   const arraste = useRef<{ acc: number; ang: number } | null>(null);
   useEffect(() => setCfg(lerConfig()), []);
 
@@ -127,7 +220,12 @@ export function Pomodoro() {
         <button style={{ ...IB, color: cfg.som ? "var(--accent-text)" : "var(--muted)", opacity: cfg.som ? 1 : 0.6 }} aria-pressed={cfg.som} aria-label={cfg.som ? "Som ao concluir: ligado" : "Som ao concluir: desligado"} onClick={() => { mudarCfg({ ...cfg, som: !cfg.som }); if (!cfg.som) tocar(); }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{cfg.som ? <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4" /> : <path d="M8.7 3.7A6 6 0 0 1 18 8c0 3.2.6 5.4 1.3 6.8M6.3 6.3A6 6 0 0 0 6 8c0 7-3 9-3 9h14M10 21h4M3 3l18 18" />}</svg>
         </button>
+        <button style={{ ...IB, color: pip ? "var(--accent-text)" : "var(--fg)" }} aria-pressed={!!pip} aria-label={pip ? "Fechar janela flutuante" : "Abrir em janela flutuante"} title={pip ? "Fechar janela flutuante" : "Abrir em janela flutuante (fica por cima das outras janelas)"} onClick={janelaFlutuante}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2" /><rect x="12" y="11" width="8" height="7" rx="1" fill="currentColor" /></svg>
+        </button>
       </div>
+      {pip && createPortal(<MiniPomodoro />, pip.document.body)}
+      {erroPip && <p className="relative" style={{ margin: 0, marginTop: 56, color: "var(--warn)", fontSize: 13, textAlign: "center" }}>{erroPip}</p>}
       {painel && (
         <div className="absolute z-10 flex flex-col gap-1" style={{ left: 16, top: 70, width: "min(300px, calc(100% - 32px))", padding: 16, borderRadius: 12, background: "var(--chip)", border: "1px solid var(--line2)", boxShadow: "0 12px 40px rgba(0,0,0,.5)" }}>
           <div className="display uppercase" style={{ fontSize: 18 }}>Configurações</div>
