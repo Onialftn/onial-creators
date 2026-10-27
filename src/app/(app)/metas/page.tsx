@@ -6,11 +6,12 @@ import { PLATAFORMAS, historicoDoAno, resumoDoMes, topVideos, ultimaColeta, usua
 import { diasNoMes, hojeBrasil, mesAnterior, mesDe, nomeMes } from "@/lib/datas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
 
-export default async function Metas({ searchParams }: { searchParams: Promise<{ ano?: string }> }) {
+export default async function Metas({ searchParams }: { searchParams: Promise<{ ano?: string; todos?: string }> }) {
   const { sb, perfil } = await usuarioAtual();
   const mes = mesDe(hojeBrasil());
   const anoAtual = Number(mes.slice(0, 4));
-  const pedido = Number((await searchParams).ano);
+  const q = await searchParams;
+  const pedido = Number(q.ano);
   const ano = pedido >= 2000 && pedido <= anoAtual ? pedido : anoAtual;
   const [r, anterior, top, ultima, hist] = await Promise.all([
     resumoDoMes(sb, perfil.id, mes),
@@ -140,13 +141,16 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
         </div>
       </section>
 
-      <HistoricoAno ano={ano} anoAtual={anoAtual} mesAtual={mes} hist={hist} />
+      <HistoricoAno ano={ano} anoAtual={anoAtual} mesAtual={mes} hist={hist} todos={q.todos === "1"} />
     </>
   );
 }
 
-function HistoricoAno({ ano, anoAtual, mesAtual, hist }: { ano: number; anoAtual: number; mesAtual: string; hist: Awaited<ReturnType<typeof historicoDoAno>> }) {
+function HistoricoAno({ ano, anoAtual, mesAtual, hist, todos }: { ano: number; anoAtual: number; mesAtual: string; hist: Awaited<ReturnType<typeof historicoDoAno>>; todos: boolean }) {
   const meses = hist.meses.filter((m) => m.mes <= mesAtual);
+  // mostra só os últimos 3 meses; os outros aparecem ao expandir
+  const escondidos = todos ? 0 : Math.max(0, meses.length - 3);
+  const visiveis = meses.slice(escondidos);
   const maior = Math.max(1, ...meses.map((m) => m.total));
   const soma = (f: (m: (typeof meses)[number]) => number) => meses.reduce((a, m) => a + f(m), 0);
   const seta = (alvo: number, rotulo: string, ativo: boolean) =>
@@ -167,7 +171,16 @@ function HistoricoAno({ ano, anoAtual, mesAtual, hist }: { ano: number; anoAtual
             <tr><th scope="col">MÊS</th>{PLATAFORMAS.map((p) => <th key={p} scope="col">{NOME_PLATAFORMA[p].toUpperCase()}</th>)}<th scope="col">TOTAL</th><th scope="col">META</th><th scope="col">STATUS</th></tr>
           </thead>
           <tbody>
-            {meses.map((m) => {
+            {escondidos > 0 && (
+              <tr>
+                <td colSpan={PLATAFORMAS.length + 4} style={{ padding: 8 }}>
+                  <Link href={`/metas?ano=${ano}&todos=1#historico`} className="flex items-center justify-center gap-2" style={{ minHeight: 40, borderRadius: 8, border: "1px dashed var(--line2)", color: "var(--accent-text)", fontWeight: 600, fontSize: 14 }}>
+                    Ver os outros {escondidos} {escondidos === 1 ? "mês" : "meses"} de {ano} ▾
+                  </Link>
+                </td>
+              </tr>
+            )}
+            {visiveis.map((m) => {
               const atual = m.mes === mesAtual;
               const bateu = m.meta !== null && m.total >= m.meta;
               return (
@@ -193,6 +206,9 @@ function HistoricoAno({ ano, anoAtual, mesAtual, hist }: { ano: number; anoAtual
             )}
           </tbody>
         </table>
+        {todos && meses.length > 3 && (
+          <Link href={`/metas?ano=${ano}#historico`} className="flex items-center justify-center gap-2" style={{ minHeight: 40, marginTop: 8, borderRadius: 8, border: "1px dashed var(--line2)", color: "var(--accent-text)", fontWeight: 600, fontSize: 14 }}>Mostrar só os últimos 3 meses ▴</Link>
+        )}
       </div>
       <p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>O YouTube entrega o histórico desde janeiro. TikTok e Instagram só informam o total dos vídeos, então o histórico deles começa no dia em que a conta foi conectada (ou nas views lançadas pelo gestor).</p>
     </section>
