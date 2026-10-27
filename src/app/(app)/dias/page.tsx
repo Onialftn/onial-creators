@@ -46,7 +46,7 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
         </div>
         <Calendario dias={r.calendario} mapas={mapas} />
         <div className="flex flex-wrap gap-x-5 gap-y-2" style={{ color: "var(--muted)", fontSize: 12 }}>
-          <span>Verde: postado ou reposto</span><span>Laranja: não postado</span><span>Tracejado laranja: repor até domingo</span><span>Dourado: hoje</span><span>⭐ Onial 1v1 · 🎯 Mapa de treino: mapa a gravar</span><span>Tracejado: folga</span>
+          <span>Verde: postado ou reposto</span><span>Laranja: não postado</span><span>Tracejado laranja: repor até domingo</span><span>Dourado: hoje</span><span>⭐ Onial 1v1 · 🎯 Mapa de treino: mapa a gravar</span><span>🎬 1–3 vídeos: quantos postar no dia</span><span>Tracejado: folga</span>
         </div>
         <p style={{ margin: 0, fontSize: 13, color: r.faltas ? "var(--warn)" : "var(--muted)" }}>
           {r.faltas === 0 ? "Perdeu um dia? Poste em outro dia até domingo e ele conta como reposto." : r.faltas === 1 ? "1 falta no mês: o bônus de constância caiu para 5%. Mais uma e ele zera." : `${r.faltas} faltas no mês: sem bônus de constância.`}

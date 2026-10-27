@@ -170,6 +170,7 @@ function Dia({ d, comRotulo = true, mapa }: { d: DiaCalendario; comRotulo?: bool
         {ICONE[d.status] && <Icone nome={ICONE[d.status]!} tamanho={14} />}
         {comRotulo && <span className="cal-l">{ROTULO[d.status]}</span>}
       </span>
+      {["hoje", "a_postar", "a_repor"].includes(d.status) && <span className="truncate" title="Poste de 1 a 3 vídeos neste dia" style={{ fontSize: 11, color: d.status === "hoje" ? "var(--accent-text)" : "var(--muted)" }}>🎬 1–3<span className="cal-l"> vídeos</span></span>}
       {m && <span className="flex items-center gap-1 truncate" title={`Mapa: ${m.nome}`} style={{ fontSize: 11, fontWeight: 700, color: d.status === "hoje" ? "var(--accent-text)" : "var(--text2)" }}>{m.emoji}<span className="cal-l truncate">{m.nome}</span></span>}
     </div>
   );
