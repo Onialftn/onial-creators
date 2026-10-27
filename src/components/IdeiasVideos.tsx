@@ -280,7 +280,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"><Numeros v={assistir} grande /><CopiarLink id={assistir.id} /><a href={`https://www.youtube.com/shorts/${assistir.id}`} target="_blank" rel="noreferrer" className="flex items-center gap-1.5" style={{ minHeight: 32, padding: "0 10px", borderRadius: 16, fontSize: 13, fontWeight: 600, border: "1px solid var(--line2)", color: "var(--fg)" }}>▶ Abrir no YouTube</a></div>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"><Numeros v={assistir} grande /><CopiarLink id={assistir.id} /></div>
           <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1, ...(copiado === assistir.id ? VERDE : {}) }}>
             <Progresso ativo={gerando === assistir.id} terminou={copiado === assistir.id} />
             <span className="relative flex items-center gap-2">{copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português…" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}</span>
