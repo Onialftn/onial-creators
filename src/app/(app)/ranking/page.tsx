@@ -6,17 +6,17 @@ import { hojeBrasil, mesDe, nomeMes } from "@/lib/datas";
 import { formatarNumero } from "@/lib/pagamento";
 
 function Podio({ pos, l, altura, cor, eu }: { pos: number; l?: LinhaRanking; altura: number; cor: string; eu: boolean }) {
-  if (!l) return <div style={{ flex: "1 1 160px" }} />;
+  if (!l) return <div style={{ flex: "1 1 0", minWidth: 0, maxWidth: 220 }} />;
   return (
-    <div className="flex flex-col items-center gap-2.5" style={{ flex: "1 1 160px" }}>
-      {pos === 1 ? <span style={{ color: "var(--accent-text)" }}><Icone nome="crown" tamanho={28} /></span> : <span style={{ height: 28 }} />}
-      <Avatar foto={l.foto} nome={l.nome} tamanho={pos === 1 ? 84 : 68} borda={cor} />
-      <div className="text-center">
-        <div style={{ color: "var(--strong)", fontWeight: 700 }}>{eu ? "Você" : l.nome}</div>
-        <div className="num" style={{ fontSize: 22, color: eu ? "var(--accent-text)" : "var(--strong)" }}>{formatarNumero(l.views)}</div>
-        <div style={{ color: "var(--muted)", fontSize: 12 }}>views no mês</div>
+    <div className="flex min-w-0 flex-col items-center gap-2" style={{ flex: "1 1 0", maxWidth: 220 }}>
+      {pos === 1 ? <span style={{ color: "var(--accent-text)" }}><Icone nome="crown" tamanho={24} /></span> : <span style={{ height: 24 }} />}
+      <Avatar foto={l.foto} nome={l.nome} tamanho={pos === 1 ? 72 : 56} borda={cor} />
+      <div className="w-full min-w-0 text-center">
+        <div className="truncate" style={{ color: "var(--strong)", fontWeight: 700, fontSize: 14 }}>{eu ? "Você" : l.nome}</div>
+        <div className="num" style={{ fontSize: "clamp(15px, 4.6vw, 22px)", color: eu ? "var(--accent-text)" : "var(--strong)", lineHeight: 1.2 }}>{formatarNumero(l.views)}</div>
+        <div style={{ color: "var(--muted)", fontSize: 11 }}>views no mês</div>
       </div>
-      <div className="num flex w-full justify-center" style={{ height: altura, borderRadius: "6px 6px 0 0", background: `linear-gradient(180deg,${cor},#2A2208)`, paddingTop: 12, fontSize: 40, color: pos === 1 ? "#0A0A0A" : "#fff" }}>{pos}</div>
+      <div className="num flex w-full justify-center" style={{ height: `clamp(${Math.round(altura * 0.55)}px, ${(altura / 5).toFixed(1)}vw, ${altura}px)`, borderRadius: "6px 6px 0 0", background: `linear-gradient(180deg,${cor},#2A2208)`, paddingTop: 8, fontSize: "clamp(26px, 8vw, 40px)", color: pos === 1 ? "#0A0A0A" : "#fff" }}>{pos}</div>
     </div>
   );
 }
@@ -31,7 +31,7 @@ export default async function Ranking() {
   return (
     <>
       <Cabecalho icone="trophy" titulo="Ranking do mês" sub={`Quem mais gerou views na equipe em ${nomeMes(mes).toLowerCase()}. Só views, sem valores.`} />
-      <section className="card flex flex-wrap items-end justify-center gap-4" style={{ paddingTop: 28 }}>
+      <section className="card flex items-end justify-center" style={{ paddingTop: 24, gap: "clamp(8px, 2.5vw, 16px)" }}>
         <Podio pos={2} l={linhas[1]} altura={120} cor="#9AA4B5" eu={linhas[1]?.criadorId === perfil.id} />
         <Podio pos={1} l={linhas[0]} altura={170} cor="#E8B014" eu={linhas[0]?.criadorId === perfil.id} />
         <Podio pos={3} l={linhas[2]} altura={90} cor="#C26A3A" eu={linhas[2]?.criadorId === perfil.id} />
