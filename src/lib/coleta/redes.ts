@@ -137,10 +137,18 @@ const tk = {
     const out: VideoRede[] = [];
     let cursor: number | undefined;
     for (let i = 0; i < 10; i++) {
-      const d = await json<{ data: { videos: { id: string; title?: string; video_description?: string; create_time: number; share_url?: string; view_count?: number }[]; cursor: number; has_more: boolean } }>(
-        await fetch("https://open.tiktokapis.com/v2/video/list/?fields=id,title,video_description,create_time,share_url,view_count", {
+      // o TikTok limita quantos pedidos dá para fazer por minuto (erro 429): espera e tenta de novo
+      let r: Response | null = null;
+      for (const espera of [0, 3000, 8000, 20000]) {
+        if (espera) await new Promise((ok) => setTimeout(ok, espera));
+        r = await fetch("https://open.tiktokapis.com/v2/video/list/?fields=id,title,video_description,create_time,share_url,view_count", {
           method: "POST", headers: { Authorization: `Bearer ${t.access}`, "Content-Type": "application/json" }, body: JSON.stringify(cursor ? { max_count: 20, cursor } : { max_count: 20 }),
-        }), "TikTok vídeos");
+        });
+        if (r.status !== 429) break;
+      }
+      if (r!.status === 429) throw new Error("O TikTok limitou os pedidos por agora (muitas consultas seguidas). Nada se perde: a próxima coleta busca as views de novo.");
+      const d = await json<{ data: { videos: { id: string; title?: string; video_description?: string; create_time: number; share_url?: string; view_count?: number }[]; cursor: number; has_more: boolean } }>(r!, "TikTok vídeos");
+      if (i) await new Promise((ok) => setTimeout(ok, 400)); // um respiro entre as páginas
       for (const v of d.data.videos) out.push({ idExterno: v.id, titulo: (v.title || v.video_description || "Vídeo do TikTok").slice(0, 140), url: v.share_url ?? null, postadoEm: dataBR(new Date(v.create_time * 1000)), viewsTotal: v.view_count ?? 0 });
       if (!d.data.has_more) break;
       cursor = d.data.cursor;
