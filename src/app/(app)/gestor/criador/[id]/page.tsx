@@ -8,7 +8,7 @@ import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
-import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta, salvarRecebe, renomearCriador } from "../../acoes";
+import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta, salvarRecebe, renomearCriador, zerarRede } from "../../acoes";
 import { AbasGestor, Retorno } from "../../comum";
 
 export const maxDuration = 60;
@@ -69,6 +69,19 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
                   <div className="truncate" style={{ fontSize: 12, color: !c ? "var(--muted)" : c.erro ? "var(--warn)" : "var(--muted)" }}>
                     {!c ? "Não conectado" : c.erro ? <details><summary style={{ cursor: "pointer" }}>Com problema na coleta</summary><code style={{ fontSize: 11, wordBreak: "break-word" }}>{c.erro}</code></details> : `${c.nome_conta}${c.ultima_coleta ? ` · ${quandoFoi(String(c.ultima_coleta))}` : ""}`}
                   </div>
+                  {c && rede !== "youtube" && (
+                    <details style={{ fontSize: 12, marginTop: 4 }}>
+                      <summary style={{ cursor: "pointer", color: "var(--accent-text)", width: "fit-content" }}>Zerar e começar de hoje</summary>
+                      <form action={zerarRede} className="flex flex-col gap-2" style={{ marginTop: 6 }}>
+                        <input type="hidden" name="criador" value={id} /><input type="hidden" name="rede" value={rede} />
+                        <span style={{ color: "var(--muted)" }}>Apaga todas as views de {NOME_PLATAFORMA[rede]} dele e usa o total de hoje como ponto de partida. Não dá para desfazer.</span>
+                        <div className="flex gap-2">
+                          <input className="input" name="confirma" placeholder="Digite ZERAR" aria-label="Digite ZERAR para confirmar" style={{ minHeight: 34, maxWidth: 140 }} required />
+                          <button className="btn-line" type="submit" style={{ minHeight: 34, color: "var(--warn)" }}>Zerar</button>
+                        </div>
+                      </form>
+                    </details>
+                  )}
                 </div>
               </div>
             );

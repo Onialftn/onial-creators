@@ -7,7 +7,7 @@ import { anotarSaldo, coletarTodas } from "@/lib/coleta/coletar";
 import { MAPAS } from "@/lib/ia/mapas";
 import { resolverCanal } from "@/lib/ideias";
 import { gerarNotificacoes, notificar } from "@/lib/notificacoes";
-import { formatarReais } from "@/lib/pagamento";
+import { formatarNumero, formatarReais } from "@/lib/pagamento";
 import { nomeMes } from "@/lib/datas";
 
 async function gestor() {
@@ -45,6 +45,26 @@ export async function renomearCriador(f: FormData) {
   if (nome.length < 2) voltar(criador, "Escreva o nome do criador.");
   await sb.from("perfis").update({ nome }).eq("id", criador).eq("papel", "criador");
   voltar(criador, `Nome alterado para ${nome}.`);
+}
+
+/**
+ * Zera as views de TikTok ou Instagram de um criador e começa do total de hoje:
+ * apaga as views por dia já gravadas e guarda o total atual de cada vídeo como ponto de partida.
+ * Daqui pra frente só conta o que ele ganhar a mais.
+ */
+export async function zerarRede(f: FormData) {
+  await gestor();
+  const criador = texto(f, "criador");
+  const rede = texto(f, "rede");
+  if (rede !== "tiktok" && rede !== "instagram") voltar(criador, "Rede inválida.");
+  if (texto(f, "confirma") !== "ZERAR") voltar(criador, "Para zerar, digite ZERAR no campo.");
+  const admin = supabaseAdmin();
+  const { error } = await admin.from("views_diarias").delete().eq("criador_id", criador).eq("plataforma", rede);
+  if (error) voltar(criador, `Não consegui zerar: ${error.message}`);
+  const { data: vids } = await admin.from("videos").select("views_total").eq("criador_id", criador).eq("plataforma", rede).limit(5000);
+  const base = (vids ?? []).reduce((a, v) => a + (Number(v.views_total) || 0), 0);
+  const nome = rede === "tiktok" ? "TikTok" : "Instagram";
+  voltar(criador, `${nome} zerado. Ponto de partida: ${formatarNumero(base)} views (total de hoje). Só o que ganhar daqui pra frente conta.`);
 }
 
 /** Conta da própria Onial: não recebe pagamento (fica fora dos totais a pagar). */
