@@ -10,7 +10,7 @@ export async function POST(req: NextRequest) {
   const b = (await req.json().catch(() => ({}))) as { endpoint?: string; keys?: { p256dh?: string; auth?: string } };
   if (!b.endpoint?.startsWith("https://") || !b.keys?.p256dh || !b.keys?.auth) return NextResponse.json({ erro: "Inscrição inválida." }, { status: 400 });
   await supabaseAdmin().from("push_inscricoes").upsert({ endpoint: b.endpoint, criador_id: user.id, p256dh: b.keys.p256dh, auth: b.keys.auth });
-  await notificar(user.id, { tipo: "boas-vindas", titulo: "Notificações ligadas ✅", texto: "Você vai receber por aqui as notificações do Onial Creators.", link: "/", chave: `push-ok:${b.endpoint.slice(-24)}` });
+  await notificar(user.id, { tipo: "boas-vindas", titulo: "Notificações ligadas ✅", texto: "Tudo certo por aqui.", link: "/", chave: `push-ok:${b.endpoint.slice(-24)}` });
   return NextResponse.json({ ok: true });
 }
 

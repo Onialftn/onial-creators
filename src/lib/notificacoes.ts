@@ -2,7 +2,7 @@ import "server-only";
 import webpush from "web-push";
 import { marcoMeta, videosBombando, type VideoSemana } from "@/lib/avisos";
 import { rankingDoMes, resumoDoMes } from "@/lib/dados";
-import { diaDaSemana, hojeBrasil, mesDe, nomeMes, somarDias } from "@/lib/datas";
+import { diaDaSemana, hojeBrasil, mesDe, somarDias } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
 import { supabaseAdmin } from "@/lib/supabase/server";
@@ -83,35 +83,35 @@ export async function gerarNotificacoes() {
         const mapa = MAPAS.find((m) => m.id === mapasHoje?.find((x) => x.criador_id === id)?.mapa);
         await avisar({
           tipo: "postar",
-          titulo: mapa ? `Hoje é dia de postar no ${mapa.nome} ${mapa.emoji}` : "Hoje é dia de postar 🎬",
-          texto: mapa ? "Esse é o mapa de hoje. Veja os vídeos em alta em Ideias & roteiros." : "Veja os vídeos em alta em Ideias & roteiros para se inspirar.",
+          titulo: "Hoje é dia de postar 🎬",
+          texto: mapa ? `Mapa: ${mapa.nome} ${mapa.emoji}` : "Veja ideias em Ideias & roteiros.",
           link: mapa ? `/ideias?mapa=${mapa.id}` : "/ideias",
           chave: `postar:${hoje}`,
         });
       }
       // 2. constância: dia para repor e faltas
       if (r.aRepor > 0)
-        await avisar({ tipo: "constancia", titulo: `Você tem ${r.aRepor} ${r.aRepor === 1 ? "dia" : "dias"} para repor até domingo`, texto: "Poste um vídeo extra esta semana para não perder o bônus de constância.", link: "/dias", chave: `repor:${hoje}` });
+        await avisar({ tipo: "constancia", titulo: `${r.aRepor} ${r.aRepor === 1 ? "dia" : "dias"} para repor ⚠️`, texto: "Reponha até domingo e mantenha o bônus.", link: "/dias", chave: `repor:${hoje}` });
       if (r.faltas > 0)
-        await avisar({ tipo: "constancia", titulo: r.faltas === 1 ? "Você teve 1 falta no mês" : `Você teve ${r.faltas} faltas no mês`, texto: r.faltas === 1 ? "O bônus de constância caiu para 5%. Com mais uma falta ele zera." : "O bônus de constância deste mês zerou.", link: "/dias", chave: `faltas:${mes}:${r.faltas}` });
+        await avisar({ tipo: "constancia", titulo: r.faltas === 1 ? "1 falta no mês" : `${r.faltas} faltas no mês`, texto: r.faltas === 1 ? "Constância caiu para 5%." : "Constância do mês zerou.", link: "/dias", chave: `faltas:${mes}:${r.faltas}` });
 
       // 3. meta
       const marco = marcoMeta(r.views, r.meta);
       if (marco && r.meta)
         await avisar(marco === 100
-          ? { tipo: "meta", titulo: "Meta batida! 🏆", texto: `Você passou de ${formatarNumero(r.meta)} views e garantiu o bônus de ${formatarReais(Math.round(r.meta / 10))}.`, link: "/metas", chave: `meta:${mes}:100` }
-          : { tipo: "meta", titulo: `Você chegou a ${marco}% da meta`, texto: `Faltam ${formatarNumero(r.meta - r.views)} views para o bônus de ${formatarReais(Math.round(r.meta / 10))}.`, link: "/metas", chave: `meta:${mes}:${marco}` });
+          ? { tipo: "meta", titulo: "Meta batida! 🏆", texto: `Bônus de ${formatarReais(Math.round(r.meta / 10))} garantido.`, link: "/metas", chave: `meta:${mes}:100` }
+          : { tipo: "meta", titulo: `${marco}% da meta 🎯`, texto: `Faltam ${formatarNumero(r.meta - r.views)} views.`, link: "/metas", chave: `meta:${mes}:${marco}` });
 
       // 4. vídeo bombando (2× a média do criador)
       for (const v of videosBombando(await semanaPorVideo(admin, id, hoje)))
-        await avisar({ tipo: "video", titulo: `Parabéns! Seu vídeo está bombando no ${NOME_REDE[v.plataforma] ?? v.plataforma} 🔥`, texto: `"${v.titulo.slice(0, 80)}" fez ${formatarNumero(v.views)} views na última semana, ${String(v.vezes).replace(".", ",")}× a sua média.`, link: "/metas", chave: `bomba:${v.id}` });
+        await avisar({ tipo: "video", titulo: `Vídeo bombando no ${NOME_REDE[v.plataforma] ?? v.plataforma} 🔥`, texto: `${formatarNumero(v.views)} views na semana: "${v.titulo.slice(0, 40)}"`, link: "/metas", chave: `bomba:${v.id}` });
 
       // 5. ranking: subiu de posição desde a última anotação
       if (ranking.length > 1) {
         const pos = ranking.findIndex((l) => l.criadorId === id) + 1;
         const { data: antes } = await admin.from("saldos_diarios").select("posicao").eq("criador_id", id).lt("dia", hoje).not("posicao", "is", null).order("dia", { ascending: false }).limit(1).maybeSingle();
         if (pos > 0 && antes?.posicao && pos < Number(antes.posicao))
-          await avisar({ tipo: "ranking", titulo: pos === 1 ? "Você está em 1º no ranking! 👑" : `Você subiu para o ${pos}º lugar no ranking`, texto: `Ranking de ${nomeMes(mes).toLowerCase()}, por views.`, link: "/ranking", chave: `ranking:${hoje}:${pos}` });
+          await avisar({ tipo: "ranking", titulo: pos === 1 ? "1º no ranking! 👑" : `Subiu para ${pos}º no ranking`, texto: "Veja o ranking do mês.", link: "/ranking", chave: `ranking:${hoje}:${pos}` });
         if (pos > 0) await admin.from("saldos_diarios").update({ posicao: pos }).eq("criador_id", id).eq("dia", hoje);
       }
     } catch (e) {
@@ -122,7 +122,7 @@ export async function gerarNotificacoes() {
   const { data: extrasHoje } = await admin.from("extras").select("id, titulo, valor_centavos").eq("ativo", true).eq("prazo", hoje);
   for (const x of extrasHoje ?? []) {
     for (const c of criadores ?? []) {
-      await notificar(c.id as string, { tipo: "pagamento", titulo: `Hoje vale o extra: +${formatarReais(x.valor_centavos)} ⏰`, texto: `${x.titulo}. Poste hoje até 23:59 e mande o link em Dias de postagem.`, link: "/dias#extras", chave: `extra:hoje:${x.id}` }, admin).catch(() => undefined);
+      await notificar(c.id as string, { tipo: "pagamento", titulo: `Extra hoje: +${formatarReais(x.valor_centavos)} ⏰`, texto: `${x.titulo}. Até 23:59.`, link: "/dias#extras", chave: `extra:hoje:${x.id}` }, admin).catch(() => undefined);
       n++;
     }
   }

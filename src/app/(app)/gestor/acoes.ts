@@ -137,7 +137,7 @@ export async function fecharMes(f: FormData) {
     { criador_id: criador, mes, views: p.views, faltas: p.faltas, bruto_centavos: p.brutoCentavos, constancia_centavos: p.constanciaCentavos, bonus_meta_centavos: p.bonusMetaCentavos, bonus_ajuda_centavos: p.bonusAjudaCentavos, bonus_extra_centavos: p.bonusExtraCentavos, total_centavos: p.totalCentavos, status: "em_aberto" },
     { onConflict: "criador_id,mes" },
   );
-  await notificar(criador, { tipo: "pagamento", titulo: `Seu mês de ${nomeMes(mes).split(" ")[0].toLowerCase()} foi fechado`, texto: `Você vai receber ${formatarReais(p.totalCentavos)}. Veja os detalhes em Pagamentos.`, link: "/pagamentos", chave: `fechado:${mes}:${p.totalCentavos}` }).catch(() => undefined);
+  await notificar(criador, { tipo: "pagamento", titulo: `${nomeMes(mes).split(" ")[0]} fechado`, texto: `Você recebe ${formatarReais(p.totalCentavos)}.`, link: "/pagamentos", chave: `fechado:${mes}:${p.totalCentavos}` }).catch(() => undefined);
   voltar(criador, "Mês fechado. O valor aparece em Pagamentos como A pagar.");
 }
 
@@ -145,7 +145,7 @@ export async function marcarPago(f: FormData) {
   const { sb } = await gestor();
   const criador = texto(f, "criador");
   const { data: pg } = await sb.from("pagamentos").update({ status: "pago", pago_em: new Date().toISOString() }).eq("id", texto(f, "pagamento")).select("mes, total_centavos").maybeSingle();
-  if (pg) await notificar(criador, { tipo: "pagamento", titulo: "Pagamento feito! 💸", texto: `Seu pagamento de ${nomeMes(String(pg.mes)).toLowerCase()} (${formatarReais(Number(pg.total_centavos))}) foi marcado como pago.`, link: "/pagamentos", chave: `pago:${texto(f, "pagamento")}` }).catch(() => undefined);
+  if (pg) await notificar(criador, { tipo: "pagamento", titulo: "Pagamento feito! 💸", texto: `${formatarReais(Number(pg.total_centavos))} de ${nomeMes(String(pg.mes)).split(" ")[0].toLowerCase()}.`, link: "/pagamentos", chave: `pago:${texto(f, "pagamento")}` }).catch(() => undefined);
   voltar(criador, "Pagamento marcado como pago.");
 }
 

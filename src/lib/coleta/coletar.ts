@@ -165,7 +165,7 @@ export async function coletarConta(contaId: string, completo = false) {
     const msg = e instanceof Error ? e.message : String(e);
     await admin.from("contas_plataforma").update({ erro: msg.slice(0, 500) }).eq("id", contaId);
     const nome = { youtube: "YouTube", tiktok: "TikTok", instagram: "Instagram" }[rede];
-    await notificar(criador, { tipo: "rede", titulo: `Seu ${nome} precisa ser conectado de novo`, texto: "Não consegui buscar suas views. Abra Minhas redes e clique em Conectar de novo.", link: "/redes", chave: `rede:${contaId}:${hoje}` }, admin).catch(() => undefined);
+    await notificar(criador, { tipo: "rede", titulo: `Reconecte seu ${nome} ⚠️`, texto: "Toque para conectar de novo.", link: "/redes", chave: `rede:${contaId}:${hoje}` }, admin).catch(() => undefined);
     throw e;
   }
 }

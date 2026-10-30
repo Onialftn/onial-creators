@@ -11,7 +11,6 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 type Retorno = { ok?: string; erro?: string };
 const primeiro = (nome: string) => nome.split(" ")[0];
 const diaBr = (dia: string) => dia.split("-").reverse().slice(0, 2).join("/");
-const nomeMapa = (id: string) => MAPAS.find((m) => m.id === id)?.nome ?? id;
 const atualizar = () => { revalidatePath("/gravar"); revalidatePath("/", "layout"); };
 
 async function carregar(id: string) {
@@ -41,8 +40,8 @@ export async function pedirAjuda(d: { dia: string; hora: string; duracao: number
   if (error || !novo) return { erro: "Não consegui salvar o pedido. Tente de novo." };
   const { data: equipe } = await admin.from("perfis").select("id").neq("id", perfil.id);
   await Promise.all((equipe ?? []).map((e) => notificar(e.id, {
-    tipo: "ajuda", titulo: `${primeiro(perfil.nome)} precisa de ajuda para gravar 🎬`,
-    texto: `${diaBr(d.dia)}, ${faixaHorario(d.hora, Number(d.duracao))} · ${nomeMapa(d.mapa)}. Ajude e ganhe ${formatarReais(BONUS_AJUDA_CENTAVOS)}.`,
+    tipo: "ajuda", titulo: `${primeiro(perfil.nome)} pediu ajuda 🎬`,
+    texto: `${diaBr(d.dia)}, ${d.hora.slice(0, 5)} · +${formatarReais(BONUS_AJUDA_CENTAVOS)}`,
     link: `/gravar?dia=${d.dia}`, chave: `ajuda:novo:${novo.id}`,
   }, admin).catch(() => undefined)));
   atualizar();
@@ -58,7 +57,7 @@ export async function aceitarAjuda(id: string): Promise<Retorno> {
   if (situacao(p, ajudas.length) !== "aberto") return { erro: "Esse pedido não está mais aberto (lotou ou já começou)." };
   const { error } = await admin.from("ajudas").insert({ pedido_id: id, ajudante_id: perfil.id });
   if (error) return { erro: "Não consegui aceitar. Tente de novo." };
-  await notificar(p.criador_id, { tipo: "ajuda", titulo: `${primeiro(perfil.nome)} vai te ajudar a gravar 🤝`, texto: `${diaBr(p.dia)}, ${faixaHorario(p.hora, p.duracao_min)}. ${ajudas.length + 1} de ${p.vagas} ${p.vagas === 1 ? "pessoa" : "pessoas"}.`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:aceitou:${id}:${perfil.id}` }, admin).catch(() => undefined);
+  await notificar(p.criador_id, { tipo: "ajuda", titulo: `${primeiro(perfil.nome)} vai ajudar 🤝`, texto: `${diaBr(p.dia)}, ${p.hora.slice(0, 5)} · ${ajudas.length + 1}/${p.vagas}`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:aceitou:${id}:${perfil.id}` }, admin).catch(() => undefined);
   atualizar();
   return { ok: "Combinado! Você vai ajudar nessa gravação." };
 }
@@ -69,7 +68,7 @@ export async function desistirAjuda(id: string): Promise<Retorno> {
   if (!p) return { erro: "Esse pedido não existe mais." };
   if (p.status !== "aberto" || inicioDe(p) <= new Date()) return { erro: "A gravação já começou: fale com quem pediu." };
   await admin.from("ajudas").delete().eq("pedido_id", id).eq("ajudante_id", perfil.id);
-  await notificar(p.criador_id, { tipo: "ajuda", titulo: `${primeiro(perfil.nome)} não vai mais poder ajudar`, texto: `Na gravação de ${diaBr(p.dia)}, ${faixaHorario(p.hora, p.duracao_min)}. A vaga abriu de novo.`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:desistiu:${id}:${perfil.id}:${Date.now()}` }, admin).catch(() => undefined);
+  await notificar(p.criador_id, { tipo: "ajuda", titulo: `${primeiro(perfil.nome)} desistiu`, texto: `${diaBr(p.dia)}, ${p.hora.slice(0, 5)} · vaga aberta`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:desistiu:${id}:${perfil.id}:${Date.now()}` }, admin).catch(() => undefined);
   atualizar();
   return { ok: "Você saiu dessa gravação." };
 }
@@ -81,7 +80,7 @@ export async function cancelarPedido(id: string): Promise<Retorno> {
   if (p.criador_id !== perfil.id && perfil.papel !== "gestor") return { erro: "Só quem pediu pode cancelar." };
   if (p.status === "feito") return { erro: "Essa gravação já foi confirmada." };
   await admin.from("pedidos_ajuda").update({ status: "cancelado" }).eq("id", id);
-  await Promise.all(ajudas.map((a) => notificar(a.ajudante_id, { tipo: "ajuda", titulo: `${p.criador_id === perfil.id ? primeiro(perfil.nome) : "O gestor"} cancelou a gravação ❌`, texto: `A gravação de ${diaBr(p.dia)}, ${faixaHorario(p.hora, p.duracao_min)} em que você ia ajudar foi cancelada. Não precisa mais ir.`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:cancelado:${id}` }, admin).catch(() => undefined)));
+  await Promise.all(ajudas.map((a) => notificar(a.ajudante_id, { tipo: "ajuda", titulo: "Gravação cancelada ❌", texto: `${diaBr(p.dia)}, ${p.hora.slice(0, 5)} · não precisa ir`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:cancelado:${id}` }, admin).catch(() => undefined)));
   atualizar();
   return { ok: "Pedido cancelado." };
 }
@@ -98,7 +97,7 @@ export async function confirmarGravacao(id: string, presentes: string[]): Promis
   if (fechado?.length && perfil.papel !== "gestor") return { erro: "O mês dessa gravação já foi fechado. Fale com o gestor." };
   for (const a of ajudas) await admin.from("ajudas").update({ presente: presentes.includes(a.ajudante_id) }).eq("pedido_id", id).eq("ajudante_id", a.ajudante_id);
   await admin.from("pedidos_ajuda").update({ status: "feito", confirmado_em: new Date().toISOString() }).eq("id", id);
-  await Promise.all(ajudas.filter((a) => presentes.includes(a.ajudante_id)).map((a) => notificar(a.ajudante_id, { tipo: "pagamento", titulo: `+${formatarReais(BONUS_AJUDA_CENTAVOS)} pela ajuda na gravação 💸`, texto: `${primeiro(perfil.nome)} confirmou a gravação de ${diaBr(p.dia)}. O bônus entrou no seu total do mês.`, link: "/", chave: `ajuda:bonus:${id}` }, admin).catch(() => undefined)));
+  await Promise.all(ajudas.filter((a) => presentes.includes(a.ajudante_id)).map((a) => notificar(a.ajudante_id, { tipo: "pagamento", titulo: `+${formatarReais(BONUS_AJUDA_CENTAVOS)} pela ajuda 💸`, texto: `${primeiro(perfil.nome)} confirmou.`, link: "/", chave: `ajuda:bonus:${id}` }, admin).catch(() => undefined)));
   atualizar();
   return { ok: presentes.length ? "Gravação confirmada! O bônus entrou para quem ajudou." : "Gravação confirmada (ninguém marcado como presente)." };
 }
@@ -117,7 +116,7 @@ export async function sugerirHorario(id: string, d: { dia: string; hora: string;
   await admin.from("sugestoes_horario").update({ status: "recusada" }).eq("pedido_id", id).eq("criador_id", perfil.id).eq("status", "pendente");
   const { data: s, error } = await admin.from("sugestoes_horario").insert({ pedido_id: id, criador_id: perfil.id, dia: d.dia, hora: d.hora, mensagem }).select("id").single();
   if (error || !s) return { erro: "Não consegui enviar a sugestão. Tente de novo." };
-  await notificar(p.criador_id, { tipo: "ajuda", titulo: `${primeiro(perfil.nome)} sugeriu outro horário 🕒`, texto: `${diaBr(d.dia)} às ${d.hora} (em vez de ${diaBr(p.dia)}, ${p.hora.slice(0, 5)}).${mensagem ? ` "${mensagem}"` : ""}`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:sugestao:${s.id}` }, admin).catch(() => undefined);
+  await notificar(p.criador_id, { tipo: "ajuda", titulo: `${primeiro(perfil.nome)} sugeriu horário 🕒`, texto: `${diaBr(d.dia)}, ${d.hora}`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:sugestao:${s.id}` }, admin).catch(() => undefined);
   atualizar();
   return { ok: "Sugestão enviada! Se aceitar, você já entra como ajudante." };
 }
@@ -134,7 +133,7 @@ export async function responderSugestao(sugestaoId: string, aceitar: boolean): P
   const hora = String(s.hora).slice(0, 5);
   if (!aceitar) {
     await admin.from("sugestoes_horario").update({ status: "recusada" }).eq("id", sugestaoId);
-    await notificar(s.criador_id, { tipo: "ajuda", titulo: "Sugestão de horário recusada", texto: `${primeiro(perfil.nome)} vai manter ${diaBr(p.dia)}, ${p.hora.slice(0, 5)}.`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:sugestao-nao:${sugestaoId}` }, admin).catch(() => undefined);
+    await notificar(s.criador_id, { tipo: "ajuda", titulo: "Sugestão recusada", texto: `Mantido: ${diaBr(p.dia)}, ${p.hora.slice(0, 5)}`, link: `/gravar?dia=${p.dia}`, chave: `ajuda:sugestao-nao:${sugestaoId}` }, admin).catch(() => undefined);
     atualizar();
     return { ok: "Sugestão recusada." };
   }
@@ -146,8 +145,8 @@ export async function responderSugestao(sugestaoId: string, aceitar: boolean): P
   const jaAjuda = ajudas.some((a) => a.ajudante_id === s.criador_id);
   if (!jaAjuda && ajudas.length < p.vagas) await admin.from("ajudas").insert({ pedido_id: p.id, ajudante_id: s.criador_id });
   const novo = `${diaBr(s.dia)}, ${faixaHorario(hora, p.duracao_min)}`;
-  await notificar(s.criador_id, { tipo: "ajuda", titulo: "Seu horário foi aceito 🤝", texto: `A gravação ficou para ${novo}.${jaAjuda || ajudas.length < p.vagas ? " Você está na lista de ajudantes." : ""}`, link: `/gravar?dia=${s.dia}`, chave: `ajuda:sugestao-sim:${sugestaoId}` }, admin).catch(() => undefined);
-  await Promise.all(ajudas.filter((a) => a.ajudante_id !== s.criador_id).map((a) => notificar(a.ajudante_id, { tipo: "ajuda", titulo: "A gravação mudou de horário", texto: `Agora é ${novo}. Se não puder, toque em "Não vou poder".`, link: `/gravar?dia=${s.dia}`, chave: `ajuda:mudou:${sugestaoId}` }, admin).catch(() => undefined)));
+  await notificar(s.criador_id, { tipo: "ajuda", titulo: "Horário aceito 🤝", texto: `Ficou para ${novo}.`, link: `/gravar?dia=${s.dia}`, chave: `ajuda:sugestao-sim:${sugestaoId}` }, admin).catch(() => undefined);
+  await Promise.all(ajudas.filter((a) => a.ajudante_id !== s.criador_id).map((a) => notificar(a.ajudante_id, { tipo: "ajuda", titulo: "Gravação mudou de horário", texto: `Agora: ${novo}`, link: `/gravar?dia=${s.dia}`, chave: `ajuda:mudou:${sugestaoId}` }, admin).catch(() => undefined)));
   atualizar();
   return { ok: `Horário mudado para ${novo}.` };
 }

@@ -41,7 +41,7 @@ export async function criarExtra(f: FormData) {
   const admin = supabaseAdmin();
   const { data: novo } = await admin.from("extras").insert({ titulo, descricao, regras, valor_centavos: valor, prazo }).select("id").single();
   const { data: criadores } = await admin.from("perfis").select("id").eq("papel", "criador");
-  await Promise.all((criadores ?? []).map((c) => notificar(c.id, { tipo: "pagamento", titulo: `Vídeo extra: +${formatarReais(valor)} 💰`, texto: `${titulo}. Vale só ${prazo === hojeBrasil() ? "HOJE" : `no dia ${diaBr(prazo)}`} (24h): poste nesse dia e mande o link em Dias de postagem.`, link: "/dias#extras", chave: `extra:novo:${novo?.id}` }, admin).catch(() => undefined)));
+  await Promise.all((criadores ?? []).map((c) => notificar(c.id, { tipo: "pagamento", titulo: `Extra: +${formatarReais(valor)} 💰`, texto: `${titulo} · só ${prazo === hojeBrasil() ? "hoje" : diaBr(prazo)}`, link: "/dias#extras", chave: `extra:novo:${novo?.id}` }, admin).catch(() => undefined)));
   irPara(`/gestor/extras?ok=${encodeURIComponent("Extra criado! A equipe foi avisada.")}`);
 }
 
@@ -97,7 +97,7 @@ export async function enviarExtra(f: FormData) {
   if (atual?.status === "aprovado") volta("Esse extra já foi aprovado para você.");
   await admin.from("entregas_extra").upsert({ extra_id: ex.id, criador_id: perfil.id, link: ref!.url.slice(0, 500), status: "enviado", motivo: "", enviado_em: new Date().toISOString(), aprovado_em: null, mes: null });
   const { data: gestores } = await admin.from("perfis").select("id").eq("papel", "gestor");
-  await Promise.all((gestores ?? []).map((g) => notificar(g.id, { tipo: "pagamento", titulo: `${perfil.nome.split(" ")[0]} mandou um vídeo extra`, texto: `${ex.titulo} (${formatarReais(ex.valor_centavos)}). Confira e aprove.`, link: "/gestor/extras", chave: `extra:enviado:${ex.id}:${perfil.id}:${Date.now()}` }, admin).catch(() => undefined)));
+  await Promise.all((gestores ?? []).map((g) => notificar(g.id, { tipo: "pagamento", titulo: `${perfil.nome.split(" ")[0]} mandou um extra`, texto: `${ex.titulo} · aprovar`, link: "/gestor/extras", chave: `extra:enviado:${ex.id}:${perfil.id}:${Date.now()}` }, admin).catch(() => undefined)));
   volta("Link enviado! Assim que o gestor aprovar, o valor entra no seu total do mês.", true);
 }
 
@@ -115,7 +115,7 @@ export async function avaliarEntrega(f: FormData) {
     ? { status: "aprovado", aprovado_em: new Date().toISOString(), mes: mesDe(hojeBrasil()), motivo: "" }
     : { status: "recusado", aprovado_em: null, mes: null, motivo }).eq("extra_id", extra).eq("criador_id", criador);
   await notificar(criador, aprovar
-    ? { tipo: "pagamento", titulo: `Extra aprovado: +${formatarReais(ex!.valor_centavos)} 💸`, texto: `${ex!.titulo}. O valor entrou no seu total do mês.`, link: "/", chave: `extra:ok:${extra}:${criador}:${Date.now()}` }
-    : { tipo: "pagamento", titulo: "Vídeo extra não aprovado", texto: `${ex!.titulo}.${motivo ? ` Motivo: ${motivo}.` : ""} Você pode mandar outro link até o prazo.`, link: "/dias#extras", chave: `extra:nao:${extra}:${criador}:${Date.now()}` }, admin).catch(() => undefined);
+    ? { tipo: "pagamento", titulo: `Extra aprovado: +${formatarReais(ex!.valor_centavos)} 💸`, texto: `${ex!.titulo}`, link: "/", chave: `extra:ok:${extra}:${criador}:${Date.now()}` }
+    : { tipo: "pagamento", titulo: "Extra não aprovado", texto: motivo ? `Motivo: ${motivo}` : `${ex!.titulo}`, link: "/dias#extras", chave: `extra:nao:${extra}:${criador}:${Date.now()}` }, admin).catch(() => undefined);
   irPara(`/gestor/extras?ok=${encodeURIComponent(aprovar ? "Aprovado: o valor entrou no total do mês do criador." : "Recusado. O criador foi avisado.")}`);
 }

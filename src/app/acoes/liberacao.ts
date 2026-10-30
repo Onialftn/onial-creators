@@ -19,7 +19,7 @@ export async function pedirLiberacao(f: FormData) {
   const admin = supabaseAdmin();
   await admin.from("liberacoes").upsert({ criador_id: perfil.id, rede: r, usuario, liberado: false, pedido_em: new Date().toISOString(), liberado_em: null });
   const { data: gestores } = await admin.from("perfis").select("id").eq("papel", "gestor");
-  await Promise.all((gestores ?? []).map((g) => notificar(g.id, { tipo: "rede", titulo: `Liberar o ${NOME[r]} de ${perfil.nome.split(" ")[0]}`, texto: `@${usuario} pediu liberação para conectar o ${NOME[r]}. Veja em Painel do gestor → Configurações.`, link: "/gestor/config#liberar", chave: `liberar:${r}:${perfil.id}:${usuario}` }, admin).catch(() => undefined)));
+  await Promise.all((gestores ?? []).map((g) => notificar(g.id, { tipo: "rede", titulo: `Liberar ${NOME[r]} de ${perfil.nome.split(" ")[0]}`, texto: `@${usuario}`, link: "/gestor/config#liberar", chave: `liberar:${r}:${perfil.id}:${usuario}` }, admin).catch(() => undefined)));
   revalidatePath("/redes");
   redirect("/redes?ok=" + encodeURIComponent(`Pedido enviado! Assim que o gestor liberar o ${NOME[r]}, você recebe uma notificação.`));
 }
@@ -36,8 +36,8 @@ export async function marcarLiberado(f: FormData) {
   await admin.from("liberacoes").update({ liberado: sim, liberado_em: sim ? new Date().toISOString() : null }).eq("criador_id", criador).eq("rede", r);
   if (sim) {
     await notificar(criador, r === "instagram"
-      ? { tipo: "rede", titulo: "Seu Instagram foi liberado ✅", texto: "Falta 1 passo: aceite o convite de testador e depois conecte em Minhas redes. Toque para ver como.", link: "/redes", chave: `liberado:instagram:${criador}:${Date.now()}` }
-      : { tipo: "rede", titulo: "Seu TikTok foi liberado ✅", texto: "Agora é só conectar o TikTok em Minhas redes.", link: "/redes", chave: `liberado:tiktok:${criador}:${Date.now()}` }, admin).catch(() => undefined);
+      ? { tipo: "rede", titulo: "Seu Instagram foi liberado ✅", texto: "Aceite o convite e conecte.", link: "/redes", chave: `liberado:instagram:${criador}:${Date.now()}` }
+      : { tipo: "rede", titulo: "Seu TikTok foi liberado ✅", texto: "Já pode conectar.", link: "/redes", chave: `liberado:tiktok:${criador}:${Date.now()}` }, admin).catch(() => undefined);
   }
   revalidatePath("/gestor/config");
   redirect("/gestor/config?ok=" + encodeURIComponent(sim ? `${NOME[r]} marcado como liberado. O criador foi avisado.` : "Desmarcado.") + "#liberar");
