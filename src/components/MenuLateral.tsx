@@ -42,7 +42,7 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
 
 /** Logo abaixo de Notificações. */
 const EXTRAS: Item[] = [
-  { href: "/novidades", rotulo: "Novidades", icone: "zap" },
+  { href: "/novidades", rotulo: "Novidades", icone: "megafone" },
   { href: "/sugestoes", rotulo: "Sugestões", icone: "bulb" },
 ];
 

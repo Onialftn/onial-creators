@@ -16,7 +16,7 @@ export default async function Novidades({ searchParams }: { searchParams: Promis
 
   return (
     <>
-      <Cabecalho icone="zap" titulo="Novidades" sub="Atualizações dos mapas da Onial. Use as novidades para criar vídeos e divulgar." />
+      <Cabecalho icone="megafone" titulo="Novidades" sub="Atualizações dos mapas da Onial. Use as novidades para criar vídeos e divulgar." />
       <Retorno ok={ok} erro={erro} />
 
       {gestor && (
@@ -53,7 +53,7 @@ export default async function Novidades({ searchParams }: { searchParams: Promis
               {i === 0 && !filtro && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, padding: "2px 7px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A" }}>MAIS RECENTE</span>}
               <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{quando(n.criado_em)}</span>
             </div>
-            <TituloCard icone="zap">{n.titulo}</TituloCard>
+            <TituloCard icone="megafone">{n.titulo}</TituloCard>
             {n.texto && <TextoSimples texto={n.texto} />}
             {gestor && (
               <details style={{ fontSize: 12 }}>
