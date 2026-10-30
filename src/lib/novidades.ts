@@ -16,3 +16,10 @@ export async function avisarNovidadesRecentes(pessoa: string) {
   const { data } = await admin.from("novidades").select("id, mapa, titulo").gte("criado_em", new Date(Date.now() - 3 * 86_400_000).toISOString());
   for (const n of data ?? []) await avisarNovidade(n, [pessoa]);
 }
+
+/** Novidades duram 7 dias: depois disso são apagadas (roda todo dia junto com a coleta). */
+export const DIAS_NOVIDADE = 7;
+export const limiteNovidades = () => new Date(Date.now() - DIAS_NOVIDADE * 86_400_000).toISOString();
+export async function apagarNovidadesVelhas() {
+  await supabaseAdmin().from("novidades").delete().lt("criado_em", limiteNovidades());
+}
