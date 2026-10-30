@@ -40,6 +40,12 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
   { titulo: "Gestão", soGestor: true, itens: [{ href: "/gestor", rotulo: "Painel do gestor", icone: "gear" }] },
 ];
 
+/** Logo abaixo de Notificações. */
+const EXTRAS: Item[] = [
+  { href: "/novidades", rotulo: "Novidades", icone: "zap" },
+  { href: "/sugestoes", rotulo: "Sugestões", icone: "bulb" },
+];
+
 export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush = null, precisamAjuda = 0 }: { nome: string; papel: "criador" | "gestor"; foto?: string | null; avisos?: Notificacao[]; chavePush?: string | null; precisamAjuda?: number }) {
   const rota = usePathname();
   const [claro, setClaro] = useState(false);
@@ -64,7 +70,7 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
     document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", f); document.body.style.overflow = ""; };
   }, [aberto]);
-  const atual = GRUPOS.flatMap((g) => g.itens).find((i) => ativo(i.href));
+  const atual = [...EXTRAS, ...GRUPOS.flatMap((g) => g.itens)].find((i) => ativo(i.href));
 
   return (
     <>
@@ -91,6 +97,13 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
         </span>
       </Link>
       <div className="menu-sino"><Sino itens={avisos} chavePublica={chavePush} /></div>
+      <nav className="menu-grupo menu-extra" aria-label="Novidades e sugestões">
+        {EXTRAS.map((i) => (
+          <Link key={i.href} href={i.href} className={`menu-item ${ativo(i.href) ? "menu-ativo" : ""}`} aria-current={ativo(i.href) ? "page" : undefined}>
+            <Icone nome={i.icone} />{i.rotulo}
+          </Link>
+        ))}
+      </nav>
       {GRUPOS.filter((g) => !g.soGestor || papel === "gestor").map((g) => (
         <nav key={g.titulo} className="menu-grupo" aria-label={g.titulo}>
           <div className="menu-titulo">{g.titulo.toUpperCase()}</div>

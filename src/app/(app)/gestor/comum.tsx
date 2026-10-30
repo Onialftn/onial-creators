@@ -2,10 +2,11 @@ import Link from "next/link";
 import { Icone } from "@/components/Icone";
 
 /** Abas do Painel do gestor. */
-export function AbasGestor({ ativa }: { ativa: "geral" | "criador" | "extras" | "config" }) {
+export function AbasGestor({ ativa }: { ativa: "geral" | "criador" | "extras" | "sugestoes" | "config" }) {
   const abas = [
     { id: "geral", href: "/gestor", rotulo: "Visão geral", icone: "dash" },
     { id: "extras", href: "/gestor/extras", rotulo: "Vídeos extras", icone: "wallet" },
+    { id: "sugestoes", href: "/gestor/sugestoes", rotulo: "Sugestões", icone: "bulb" },
     { id: "config", href: "/gestor/config", rotulo: "Configurações", icone: "gear" },
   ] as const;
   return (

@@ -2,12 +2,14 @@ import { MenuLateral } from "@/components/MenuLateral";
 import type { Notificacao } from "@/components/Sino";
 import { usuarioAtual } from "@/lib/dados";
 import { hojeBrasil } from "@/lib/datas";
+import { avisarNovidadesRecentes } from "@/lib/novidades";
 import { podeAceitar, type Ajuda, type Pedido } from "@/lib/gravar";
 
 export const dynamic = "force-dynamic";
 
 export default async function LayoutApp({ children }: { children: React.ReactNode }) {
   const { sb, perfil } = await usuarioAtual();
+  await avisarNovidadesRecentes(perfil.id).catch(() => undefined);
   const [{ data: avisos }, { data: pedidos }] = await Promise.all([
     sb.from("notificacoes").select("id, tipo, titulo, texto, link, lida, criado_em").eq("criador_id", perfil.id).eq("oculta", false).order("criado_em", { ascending: false }).limit(30),
     sb.from("pedidos_ajuda").select("id, criador_id, dia, hora, duracao_min, vagas, mapa, descricao, status").eq("status", "aberto").gte("dia", hojeBrasil()).neq("criador_id", perfil.id),
