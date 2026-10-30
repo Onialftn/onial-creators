@@ -19,6 +19,7 @@ const P: Record<string, React.ReactNode> = {
   zz: <path d="M4 7h6l-6 8h6M14 4h6l-6 8h6" />,
   hash: <path d="M5 9h14M5 15h14M10 4L8 20M16 4l-2 16" />,
   bell: <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4" />,
+  "bell-off": <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4M3 3l18 18" />,
   crown: <path d="M3 8l4 4 5-7 5 7 4-4-2 11H5z" />,
   sun: <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></>,
   moon: <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />,

@@ -64,18 +64,26 @@ function AvisosCelular({ chavePublica }: { chavePublica: string | null }) {
     if (sub) { await fetch("/api/push/inscrever", { method: "DELETE", headers: { "content-type": "application/json" }, body: JSON.stringify({ endpoint: sub.endpoint }) }); await sub.unsubscribe(); }
     setEstado("desligado");
   }
+  const [dica, setDica] = useState(false);
   if (!chavePublica || estado === "carregando" || estado === "sem-suporte") return null;
-  const caixa = { padding: "10px 12px", borderRadius: 8, background: "var(--bg)", border: "1px solid var(--line)", fontSize: 13, color: "var(--text2)" } as const;
-  if (estado === "iphone-instalar")
-    return <div style={caixa}><b style={{ color: "var(--fg)" }}>Notificações no iPhone:</b> toque em <b>Compartilhar</b> (o quadrado com a seta) → <b>Adicionar à Tela de Início</b>. Abra o Onial pelo ícone novo e ligue as notificações aqui.</div>;
-  if (estado === "bloqueado")
-    return <div style={caixa}>As notificações estão bloqueadas neste aparelho. Libere nas configurações do navegador (Notificações → onial-creators.com.br) e volte aqui.</div>;
+  const ligado = estado === "ligado";
+  const texto = estado === "iphone-instalar"
+    ? "No iPhone: Compartilhar → Adicionar à Tela de Início. Abra pelo ícone e toque aqui de novo."
+    : estado === "bloqueado"
+      ? "Bloqueadas neste aparelho. Libere nas configurações do navegador."
+      : erro;
+  function clicar() {
+    if (estado === "iphone-instalar" || estado === "bloqueado") return setDica((d) => !d);
+    if (ligado) void desligar(); else void ligar();
+  }
+  const rotulo = ligado ? "Desligar notificações no celular" : "Ligar notificações no celular";
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2" style={caixa}>
-      <span>{estado === "ligado" ? "✅ Notificações ligadas neste aparelho" : "Receba as notificações na tela do celular"}</span>
-      {estado === "ligado" ? <button onClick={desligar} style={{ color: "var(--muted)", fontSize: 12, textDecoration: "underline" }}>Desligar</button> : <button className="btn-gold" onClick={ligar} style={{ minHeight: 34, padding: "0 12px", fontSize: 13 }}>Ligar notificações</button>}
-      {erro && <span style={{ color: "var(--warn)", width: "100%" }}>{erro}</span>}
-    </div>
+    <span className="relative flex">
+      <button type="button" onClick={clicar} aria-label={rotulo} title={rotulo} aria-pressed={ligado} className="flex items-center justify-center" style={{ width: 40, height: 40, borderRadius: 8, color: ligado ? "#E8B014" : "var(--muted)" }}>
+        <Icone nome={ligado ? "bell" : "bell-off"} tamanho={18} />
+      </button>
+      {(dica || erro) && texto && <span role="status" style={{ position: "absolute", top: 44, right: 0, width: 230, zIndex: 2, padding: "8px 10px", borderRadius: 8, background: "var(--panel)", border: "1px solid var(--line)", fontSize: 12, color: "var(--text2)" }}>{texto}</span>}
+    </span>
   );
 }
 
@@ -123,10 +131,10 @@ export function Sino({ itens: iniciais, chavePublica, compacto = false }: { iten
         <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,.55)" }} onClick={(e) => e.target === e.currentTarget && setAberto(false)}>
           <aside role="dialog" aria-label="Notificações" className="absolute inset-y-0 right-0 flex flex-col gap-3 overflow-y-auto" style={{ width: "min(380px, 92vw)", padding: 18, background: "var(--side)", borderLeft: "1px solid var(--line)", boxShadow: "-12px 0 40px rgba(0,0,0,.5)" }}>
             <div className="flex items-center justify-between">
-              <h2 className="h2 m-0" style={{ fontSize: 20 }}>Notificações</h2>
+              <h2 className="h2 m-0 flex-1" style={{ fontSize: 20 }}>Notificações</h2>
+              <AvisosCelular chavePublica={chavePublica} />
               <button aria-label="Fechar notificações" onClick={() => setAberto(false)} className="flex items-center justify-center" style={{ width: 40, height: 40, color: "var(--muted)" }}><Icone nome="x" tamanho={18} /></button>
             </div>
-            <AvisosCelular chavePublica={chavePublica} />
             {itens.length > 0 && (
               <div className="flex items-center justify-between gap-2" style={{ fontSize: 13 }}>
                 <button type="button" onClick={() => lidas()} disabled={!naoLidas} className="flex items-center gap-1" style={{ color: naoLidas ? "var(--accent-text)" : "var(--muted)", minHeight: 32 }}><Icone nome="check" tamanho={14} /> Marcar todas como lidas</button>
