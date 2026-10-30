@@ -7,11 +7,20 @@ import { REDES } from "@/lib/coleta/redes";
 import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
+import { ultimosVideos } from "@/lib/seo-canal";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
 import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta, salvarRecebe, renomearCriador, zerarRede } from "../../acoes";
 import { AbasGestor, Retorno } from "../../comum";
 
 export const maxDuration = 60;
+
+/** "qui, 30/10 às 18:05" (horário de Brasília) */
+const quandoPostou = (iso: string) => {
+  const d = new Date(iso);
+  const dia = d.toLocaleDateString("pt-BR", { weekday: "short", day: "2-digit", month: "2-digit", timeZone: "America/Sao_Paulo" }).replace(".", "");
+  const hora = d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
+  return `Postado ${dia} às ${hora}`;
+};
 
 
 export default async function CriadorGestor({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ok?: string; erro?: string }> }) {
@@ -31,6 +40,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
     sb.from("mapa_dia").select("dia_semana, mapa").eq("criador_id", id),
     sb.from("contas_plataforma").select("plataforma, nome_conta, ultima_coleta, erro").eq("criador_id", id),
   ]);
+  const recentes = await ultimosVideos(id).catch(() => "erro" as const);
   const dias = new Set((agenda ?? []).map((a) => a.dia_semana as number));
   const fechados = new Set((pags ?? []).map((p) => p.mes as string));
 
@@ -57,7 +67,32 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
       <CardsGanho r={r} />
 
       <section className="card flex flex-col gap-3">
-        <TituloCard icone="zap">Redes</TituloCard>
+        <TituloCard icone="video" direita={<span style={{ fontSize: 12 }}>YouTube · atualiza a cada 30 min</span>}>Últimos vídeos</TituloCard>
+        {recentes === null && <p style={{ margin: 0, color: "var(--muted)" }}>O YouTube dele não está conectado.</p>}
+        {recentes === "erro" && <p style={{ margin: 0, color: "var(--muted)" }}>Não consegui ler o canal agora. Tente de novo mais tarde.</p>}
+        {Array.isArray(recentes) && recentes.length === 0 && <p style={{ margin: 0, color: "var(--muted)" }}>Nenhum vídeo no canal ainda.</p>}
+        {Array.isArray(recentes) && recentes.length > 0 && (
+          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))" }}>
+            {recentes.map((v) => (
+              <a key={v.id} href={`https://www.youtube.com/shorts/${v.id}`} target="_blank" rel="noreferrer" className="tile flex gap-3" style={{ alignItems: "flex-start" }}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={v.capa} alt="" width={72} height={96} style={{ width: 72, height: 96, objectFit: "cover", borderRadius: 6, flex: "none", background: "var(--bg)" }} />
+                <div className="min-w-0 flex flex-col gap-1.5">
+                  <div style={{ color: "var(--strong)", fontWeight: 600, fontSize: 14, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
+                  <div style={{ fontSize: 12, color: "var(--muted)" }}>{quandoPostou(v.publicadoEm)}</div>
+                  <div className="flex flex-wrap gap-x-3 gap-y-1 num" style={{ fontSize: 15, color: "var(--fg)" }}>
+                    <span title="Views">👁 {formatarNumero(v.views)}</span>
+                    <span title="Likes">❤️ {formatarNumero(v.likes)}</span>
+                    <span title="Comentários">💬 {formatarNumero(v.comentarios)}</span>
+                  </div>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
+        <details style={{ fontSize: 13 }}>
+          <summary style={{ cursor: "pointer", color: "var(--accent-text)", width: "fit-content" }}>Redes conectadas e views do mês</summary>
+          <div style={{ marginTop: 10 }}>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" }}>
           {REDES.map((rede) => {
             const c = (contas ?? []).find((x) => x.plataforma === rede);
@@ -87,6 +122,8 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
             );
           })}
         </div>
+          </div>
+        </details>
       </section>
 
       <section className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))" }}>
