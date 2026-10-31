@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  aPartirDoInicio,
   calcularConstancia,
   calcularPagamento,
   formatarReais,
@@ -179,5 +180,21 @@ describe("pagamento", () => {
 
   it("formato brasileiro", () => {
     expect(formatarReais(306_200)).toBe("R$ 3.062,00");
+  });
+});
+
+describe("faltas zeradas: contagem começa num dia (pedido do gestor)", () => {
+  it("dias perdidos antes do início não viram falta", () => {
+    let dias = outubroPerfeito();
+    dias = mudar(dias, "2026-10-05", 0);
+    dias = mudar(dias, "2026-10-14", 0);
+    dias = mudar(dias, "2026-10-28", 0);
+    expect(calcularConstancia(dias, FIM_DO_MES, "2026-10").faltas).toBe(3);
+    expect(calcularConstancia(aPartirDoInicio(dias, "2026-10-31"), FIM_DO_MES, "2026-10")).toEqual({ faltas: 0, aRepor: 0, percentual: 0.1 });
+  });
+  it("a partir do início, falta volta a contar normalmente", () => {
+    const dias = mudar(outubroPerfeito(), "2026-10-30", 0); // sexta
+    expect(calcularConstancia(aPartirDoInicio(dias, "2026-10-30"), FIM_DO_MES, "2026-10").faltas).toBe(1);
+    expect(calcularConstancia(aPartirDoInicio(dias, "2026-10-31"), FIM_DO_MES, "2026-10").faltas).toBe(0);
   });
 });

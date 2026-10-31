@@ -2,7 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { BONUS_META_CENTAVOS_POR_MIL, calcularConstancia, calcularPagamento, sobraParaRepor, fimDaSemana as fimDaSemanaDe, inicioDaSemana as inicioDaSemanaDe, type DiaPostagem } from "@/lib/pagamento";
+import { BONUS_META_CENTAVOS_POR_MIL, aPartirDoInicio, calcularConstancia, calcularPagamento, sobraParaRepor, fimDaSemana as fimDaSemanaDe, inicioDaSemana as inicioDaSemanaDe, type DiaPostagem } from "@/lib/pagamento";
 import { postagensPorDia, type VideoPostado } from "@/lib/postagens";
 import { diaDaSemana, hojeBrasil, intervalo, mesDe, primeiroDia, ultimoDia } from "@/lib/datas";
 
@@ -99,12 +99,13 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   // automático pelas redes; o registro manual do gestor continua valendo (fica o maior)
   const postagens = postagensPorDia((videos.data ?? []) as VideoPostado[]);
   for (const r of dias.data ?? []) postagens.set(r.dia as string, Math.max(postagens.get(r.dia as string) ?? 0, r.postagens as number));
-  const lista: DiaPostagem[] = intervalo(semIni, semFim).map((data) => ({
+  // faltas só contam a partir de INICIO_CONSTANCIA (antes disso nenhum dia é obrigatório)
+  const lista: DiaPostagem[] = aPartirDoInicio(intervalo(semIni, semFim).map((data) => ({
     data,
     agendado: agendados.has(diaDaSemana(data)),
     postagens: postagens.get(data) ?? 0,
     extras: Math.min(extrasPorDia.get(data) ?? 0, postagens.get(data) ?? 0),
-  }));
+  })));
   const constancia = calcularConstancia(lista, hoje, mes);
 
   // reposições: em cada semana, postagens extras cobrem os dias perdidos, do mais antigo ao mais novo

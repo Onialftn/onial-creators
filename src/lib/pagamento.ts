@@ -73,6 +73,17 @@ export function fimDaSemana(data: string): string {
   return new Date(paraUtc(inicioDaSemana(data)) + 6 * DIA_MS).toISOString().slice(0, 10);
 }
 
+/**
+ * Dia em que a contagem de faltas começa (pedido do gestor em 31/10/2026: "limpa todas as faltas e conta a partir de hoje").
+ * Dias de postagem antes desta data não viram falta nem "a repor".
+ */
+export const INICIO_CONSTANCIA = "2026-10-31";
+
+/** Antes do início da contagem, nenhum dia é obrigatório (ninguém leva falta) e os vídeos desses dias não repõem faltas depois. */
+export function aPartirDoInicio(dias: DiaPostagem[], inicio = INICIO_CONSTANCIA): DiaPostagem[] {
+  return dias.map((d) => (d.data < inicio ? { ...d, agendado: false, extras: d.postagens } : d));
+}
+
 export function percentualPorFaltas(faltas: number): number {
   if (faltas <= 0) return 0.1;
   if (faltas === 1) return 0.05;
