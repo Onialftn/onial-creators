@@ -12,7 +12,7 @@ export default async function Novidades({ searchParams }: { searchParams: Promis
   const { sb, perfil } = await usuarioAtual();
   const { ok, erro, mapa: filtro } = await searchParams;
   const { data } = await sb.from("novidades").select("id, mapa, titulo, texto, criado_em").gte("criado_em", limiteNovidades()).order("criado_em", { ascending: false }).limit(50);
-  const lista = (data ?? []).filter((n) => !filtro || n.mapa === filtro);
+  const lista = (data ?? []).filter((n) => !filtro || n.mapa === (filtro === "site" ? "" : filtro));
   const gestor = perfil.papel === "gestor";
 
   return (
@@ -26,7 +26,7 @@ export default async function Novidades({ searchParams }: { searchParams: Promis
           <form action={publicarNovidade} className="flex flex-col gap-3" style={{ marginTop: 14 }}>
             <label className="flex flex-col gap-1.5"><span className="label">Mapa</span>
               <select className="input" name="mapa" defaultValue="">
-                <option value="">Geral (sem mapa)</option>
+                <option value="">📱 Site/App</option>
                 {MAPAS.map((m) => <option key={m.id} value={m.id}>{m.emoji} {m.nome}</option>)}
               </select>
             </label>
@@ -41,6 +41,7 @@ export default async function Novidades({ searchParams }: { searchParams: Promis
 
       <nav className="flex flex-wrap gap-2" aria-label="Filtrar por mapa">
         <a href="/novidades" className={!filtro ? "btn-gold" : "btn-line"} style={{ minHeight: 36, fontSize: 13 }}>Todos</a>
+        <a href="/novidades?mapa=site" className={filtro === "site" ? "btn-gold" : "btn-line"} style={{ minHeight: 36, fontSize: 13 }}>📱 Site/App</a>
         {MAPAS.map((m) => <a key={m.id} href={`/novidades?mapa=${m.id}`} className={filtro === m.id ? "btn-gold" : "btn-line"} style={{ minHeight: 36, fontSize: 13 }}>{m.emoji} {m.falado}</a>)}
       </nav>
 
@@ -50,7 +51,7 @@ export default async function Novidades({ searchParams }: { searchParams: Promis
         return (
           <article key={n.id} id={`n-${n.id}`} className="card flex flex-col gap-3" style={i === 0 && !filtro ? { borderColor: "#E8B014" } : undefined}>
             <div className="flex flex-wrap items-center gap-2" style={{ fontSize: 13 }}>
-              <span className="pill-tint">{m ? `${m.emoji} ${m.nome}` : "Geral"}</span>
+              <span className="pill-tint">{m ? `${m.emoji} ${m.nome}` : "📱 Site/App"}</span>
               {i === 0 && !filtro && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, padding: "2px 7px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A" }}>MAIS RECENTE</span>}
               <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{quando(n.criado_em)}</span>
             </div>
