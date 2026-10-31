@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import type { VideoRef } from "@/lib/ideias";
+import { alternarCurtido } from "@/app/acoes/curtidos";
 import type { RoteiroIA } from "@/lib/ia/roteiro";
 import { CapaVideo } from "./CapaVideo";
 import { TituloCard } from "./Blocos";
@@ -131,6 +132,22 @@ function CopiarLink({ id }: { id: string }) {
   );
 }
 
+const CORACAO = "M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21l8.8-8.6a5.5 5.5 0 0 0 0-7.8z";
+
+/** Botão de curtir: coração vermelho quando curtido. O vídeo vai para a aba Curtidos. */
+function Curtir({ curtido, alternar, pequeno = false }: { curtido: boolean; alternar: () => void; pequeno?: boolean }) {
+  const t = pequeno ? 16 : 14;
+  return (
+    <button type="button" onClick={alternar} aria-pressed={curtido} aria-label={curtido ? "Descurtir (tirar dos Curtidos)" : "Curtir (salvar nos Curtidos)"} title={curtido ? "Tirar dos Curtidos" : "Salvar nos Curtidos"} className="flex flex-none items-center justify-center gap-1.5"
+      style={pequeno
+        ? { width: 38, minHeight: 38, borderRadius: 8, border: `1px solid ${curtido ? "#FF4D6D" : "var(--line2)"}`, background: curtido ? "rgba(255,77,109,.12)" : "transparent", color: curtido ? "#FF4D6D" : "var(--fg)" }
+        : { minHeight: 32, padding: "0 12px", borderRadius: 16, fontSize: 13, fontWeight: 600, border: `1px solid ${curtido ? "#FF4D6D" : "var(--line2)"}`, background: curtido ? "#FF4D6D" : "transparent", color: curtido ? "#fff" : "var(--fg)" }}>
+      <svg width={t} height={t} viewBox="0 0 24 24" fill={curtido ? "currentColor" : "none"} stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={CORACAO} /></svg>
+      {!pequeno && (curtido ? "Curtido" : "Curtir")}
+    </button>
+  );
+}
+
 /**
  * Player do YouTube que começa sozinho. No celular o navegador só deixa começar sem som:
  * aparece "Toque para ligar o som" e, depois de ligado, os próximos vídeos (setas) seguem com som no mesmo player.
@@ -168,7 +185,18 @@ function Player({ id, titulo }: { id: string; titulo: string }) {
   );
 }
 
-export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automatico, traduzidos: iniciais }: { mapa: string; tema: string; melhores: VideoRef[]; recentes: VideoRef[]; iaPronta: boolean; automatico: boolean; traduzidos: Record<string, Pronta> }) {
+export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automatico, traduzidos: iniciais, curtidos: curtidosIni = [], soCurtidos = false }: { mapa: string; tema: string; melhores: VideoRef[]; recentes: VideoRef[]; iaPronta: boolean; automatico: boolean; traduzidos: Record<string, Pronta>; curtidos?: VideoRef[]; soCurtidos?: boolean }) {
+  // curtidos: a lista da aba Curtidos (mais novo primeiro); muda na hora e salva no servidor
+  const [curtidos, setCurtidos] = useState<VideoRef[]>(curtidosIni);
+  const [erroCurtir, setErroCurtir] = useState("");
+  const ehCurtido = (id: string) => curtidos.some((c) => c.id === id);
+  async function curtir(v: VideoRef) {
+    const novo = !ehCurtido(v.id);
+    setErroCurtir("");
+    setCurtidos((l) => (novo ? [v, ...l] : l.filter((c) => c.id !== v.id)));
+    const r = await alternarCurtido(v, novo).catch(() => ({ curtido: !novo, erro: "Não consegui salvar agora. Tente de novo." }));
+    if (r.erro) { setErroCurtir(r.erro); setCurtidos((l) => (novo ? l.filter((c) => c.id !== v.id) : [v, ...l])); }
+  }
   const [assistir, setAssistirV] = useState<VideoRef | null>(null);
   // lista da seção de onde o vídeo foi aberto: as setas ▲ ▼ andam por ela
   const [fila, setFila] = useState<VideoRef[]>([]);
@@ -215,11 +243,36 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
   const Acoes = ({ v, lista }: { v: VideoRef; lista: VideoRef[] }) => (
     <div className="flex gap-2">
       <button className="btn-line flex-1" onClick={() => setAssistir(v, lista)} style={{ minHeight: 38 }}><Icone nome="play" tamanho={14} />Assistir</button>
+      <Curtir curtido={ehCurtido(v.id)} alternar={() => curtir(v)} pequeno />
     </div>
   );
 
+  // lista fixa da aba Curtidos (descurtir não tira da tela na hora, para dar para curtir de novo)
+  const [listaCurtidos] = useState(curtidosIni);
   return (
     <>
+      {erroCurtir && <div role="alert" className="pill-warn" style={{ padding: "10px 14px" }}>{erroCurtir}</div>}
+      {soCurtidos ? (
+        <section className="card flex flex-col gap-4">
+          <TituloCard icone="bulb" direita={`${curtidos.length} ${curtidos.length === 1 ? "vídeo" : "vídeos"}`}>❤️ Curtidos</TituloCard>
+          {listaCurtidos.length === 0 ? <p style={{ margin: 0, color: "var(--muted)" }}>Você ainda não curtiu nenhum vídeo. Toque no ♡ de um vídeo em Explorar para salvar aqui.</p> : (
+            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))" }}>
+              {listaCurtidos.map((v) => (
+                <div key={v.id} className="flex min-w-0 flex-col gap-2" style={{ opacity: ehCurtido(v.id) ? 1 : 0.45 }}>
+                  <button onClick={() => setAssistir(v, listaCurtidos)} className="relative overflow-hidden" style={{ aspectRatio: "9/16", borderRadius: 6, background: "#111" }} aria-label={`Assistir ${v.titulo}`}>
+                    <CapaVideo src={v.capa} alt="" />
+                    <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 65%,rgba(0,0,0,.85))" }} />
+                    <span className="num absolute" style={{ left: 8, bottom: 6, fontSize: 17, color: "#fff" }}>{n(v.views)}</span>
+                  </button>
+                  <div style={{ color: "var(--strong)", fontSize: 13, fontWeight: 600, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
+                  <div style={{ color: "var(--muted)", fontSize: 12 }}>{v.canal}</div>
+                  <Acoes v={v} lista={listaCurtidos} />
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      ) : <>
       <section className="card flex flex-col gap-4">
         <TituloCard icone="zap" direita="Últimos 7 dias · os que mais crescem (views por dia)">Melhores vídeos novos · {tema}</TituloCard>
         {melhores.length === 0 ? <p style={{ margin: 0, color: "var(--muted)" }}>Nenhum Short novo nesses canais nos últimos 7 dias.</p> : (
@@ -259,6 +312,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
         </div>
         {mostrar < recentes.length && <button className="btn-line" onClick={() => setMostrar(mostrar + 10)} style={{ alignSelf: "center" }}>Carregar mais 10</button>}
       </section>
+      </>}
 
       {assistir && (
         <Janela titulo={assistir.titulo} fechar={() => setAssistir(null)}>
@@ -280,7 +334,7 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
               </div>
             )}
           </div>
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"><Numeros v={assistir} grande /><CopiarLink id={assistir.id} /></div>
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2"><Numeros v={assistir} grande /><Curtir curtido={ehCurtido(assistir.id)} alternar={() => curtir(assistir)} /><CopiarLink id={assistir.id} /></div>
           <button className="btn-gold relative overflow-hidden" disabled={gerando === assistir.id} onClick={() => roteiro(assistir)} style={{ minHeight: 48, opacity: 1, ...(copiado === assistir.id ? VERDE : {}) }}>
             <Progresso ativo={gerando === assistir.id} terminou={copiado === assistir.id} />
             <span className="relative flex items-center gap-2">{copiado === assistir.id ? <><Icone nome="check" tamanho={16} />Roteiro copiado! É só colar</> : gerando === assistir.id ? "Gerando o roteiro em português…" : <><Icone nome="script" tamanho={16} />Copiar roteiro em português</>}</span>
