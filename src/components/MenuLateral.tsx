@@ -46,7 +46,7 @@ const EXTRAS: Item[] = [
   { href: "/sugestoes", rotulo: "Sugestões", icone: "bulb" },
 ];
 
-export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush = null, precisamAjuda = 0 }: { nome: string; papel: "criador" | "gestor"; foto?: string | null; avisos?: Notificacao[]; chavePush?: string | null; precisamAjuda?: number }) {
+export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush = null, precisamAjuda = 0, novidades = [] }: { nome: string; papel: "criador" | "gestor"; foto?: string | null; avisos?: Notificacao[]; chavePush?: string | null; precisamAjuda?: number; novidades?: string[] }) {
   const rota = usePathname();
   const [claro, setClaro] = useState(false);
   useEffect(() => setClaro(document.documentElement.getAttribute("data-mode") === "light"), []);
@@ -59,6 +59,15 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
       localStorage.setItem("onialMode", novo ? "light" : "dark");
     } catch {}
   }
+  // número em "Novidades": novidades publicadas depois da última vez que a pessoa abriu a aba (guardado neste aparelho)
+  const [vistas, setVistas] = useState<string | null>(null);
+  useEffect(() => {
+    const ler = () => { try { setVistas(localStorage.getItem("onialNovidadesVistas") ?? ""); } catch { setVistas(""); } };
+    ler();
+    window.addEventListener("novidades-vistas", ler);
+    return () => window.removeEventListener("novidades-vistas", ler);
+  }, []);
+  const novasNovidades = novidades.filter((d) => vistas !== null && new Date(d).getTime() > (vistas ? Number(vistas) : 0)).length;
   const ativo = (href: string) => (href === "/" ? rota === "/" : rota.startsWith(href));
   // celular: o menu abre pela lateral (botão ☰) e fecha ao trocar de aba, tocar fora ou apertar Esc
   const [aberto, setAberto] = useState(false);
@@ -84,6 +93,7 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
       <button type="button" onClick={() => setAberto(true)} aria-label="Abrir menu" aria-expanded={aberto} aria-controls="menu-principal" className="relative flex items-center justify-center" style={{ width: 44, height: 44, borderRadius: 8, border: "1px solid var(--line)", background: "var(--panel)", color: "var(--fg)" }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
         {precisamAjuda > 0 && <span className="bolinha-ajuda" style={{ position: "absolute", top: -4, right: -4 }} aria-label="Alguém precisa de ajuda para gravar" />}
+        {novasNovidades > 0 && <span style={{ position: "absolute", top: -4, left: -4, width: 12, height: 12, borderRadius: 6, background: "#FF5C5C", border: "2px solid var(--side)" }} aria-label="Tem novidade nova" />}
       </button>
     </header>
     <div className={`menu-fundo ${aberto ? "menu-fundo-on" : ""}`} onClick={() => setAberto(false)} aria-hidden="true" />
@@ -101,6 +111,7 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
         {EXTRAS.map((i) => (
           <Link key={i.href} href={i.href} className={`menu-item ${ativo(i.href) ? "menu-ativo" : ""}`} aria-current={ativo(i.href) ? "page" : undefined}>
             <Icone nome={i.icone} />{i.rotulo}
+            {i.href === "/novidades" && novasNovidades > 0 && <span className="num" aria-label={`${novasNovidades} ${novasNovidades === 1 ? "novidade nova" : "novidades novas"}`} style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 10, background: "#FF5C5C", color: "#fff", fontSize: 12, lineHeight: "20px", textAlign: "center" }}>{novasNovidades > 9 ? "9+" : novasNovidades}</span>}
           </Link>
         ))}
       </nav>

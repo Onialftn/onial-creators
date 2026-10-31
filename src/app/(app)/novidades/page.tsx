@@ -1,4 +1,5 @@
 import { Cabecalho, TituloCard } from "@/components/Blocos";
+import { NovidadesVistas } from "@/components/NovidadesVistas";
 import { TextoSimples } from "@/components/TextoSimples";
 import { apagarNovidade, publicarNovidade } from "@/app/acoes/novidades";
 import { usuarioAtual } from "@/lib/dados";
@@ -18,6 +19,7 @@ export default async function Novidades({ searchParams }: { searchParams: Promis
   return (
     <>
       <Cabecalho icone="megafone" titulo="Novidades" sub="Atualizações dos mapas da Onial. Use as novidades para criar vídeos e divulgar. Cada novidade fica aqui por 7 dias." />
+      <NovidadesVistas />
       <Retorno ok={ok} erro={erro} />
 
       {gestor && (

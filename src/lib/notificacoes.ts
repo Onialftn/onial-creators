@@ -16,7 +16,7 @@ export function pushConfigurado() {
 }
 
 /** Manda o aviso para os celulares/navegadores inscritos do criador. */
-async function enviarPush(admin: Admin, criadorId: string, a: Aviso) {
+export async function enviarPush(admin: Admin, criadorId: string, a: Aviso) {
   if (!pushConfigurado()) return;
   webpush.setVapidDetails("mailto:onial.contato@gmail.com", process.env.VAPID_PUBLIC_KEY!.trim(), process.env.VAPID_PRIVATE_KEY!.trim());
   const { data: subs } = await admin.from("push_inscricoes").select("endpoint, p256dh, auth").eq("criador_id", criadorId);
