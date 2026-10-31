@@ -135,7 +135,7 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
         <div className="flex flex-wrap items-center gap-2" style={{ padding: "12px 16px 6px 18px", background: "var(--bg)" }}>
           <span className="num" style={{ padding: "3px 10px", borderRadius: 8, fontSize: 15, background: dia < hoje ? "var(--chip)" : ehHoje ? "var(--ok)" : "#E8B014", color: dia < hoje ? "var(--muted)" : "#0A0A0A", letterSpacing: 0.5 }}>{diaCurto(dia).toUpperCase()}</span>
           <span style={{ fontWeight: 700, fontSize: 14, color: dia < hoje ? "var(--muted)" : ehHoje ? "var(--ok)" : "var(--accent-text)" }}>{quandoExtra(dia, hoje)}</span>
-          <span style={{ fontSize: 13, color: "var(--muted)" }}>· {lista.length} {lista.length === 1 ? "extra" : "extras"} · {valorCurto(total)} por criador</span>
+          <span style={{ fontSize: 14, color: "var(--text2)" }}>· {lista.length} {lista.length === 1 ? "extra" : "extras"} · <b className="num" style={{ color: dia < hoje ? "var(--muted)" : "var(--ok)", fontSize: 20 }}>{valorCurto(total)}</b> por criador</span>
           {pend > 0 && <span className="pill-warn" style={{ fontSize: 11, marginLeft: "auto" }}>{pend} para aprovar</span>}
         </div>
         {lista.map((x, i) => linha(x, i))}

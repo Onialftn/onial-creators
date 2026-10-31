@@ -60,7 +60,7 @@ function CabecaDia({ dia, hoje, extras }: { dia: string; hoje: string; extras: E
     <span className="flex flex-1 flex-wrap items-center gap-2">
       <span className="num" style={{ padding: "3px 10px", borderRadius: 8, fontSize: 15, background: ehHoje ? "var(--ok)" : "#E8B014", color: "#0A0A0A", letterSpacing: 0.5 }}>{diaCurto(dia).toUpperCase()}</span>
       <span style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", color: ehHoje ? "var(--ok)" : "var(--accent-text)" }}>{ehHoje ? "Hoje até 23:59" : quandoExtra(dia, hoje)}</span>
-      <span style={{ fontSize: 13, color: "var(--muted)", whiteSpace: "nowrap" }}>· até <b className="num" style={{ color: "var(--ok)", fontSize: 14 }}>{valorCurto(total)}</b></span>
+      <span style={{ fontSize: 15, color: "var(--text2)", whiteSpace: "nowrap" }}>· até <b className="num" style={{ color: "var(--ok)", fontSize: 20 }}>{valorCurto(total)}</b></span>
     </span>
   );
 }
