@@ -5,6 +5,7 @@ import Link from "next/link";
 import { avaliarEntrega, criarExtra, editarExtra, encerrarExtra, excluirExtra } from "@/app/acoes/extras";
 import { usuarioAtual } from "@/lib/dados";
 import { DIAS_CURTOS, diaDaSemana, hojeBrasil, somarDias } from "@/lib/datas";
+import { extrasPorDia, ordemDoExtra, quandoExtra } from "@/lib/prazo";
 import { formatarReais } from "@/lib/pagamento";
 import { Icone } from "@/components/Icone";
 import { AbasGestor, Retorno } from "../comum";
@@ -23,7 +24,7 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
   const { ok, erro, duplicar, novo, editar } = await searchParams;
   const hoje = hojeBrasil();
   const [{ data: extras }, { data: entregas }, { data: pessoas }] = await Promise.all([
-    sb.from("extras").select("*").order("criado_em", { ascending: false }).limit(30),
+    sb.from("extras").select("*").order("prazo", { ascending: false }).limit(60),
     sb.from("entregas_extra").select("*").order("enviado_em", { ascending: false }),
     sb.from("perfis").select("id, nome, foto_url"),
   ]);
@@ -33,36 +34,8 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
   const pessoa = new Map((pessoas ?? []).map((p) => [p.id, p]));
   const esperando = (entregas ?? []).filter((e) => e.status === "enviado").length;
 
-  return (
-    <>
-      <Cabecalho icone="gear" titulo="Painel do gestor" sub="Vídeos extras: você escolhe o dia e o valor; o vídeo tem que ser postado nesse dia (vale 24h). Quem fizer manda o link, você aprova e o valor entra no total do mês do criador." />
-      <AbasGestor ativa="extras" />
-      <Retorno ok={ok} erro={erro} />
-
-      {(novo || base) && <form id="novo" key={base?.id ?? "novo"} action={criarExtra} className="card flex flex-col gap-3" style={base ? { borderColor: "#E8B014" } : undefined}>
-        <TituloCard icone="plus" direita={<Link href="/gestor/extras" style={{ color: "var(--muted)", fontSize: 13, textDecoration: "underline" }}>Fechar</Link>}>{base ? `Duplicando: ${base.titulo}` : "Novo vídeo extra"}</TituloCard>
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
-          <label className="flex flex-col gap-1.5" style={{ gridColumn: "span 2" }}><span className="label">TÍTULO</span><input className="input" name="titulo" maxLength={120} defaultValue={base?.titulo ?? ""} placeholder="Ex.: Short mostrando o farm de XP do 1v1" required /></label>
-          <label className="flex flex-col gap-1.5"><span className="label">VALOR (R$)</span><input className="input" name="valor" inputMode="decimal" defaultValue={base ? reais(base.valor_centavos) : ""} placeholder="25,00" required /></label>
-          <label className="flex flex-col gap-1.5"><span className="label">DIA DO VÍDEO (VALE SÓ NESSE DIA, 24H)</span><input className="input" type="date" name="prazo" min={hoje} defaultValue={somarDias(hoje, 1)} required /></label>
-        </div>
-        <label className="flex flex-col gap-1.5"><span className="label">DESCRIÇÃO</span><textarea className="input" name="descricao" rows={3} maxLength={1000} defaultValue={base?.descricao ?? ""} placeholder="O que precisa ter no vídeo, link de referência..." style={{ paddingTop: 10, resize: "vertical" }} /></label>
-        <label className="flex flex-col gap-1.5"><span className="label">REGRAS</span><textarea className="input" name="regras" rows={4} maxLength={2000} defaultValue={base?.regras ?? ""} placeholder={"Uma regra por linha. Ex.:\nPostar no YouTube, TikTok e Instagram\nFalar o código do mapa no vídeo\nMínimo de 30 segundos"} style={{ paddingTop: 10, resize: "vertical" }} /></label>
-        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todos os criadores recebem uma notificação agora e outra no dia. O extra vale só no dia escolhido, das 00:00 às 23:59. Cada um que postar nesse dia e for aprovado ganha o valor.</p>
-        <button className="btn-gold" type="submit" style={{ alignSelf: "flex-start" }}>{base ? "Criar cópia" : "Criar extra"}</button>
-      </form>}
-
-      <section className="flex flex-col" style={{ borderRadius: 16, border: "1px solid rgba(232,176,20,.28)", background: "var(--panel)", overflow: "hidden" }}>
-        <div className="flex items-center gap-3" style={{ padding: "14px 14px 14px 18px", borderBottom: "1px solid var(--line)" }}>
-          <span style={{ color: "var(--accent-text)", display: "flex" }}><Icone nome="wallet" tamanho={22} /></span>
-          <h2 className="h2 m-0 flex-1" style={{ fontSize: 18 }}>EXTRAS E ENTREGAS</h2>
-          {esperando > 0 && <span className="pill-warn" style={{ fontSize: 12 }}>{esperando} para aprovar</span>}
-          <Link href={novo ? "/gestor/extras" : "/gestor/extras?novo=1#novo"} aria-label={novo ? "Fechar novo extra" : "Criar novo extra"} className="flex flex-none items-center justify-center" style={{ width: 44, height: 44, borderRadius: 10, background: "#E8B014", color: "#0A0A0A" }}>
-            {novo ? <Icone nome="x" tamanho={20} /> : <Icone nome="plus" tamanho={22} />}
-          </Link>
-        </div>
-        {(extras ?? []).length === 0 && <p style={{ margin: 0, padding: 18, color: "var(--muted)" }}>Nenhum extra criado ainda. Toque no + para criar.</p>}
-        {(extras ?? []).map((x, i) => {
+  type Extra = NonNullable<typeof extras>[number];
+  const linha = (x: Extra, i: number) => {
           const doExtra = (entregas ?? []).filter((e) => e.extra_id === x.id);
           const aberto = x.ativo && x.prazo >= hoje;
           const pendentes = doExtra.filter((e) => e.status === "enviado").length;
@@ -72,11 +45,12 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
           return (
             <details key={x.id} id={`extra-${x.id}`} className="linha-extra" open={editando || undefined} style={{ borderTop: i ? "1px solid var(--line)" : undefined }}>
               <summary className="flex items-center gap-3" style={{ minHeight: 60, padding: "10px 16px 10px 18px", cursor: "pointer", listStyle: "none" }}>
+                <span className="num flex flex-none items-center justify-center" style={{ width: 36, height: 36, borderRadius: 10, background: aberto ? "rgba(232,176,20,.12)" : "var(--chip)", color: aberto ? "var(--accent-text)" : "var(--muted)", fontSize: 15 }}>{ordemDoExtra(x) ? `${ordemDoExtra(x)}º` : i + 1}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate" style={{ color: aberto ? "var(--strong)" : "var(--muted)", fontWeight: 600, fontSize: 15 }}>{x.titulo}</span>
                   <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1" style={{ marginTop: 3, fontSize: 12, color: "var(--muted)" }}>
                     <span style={{ padding: "1px 8px", borderRadius: 999, fontWeight: 700, fontSize: 11, background: aberto ? "rgba(232,176,20,.16)" : "var(--chip)", color: aberto ? "var(--accent-text)" : "var(--muted)" }}>{aberto ? "Agendado" : "Encerrado"}</span>
-                    <span>· {diaCurto(x.prazo)} · {doExtra.length} {doExtra.length === 1 ? "envio" : "envios"}</span>
+                    <span>· {doExtra.length} {doExtra.length === 1 ? "envio" : "envios"}</span>
                     {pendentes > 0 && <span style={{ color: "var(--accent-text)", fontWeight: 600 }}>· {pendentes} para aprovar</span>}
                   </span>
                 </span>
@@ -146,7 +120,68 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
               </div>
             </details>
           );
-        })}
+  };
+  const grupos = extrasPorDia(extras ?? [], hoje);
+  const futuros = grupos.filter((g) => g.dia >= hoje);
+  const passados = grupos.filter((g) => g.dia < hoje);
+  const pendentesPassados = (entregas ?? []).filter((e) => e.status === "enviado" && passados.some((g) => g.extras.some((x) => x.id === e.extra_id))).length;
+  /** Um dia: cabeçalho (data, quando, total) e os extras do dia em ordem (1º, 2º, 3º vídeo). */
+  const Grupo = ({ dia, lista }: { dia: string; lista: Extra[] }) => {
+    const total = lista.reduce((a, x) => a + x.valor_centavos, 0);
+    const pend = (entregas ?? []).filter((e) => e.status === "enviado" && lista.some((x) => x.id === e.extra_id)).length;
+    const ehHoje = dia === hoje;
+    return (
+      <div style={{ borderTop: "1px solid var(--line)" }}>
+        <div className="flex flex-wrap items-center gap-2" style={{ padding: "12px 16px 6px 18px", background: "var(--bg)" }}>
+          <span className="num" style={{ padding: "3px 10px", borderRadius: 8, fontSize: 15, background: dia < hoje ? "var(--chip)" : ehHoje ? "var(--ok)" : "#E8B014", color: dia < hoje ? "var(--muted)" : "#0A0A0A", letterSpacing: 0.5 }}>{diaCurto(dia).toUpperCase()}</span>
+          <span style={{ fontWeight: 700, fontSize: 14, color: dia < hoje ? "var(--muted)" : ehHoje ? "var(--ok)" : "var(--accent-text)" }}>{quandoExtra(dia, hoje)}</span>
+          <span style={{ fontSize: 13, color: "var(--muted)" }}>· {lista.length} {lista.length === 1 ? "extra" : "extras"} · {valorCurto(total)} por criador</span>
+          {pend > 0 && <span className="pill-warn" style={{ fontSize: 11, marginLeft: "auto" }}>{pend} para aprovar</span>}
+        </div>
+        {lista.map((x, i) => linha(x, i))}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <Cabecalho icone="gear" titulo="Painel do gestor" sub="Vídeos extras: você escolhe o dia e o valor; o vídeo tem que ser postado nesse dia (vale 24h). Quem fizer manda o link, você aprova e o valor entra no total do mês do criador." />
+      <AbasGestor ativa="extras" />
+      <Retorno ok={ok} erro={erro} />
+
+      {(novo || base) && <form id="novo" key={base?.id ?? "novo"} action={criarExtra} className="card flex flex-col gap-3" style={base ? { borderColor: "#E8B014" } : undefined}>
+        <TituloCard icone="plus" direita={<Link href="/gestor/extras" style={{ color: "var(--muted)", fontSize: 13, textDecoration: "underline" }}>Fechar</Link>}>{base ? `Duplicando: ${base.titulo}` : "Novo vídeo extra"}</TituloCard>
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
+          <label className="flex flex-col gap-1.5" style={{ gridColumn: "span 2" }}><span className="label">TÍTULO</span><input className="input" name="titulo" maxLength={120} defaultValue={base?.titulo ?? ""} placeholder="Ex.: Short mostrando o farm de XP do 1v1" required /></label>
+          <label className="flex flex-col gap-1.5"><span className="label">VALOR (R$)</span><input className="input" name="valor" inputMode="decimal" defaultValue={base ? reais(base.valor_centavos) : ""} placeholder="25,00" required /></label>
+          <label className="flex flex-col gap-1.5"><span className="label">DIA DO VÍDEO (VALE SÓ NESSE DIA, 24H)</span><input className="input" type="date" name="prazo" min={hoje} defaultValue={somarDias(hoje, 1)} required /></label>
+        </div>
+        <label className="flex flex-col gap-1.5"><span className="label">DESCRIÇÃO</span><textarea className="input" name="descricao" rows={3} maxLength={1000} defaultValue={base?.descricao ?? ""} placeholder="O que precisa ter no vídeo, link de referência..." style={{ paddingTop: 10, resize: "vertical" }} /></label>
+        <label className="flex flex-col gap-1.5"><span className="label">REGRAS</span><textarea className="input" name="regras" rows={4} maxLength={2000} defaultValue={base?.regras ?? ""} placeholder={"Uma regra por linha. Ex.:\nPostar no YouTube, TikTok e Instagram\nFalar o código do mapa no vídeo\nMínimo de 30 segundos"} style={{ paddingTop: 10, resize: "vertical" }} /></label>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todos os criadores recebem uma notificação agora e outra no dia. O extra vale só no dia escolhido, das 00:00 às 23:59. Cada um que postar nesse dia e for aprovado ganha o valor.</p>
+        <button className="btn-gold" type="submit" style={{ alignSelf: "flex-start" }}>{base ? "Criar cópia" : "Criar extra"}</button>
+      </form>}
+
+      <section className="flex flex-col" style={{ borderRadius: 16, border: "1px solid rgba(232,176,20,.28)", background: "var(--panel)", overflow: "hidden" }}>
+        <div className="flex items-center gap-3" style={{ padding: "14px 14px 14px 18px", borderBottom: "1px solid var(--line)" }}>
+          <span style={{ color: "var(--accent-text)", display: "flex" }}><Icone nome="wallet" tamanho={22} /></span>
+          <h2 className="h2 m-0 flex-1" style={{ fontSize: 18 }}>EXTRAS E ENTREGAS</h2>
+          {esperando > 0 && <span className="pill-warn" style={{ fontSize: 12 }}>{esperando} para aprovar</span>}
+          <Link href={novo ? "/gestor/extras" : "/gestor/extras?novo=1#novo"} aria-label={novo ? "Fechar novo extra" : "Criar novo extra"} className="flex flex-none items-center justify-center" style={{ width: 44, height: 44, borderRadius: 10, background: "#E8B014", color: "#0A0A0A" }}>
+            {novo ? <Icone nome="x" tamanho={20} /> : <Icone nome="plus" tamanho={22} />}
+          </Link>
+        </div>
+        {(extras ?? []).length === 0 && <p style={{ margin: 0, padding: 18, color: "var(--muted)" }}>Nenhum extra criado ainda. Toque no + para criar.</p>}
+        {futuros.map((g) => <Grupo key={g.dia} dia={g.dia} lista={g.extras} />)}
+        {passados.length > 0 && (
+          <details className="dia-extra" style={{ borderTop: "1px solid var(--line)" }}>
+            <summary className="flex items-center gap-2" style={{ minHeight: 50, padding: "0 16px 0 18px", cursor: "pointer", listStyle: "none", color: "var(--muted)", fontSize: 14, fontWeight: 600 }}>
+              <span className="flex-1">Dias que já passaram · {passados.length} {passados.length === 1 ? "dia" : "dias"}{pendentesPassados ? ` · ${pendentesPassados} para aprovar` : ""}</span>
+              <span className="chev flex-none" style={{ display: "flex", transition: "transform .2s" }}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 9l6 6 6-6" /></svg></span>
+            </summary>
+            {passados.map((g) => <Grupo key={g.dia} dia={g.dia} lista={g.extras} />)}
+          </details>
+        )}
       </section>
     </>
   );
