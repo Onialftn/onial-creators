@@ -243,7 +243,6 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
   const Acoes = ({ v, lista }: { v: VideoRef; lista: VideoRef[] }) => (
     <div className="flex gap-2">
       <button className="btn-line flex-1" onClick={() => setAssistir(v, lista)} style={{ minHeight: 38 }}><Icone nome="play" tamanho={14} />Assistir</button>
-      <Curtir curtido={ehCurtido(v.id)} alternar={() => curtir(v)} pequeno />
     </div>
   );
 
