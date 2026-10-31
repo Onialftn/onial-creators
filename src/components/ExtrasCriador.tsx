@@ -27,6 +27,10 @@ function Linha({ x, e, hoje, i, comum }: { x: ExtraCriador; e?: EntregaCriador; 
         <span className="min-w-0 flex-1">
           <span className="block truncate" style={{ color: "var(--strong)", fontWeight: 600, fontSize: 15 }}>{x.titulo}</span>
           <span className="block truncate" style={{ fontSize: 12, color: aprovado ? "var(--ok)" : e?.status === "recusado" ? "var(--warn)" : "var(--muted)" }}>{situacao}</span>
+          <span className="ver-regras flex items-center gap-1" style={{ marginTop: 3, fontSize: 12, fontWeight: 600, color: "var(--accent-text)" }}>
+            <span className="txt-ver">👆 Clique para ver as regras</span><span className="txt-fechar">Fechar regras</span>
+            <span className="chev" style={{ display: "flex", transition: "transform .2s" }}>{svg("M6 9l6 6 6-6", 13)}</span>
+          </span>
         </span>
         <span className="num flex-none" style={{ fontSize: 16, color: "var(--ok)" }}>+{valorCurto(x.valor_centavos)}</span>
         <span className="flex flex-none items-center justify-center" style={{ width: 44, height: 44, borderRadius: 10, border: `1px solid ${aprovado ? "var(--ok)" : j.fase === "hoje" ? "#E8B014" : "var(--line2)"}`, background: j.fase === "hoje" && !aprovado ? "#E8B014" : "transparent", color: aprovado ? "var(--ok)" : j.fase === "hoje" ? "#0A0A0A" : "var(--muted)" }} aria-label={aprovado ? "Aprovado" : j.fase === "hoje" ? "Mandar link" : "Envio fechado até o dia"}>
