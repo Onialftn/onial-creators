@@ -54,13 +54,27 @@ export function CardsGanho({ r }: { r: ResumoMes }) {
         <div className="flex items-center gap-2" style={{ color: "var(--muted)" }}><Icone nome="target" />Bônus de meta (R$ 1 / 1.000 views)</div>
         <div className="num" style={{ fontSize: 34, marginTop: 8, color: "var(--strong)" }}>{r.meta ? formatarReais(Math.round(r.meta / 10)) : "—"}</div>
         <div style={{ color: p.bateuMeta ? "var(--ok)" : "var(--muted)", fontSize: 13, marginTop: 6 }}>
-          {!r.meta ? "O gestor ainda não definiu sua meta" : p.bateuMeta ? "Meta batida!" : `Libera ao bater ${formatarNumero(r.meta)} views`}
+          {!r.meta ? "O gestor ainda não definiu sua meta" : p.bateuMeta ? "Meta batida! O bônus já entrou no total ✅" : `Libera ao bater ${formatarNumero(r.meta)} views`}
         </div>
+        {r.meta ? (() => {
+          const pct = Math.min(100, (r.views / r.meta) * 100);
+          return (
+            <div style={{ marginTop: 12 }}>
+              <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} aria-label="Progresso da meta de views" style={{ height: 10, borderRadius: 5, background: "var(--track)", overflow: "hidden" }}>
+                <div style={{ width: `${pct}%`, height: "100%", borderRadius: 5, background: p.bateuMeta ? "var(--ok)" : "linear-gradient(90deg,#B8860B,#E8B014)", transition: "width .4s" }} />
+              </div>
+              <div className="flex justify-between" style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
+                <span className="num" style={{ fontSize: 14, color: p.bateuMeta ? "var(--ok)" : "var(--accent-text)" }}>{Math.floor(pct)}%</span>
+                <span>{p.bateuMeta ? `${formatarNumero(r.views)} views` : `faltam ${formatarNumero(Math.max(0, r.meta - r.views))} views`}</span>
+              </div>
+            </div>
+          );
+        })() : null}
       </div>
       <div style={{ background: "linear-gradient(135deg,#E8B014,#FFD966)", boxShadow: "0 0 28px rgba(232,176,20,.35)", borderRadius: 6, padding: 22 }}>
-        <div className="flex items-center gap-2" style={{ color: "#3A2E08" }}><Icone nome="trophy" />{p.bateuMeta || !r.meta ? "Total do mês até agora" : "Estimativa total do mês"}</div>
-        <div className="num" style={{ fontSize: 34, marginTop: 8, color: "#0A0A0A" }}>{formatarReais(p.bateuMeta || !r.totalSeBaterMeta ? p.totalCentavos : r.totalSeBaterMeta)}</div>
-        <div style={{ color: "#3A2E08", fontSize: 13, marginTop: 6 }}>{p.bateuMeta || !r.meta ? "Bruto + bônus conquistados" : "Se bater a meta de views"}</div>
+        <div className="flex items-center gap-2" style={{ color: "#3A2E08" }}><Icone nome="trophy" />Total do mês até agora</div>
+        <div className="num" style={{ fontSize: 34, marginTop: 8, color: "#0A0A0A" }}>{formatarReais(p.totalCentavos)}</div>
+        <div style={{ color: "#3A2E08", fontSize: 13, marginTop: 6 }}>{p.bateuMeta || !r.meta ? "Bruto + bônus conquistados" : `Sem o bônus de meta: +${formatarReais(Math.round(r.meta / 10))} quando bater`}</div>
         {p.bonusExtraCentavos > 0 && <div style={{ color: "#3A2E08", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusExtraCentavos)} de vídeos extras</div>}
         {p.ajudas > 0 && <div style={{ color: "#3A2E08", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusAjudaCentavos)} de {p.ajudas} {p.ajudas === 1 ? "gravação ajudada" : "gravações ajudadas"}</div>}
       </div>
