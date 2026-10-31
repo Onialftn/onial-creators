@@ -122,7 +122,7 @@ export async function gerarNotificacoes() {
   const { data: extrasHoje } = await admin.from("extras").select("id, titulo, valor_centavos").eq("ativo", true).eq("prazo", hoje);
   for (const x of extrasHoje ?? []) {
     for (const c of criadores ?? []) {
-      await notificar(c.id as string, { tipo: "pagamento", titulo: `Extra hoje: +${formatarReais(x.valor_centavos)} ⏰`, texto: `${x.titulo}. Até 23:59.`, link: "/dias#extras", chave: `extra:hoje:${x.id}` }, admin).catch(() => undefined);
+      await notificar(c.id as string, { tipo: "pagamento", titulo: `Extra hoje: +${formatarReais(x.valor_centavos)} ⏰`, texto: `${x.titulo}. Das 08:00 às 22:00.`, link: "/dias#extras", chave: `extra:hoje:${x.id}` }, admin).catch(() => undefined);
       n++;
     }
   }

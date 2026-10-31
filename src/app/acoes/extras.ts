@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { usuarioAtual } from "@/lib/dados";
 import { hojeBrasil, mesDe } from "@/lib/datas";
 import { linkReferencia } from "@/lib/gravar";
+import { HORARIO_EXTRA, janelaExtra, minutosBrasil } from "@/lib/prazo";
 import { notificar } from "@/lib/notificacoes";
 import { formatarReais } from "@/lib/pagamento";
 import { supabaseAdmin } from "@/lib/supabase/server";
@@ -41,7 +42,7 @@ export async function criarExtra(f: FormData) {
   const admin = supabaseAdmin();
   const { data: novo } = await admin.from("extras").insert({ titulo, descricao, regras, valor_centavos: valor, prazo }).select("id").single();
   const { data: criadores } = await admin.from("perfis").select("id").eq("papel", "criador");
-  await Promise.all((criadores ?? []).map((c) => notificar(c.id, { tipo: "pagamento", titulo: `Extra: +${formatarReais(valor)} 💰`, texto: `${titulo} · só ${prazo === hojeBrasil() ? "hoje" : diaBr(prazo)}`, link: "/dias#extras", chave: `extra:novo:${novo?.id}` }, admin).catch(() => undefined)));
+  await Promise.all((criadores ?? []).map((c) => notificar(c.id, { tipo: "pagamento", titulo: `Extra: +${formatarReais(valor)} 💰`, texto: `${titulo} · ${prazo === hojeBrasil() ? "hoje" : diaBr(prazo)}, 08h–22h`, link: "/dias#extras", chave: `extra:novo:${novo?.id}` }, admin).catch(() => undefined)));
   irPara(`/gestor/extras?ok=${encodeURIComponent("Extra criado! A equipe foi avisada.")}`);
 }
 
@@ -90,7 +91,10 @@ export async function enviarExtra(f: FormData) {
   const admin = supabaseAdmin();
   const { data: ex } = await admin.from("extras").select("*").eq("id", t(f, "extra")).maybeSingle();
   if (!ex || !ex.ativo || ex.prazo < hojeBrasil()) volta("Esse extra não está mais aberto.");
-  if (ex.prazo > hojeBrasil()) volta(`Esse extra vale só no dia ${diaBr(ex.prazo)}: poste nesse dia e mande o link.`);
+  if (ex.prazo > hojeBrasil()) volta(`Esse extra vale só no dia ${diaBr(ex.prazo)}, das ${HORARIO_EXTRA}: poste nesse horário e mande o link.`);
+  const fase = janelaExtra(ex.prazo, hojeBrasil(), minutosBrasil()).fase;
+  if (fase === "antes") volta(`O envio abre às 08:00. Poste e mande o link das ${HORARIO_EXTRA}.`);
+  if (fase === "passou") volta(`O horário desse extra acabou às 22:00 (vale das ${HORARIO_EXTRA}).`);
   const ref = linkReferencia(t(f, "link"));
   if (!ref) volta("Cole o link do vídeo que você postou.");
   const { data: atual } = await admin.from("entregas_extra").select("status").eq("extra_id", ex.id).eq("criador_id", perfil.id).maybeSingle();

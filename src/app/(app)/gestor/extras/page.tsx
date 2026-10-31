@@ -158,7 +158,7 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
         </div>
         <label className="flex flex-col gap-1.5"><span className="label">DESCRIÇÃO</span><textarea className="input" name="descricao" rows={3} maxLength={1000} defaultValue={base?.descricao ?? ""} placeholder="O que precisa ter no vídeo, link de referência..." style={{ paddingTop: 10, resize: "vertical" }} /></label>
         <label className="flex flex-col gap-1.5"><span className="label">REGRAS</span><textarea className="input" name="regras" rows={4} maxLength={2000} defaultValue={base?.regras ?? ""} placeholder={"Uma regra por linha. Ex.:\nPostar no YouTube, TikTok e Instagram\nFalar o código do mapa no vídeo\nMínimo de 30 segundos"} style={{ paddingTop: 10, resize: "vertical" }} /></label>
-        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todos os criadores recebem uma notificação agora e outra no dia. O extra vale só no dia escolhido, das 00:00 às 23:59. Cada um que postar nesse dia e for aprovado ganha o valor.</p>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todos os criadores recebem uma notificação agora e outra no dia. O extra vale só no dia escolhido, das 08:00 às 22:00 (Brasília). Cada um que postar nesse horário e for aprovado ganha o valor. Ao aprovar, confira o horário da postagem.</p>
         <button className="btn-gold" type="submit" style={{ alignSelf: "flex-start" }}>{base ? "Criar cópia" : "Criar extra"}</button>
       </form>}
 

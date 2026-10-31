@@ -1,6 +1,6 @@
 import { enviarExtra } from "@/app/acoes/extras";
 import { DIAS_CURTOS, diaDaSemana } from "@/lib/datas";
-import { extrasPorDia, janelaExtra, ordemDoExtra, quandoExtra } from "@/lib/prazo";
+import { extrasPorDia, HORARIO_EXTRA, janelaExtra, minutosBrasil, ordemDoExtra, quandoExtra } from "@/lib/prazo";
 import { Icone } from "./Icone";
 
 export interface ExtraCriador { id: string; titulo: string; descricao: string; regras: string | null; valor_centavos: number; prazo: string }
@@ -15,7 +15,7 @@ const CADEADO = "M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z";
 const ENVIAR = "M5 12h14M13 6l6 6-6 6";
 
 function Linha({ x, e, hoje, i, comum }: { x: ExtraCriador; e?: EntregaCriador; hoje: string; i: number; comum: boolean }) {
-  const j = janelaExtra(x.prazo, hoje);
+  const j = janelaExtra(x.prazo, hoje, minutosBrasil());
   const ordem = ordemDoExtra(x);
   const aprovado = e?.status === "aprovado";
   const situacao = aprovado ? "Aprovado ✓" : e?.status === "enviado" ? "Esperando aprovação" : e?.status === "recusado" ? "Não aprovado: mande outro link" : ordem ? `${ordem}º vídeo do dia` : j.fase === "hoje" ? "Vale hoje" : "Agendado";
@@ -38,8 +38,8 @@ function Linha({ x, e, hoje, i, comum }: { x: ExtraCriador; e?: EntregaCriador; 
         {e?.status === "recusado" && e.motivo && <span style={{ fontSize: 13, color: "var(--warn)" }}>Motivo: {e.motivo}</span>}
         {aprovado ? (
           <span style={{ fontSize: 13, color: "var(--ok)" }}>O valor entrou no seu total do mês.</span>
-        ) : j.fase === "antes" ? (
-          <span style={{ fontSize: 13, color: "var(--muted)" }}>Poste nesse dia. O envio do link abre às 00:00 de {diaCurto(x.prazo).toLowerCase()}.</span>
+        ) : j.fase !== "hoje" ? (
+          <span style={{ fontSize: 13, color: "var(--muted)" }}>{j.fase === "passou" ? `O horário acabou às 22:00.` : `Poste ${x.prazo === hoje ? "hoje" : `em ${diaCurto(x.prazo).toLowerCase()}`}, das ${HORARIO_EXTRA}. O envio do link abre às 08:00.`}</span>
         ) : (
           <form action={enviarExtra} className="flex flex-wrap gap-2">
             <input type="hidden" name="extra" value={x.id} />
@@ -59,7 +59,7 @@ function CabecaDia({ dia, hoje, extras }: { dia: string; hoje: string; extras: E
   return (
     <span className="flex flex-1 flex-wrap items-center gap-2">
       <span className="num" style={{ padding: "3px 10px", borderRadius: 8, fontSize: 15, background: ehHoje ? "var(--ok)" : "#E8B014", color: "#0A0A0A", letterSpacing: 0.5 }}>{diaCurto(dia).toUpperCase()}</span>
-      <span style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", color: ehHoje ? "var(--ok)" : "var(--accent-text)" }}>{ehHoje ? "Hoje até 23:59" : quandoExtra(dia, hoje)}</span>
+      <span style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", color: ehHoje ? "var(--ok)" : "var(--accent-text)" }}>{ehHoje ? "Hoje até 22:00" : quandoExtra(dia, hoje)} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 13 }}>· 08h–22h</span></span>
       <span style={{ fontSize: 15, color: "var(--text2)", whiteSpace: "nowrap" }}>· até <b className="num" style={{ color: "var(--ok)", fontSize: 20 }}>{valorCurto(total)}</b></span>
     </span>
   );
@@ -106,7 +106,7 @@ export function ExtrasCriador({ extras, entregas, hoje }: { extras: ExtraCriador
           <div style={{ paddingBottom: 4 }}><Dia extras={d.extras} hoje={hoje} entrega={entrega} /></div>
         </details>
       ))}
-      <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--muted)" }}>Cada extra vale só no seu dia (00:00 às 23:59). O envio do link libera às 00:00 desse dia.</p>
+      <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--muted)" }}>Cada extra vale só no seu dia, das 08:00 às 22:00 (Brasília). Poste e mande o link nesse horário.</p>
     </section>
   );
 }

@@ -36,7 +36,7 @@ Todo o texto do site é em português do Brasil.
   - Mínimo de 1 vídeo por dia de postagem. Vídeo a mais (2º vídeo no dia ou vídeo na folga) repõe uma falta da semana, mas vídeo extra (pago à parte) não conta como reposição (`sobraParaRepor` em `src/lib/pagamento.ts`).
   - Faltas no mês (dias não repostos até domingo): 0 faltas = 10% do bruto; 1 falta = 5%; 2 ou mais = 0%.
 - Gravações (pedido do gestor): R$ 25 fixos por gravação em que o criador ajudou (qualquer duração), quando quem pediu ajuda confirma que ele estava presente. Conta no mês do dia da gravação. Tabelas pedidos_ajuda e ajudas; regras em `src/lib/gravar.ts`.
-- Vídeos extras (pedido do gestor): o gestor cria um extra com valor, descrição, regras e o dia do vídeo (vale só nesse dia, 24h, 00:00–23:59); qualquer criador pode fazer, manda o link e o gestor aprova. O valor entra no mês da aprovação. Tabelas extras e entregas_extra.
+- Vídeos extras (pedido do gestor): o gestor cria um extra com valor, descrição, regras e o dia do vídeo (vale só nesse dia, das 08:00 às 22:00 de Brasília; o link só é aceito nesse horário); qualquer criador pode fazer, manda o link e o gestor aprova. O valor entra no mês da aprovação. Tabelas extras e entregas_extra.
 - Total = bruto + bruto × constância% + bônus de meta + bônus de ajuda + extras aprovados.
 - Valores em reais com duas casas, formato brasileiro (R$ 3.062,00).
 - Toda mudança nessas regras precisa de testes automáticos cobrindo: mês perfeito, falta reposta na semana, 1 falta, 2 faltas, meta batida e não batida.

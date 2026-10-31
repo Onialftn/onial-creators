@@ -1,15 +1,27 @@
 import { DIAS_NOMES, diaDaSemana } from "./datas";
 
+/** Horário do vídeo extra no dia escolhido (Brasília): das 08:00 às 22:00. */
+export const EXTRA_INICIO = 8 * 60;
+export const EXTRA_FIM = 22 * 60;
+export const HORARIO_EXTRA = "08:00 às 22:00";
+
+/** Minutos desde a meia-noite em Brasília (ex.: 08:30 → 510). */
+export function minutosBrasil(agora = new Date()): number {
+  const [h, m] = new Intl.DateTimeFormat("en-GB", { timeZone: "America/Sao_Paulo", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(agora).split(":").map(Number);
+  return h * 60 + m;
+}
+
 /**
- * Vídeo extra vale só no dia escolhido pelo gestor: 24 horas, das 00:00 às 23:59 (Brasília).
- * Antes do dia aparece como "em breve"; no dia dá para mandar o link; depois some.
+ * Vídeo extra vale só no dia escolhido pelo gestor, das 08:00 às 22:00 (Brasília): postar e mandar o link nesse horário.
+ * Antes aparece como "em breve"; dentro do horário dá para mandar o link; depois das 22:00 fecha.
  */
-export function janelaExtra(dia: string, hoje: string): { fase: "antes" | "hoje" | "passou"; texto: string; detalhe: string } {
+export function janelaExtra(dia: string, hoje: string, minutos = EXTRA_INICIO): { fase: "antes" | "hoje" | "passou"; texto: string; detalhe: string } {
   const n = Math.round((Date.UTC(+dia.slice(0, 4), +dia.slice(5, 7) - 1, +dia.slice(8)) - Date.UTC(+hoje.slice(0, 4), +hoje.slice(5, 7) - 1, +hoje.slice(8))) / 86_400_000);
   const nome = `${DIAS_NOMES[diaDaSemana(dia) - 1].toLowerCase()}, ${dia.slice(8)}/${dia.slice(5, 7)}`;
-  if (n < 0) return { fase: "passou", texto: `Era ${nome}`, detalhe: "encerrado" };
-  if (n === 0) return { fase: "hoje", texto: "Vale HOJE: poste até 23:59", detalhe: "só hoje" };
-  return { fase: "antes", texto: `Vale só ${n === 1 ? `amanhã (${nome})` : nome}, das 00:00 às 23:59`, detalhe: n === 1 ? "começa amanhã" : `começa em ${n} dias` };
+  if (n < 0 || (n === 0 && minutos >= EXTRA_FIM)) return { fase: "passou", texto: `Era ${nome}, das ${HORARIO_EXTRA}`, detalhe: "encerrado" };
+  if (n === 0 && minutos < EXTRA_INICIO) return { fase: "antes", texto: `Vale HOJE, das ${HORARIO_EXTRA}`, detalhe: "começa às 08:00" };
+  if (n === 0) return { fase: "hoje", texto: "Vale HOJE: poste até 22:00", detalhe: "só hoje" };
+  return { fase: "antes", texto: `Vale só ${n === 1 ? `amanhã (${nome})` : nome}, das ${HORARIO_EXTRA}`, detalhe: n === 1 ? "começa amanhã" : `começa em ${n} dias` };
 }
 
 /** "Válido pro 2° vídeo do dia" (no título, regras ou descrição) → 2. Sem número → null. */
