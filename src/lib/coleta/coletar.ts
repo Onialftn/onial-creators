@@ -200,3 +200,21 @@ export async function anotarSaldo(criadorId: string) {
   const views = (data ?? []).reduce((a, r) => a + Number(r.views), 0);
   await admin.from("saldos_diarios").upsert({ criador_id: criadorId, dia: hoje, mes, views_mes: views, atualizado_em: new Date().toISOString() });
 }
+
+/**
+ * Atualização rápida: só procura vídeos NOVOS da conta e cadastra (marca o dia de postagem na hora).
+ * Não mexe nas views: o ganho de views continua sendo calculado na coleta das 06:00.
+ */
+export async function sincronizarVideos(contaId: string): Promise<number> {
+  const admin = supabaseAdmin();
+  const { data: conta } = await admin.from("contas_plataforma").select("id, criador_id, plataforma").eq("id", contaId).single();
+  if (!conta) return 0;
+  const rede = conta.plataforma as Rede;
+  const tokens = await tokensValidos(admin, contaId, rede);
+  const videos = await REDE[rede].videos(tokens);
+  const { data: existentes } = await admin.from("videos").select("id_externo").eq("criador_id", conta.criador_id).eq("plataforma", rede);
+  const tem = new Set((existentes ?? []).map((v) => v.id_externo as string));
+  const novos = videos.filter((v) => !tem.has(v.idExterno));
+  if (novos.length) await admin.from("videos").insert(novos.map((v) => ({ criador_id: conta.criador_id, plataforma: rede, id_externo: v.idExterno, titulo: v.titulo, url: v.url, postado_em: v.postadoEm })));
+  return novos.length;
+}

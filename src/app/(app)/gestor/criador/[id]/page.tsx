@@ -168,7 +168,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
       <section id="calendario" className="card flex flex-col gap-4">
         <TituloCard icone="cal" direita={`${r.diasCumpridos} de ${r.diasAgendados} dias cumpridos · ${r.faltas} ${r.faltas === 1 ? "falta" : "faltas"}`}>Calendário de {nomeMes(mes).split(" ")[0]}</TituloCard>
         <Calendario dias={r.calendario} mapas={Object.fromEntries((mapas ?? []).map((m) => [m.dia_semana as number, m.mapa as string]))} />
-        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Os dias são marcados sozinhos pelos vídeos postados nas redes conectadas.</p>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Os dias são marcados sozinhos pelos vídeos postados nas redes conectadas, uns 10 minutos depois de postar (as views do dia entram na coleta das 06:00).</p>
       </section>
 
       <section id="pagamentos" className="card flex flex-col gap-4">

@@ -1,4 +1,6 @@
+import { after } from "next/server";
 import { MenuLateral } from "@/components/MenuLateral";
+import { buscarVideosNovos } from "@/lib/coleta/rapida";
 import type { Notificacao } from "@/components/Sino";
 import { usuarioAtual } from "@/lib/dados";
 import { hojeBrasil } from "@/lib/datas";
@@ -9,6 +11,8 @@ export const dynamic = "force-dynamic";
 
 export default async function LayoutApp({ children }: { children: React.ReactNode }) {
   const { sb, perfil } = await usuarioAtual();
+  // vídeos novos das redes, em segundo plano (no máximo a cada 10 min por conta): marca o dia de postagem quase na hora
+  after(() => buscarVideosNovos(perfil.papel === "gestor" ? "todos" : [perfil.id]).catch(() => undefined));
   const [{ data: avisos }, { data: pedidos }, { data: novidades }] = await Promise.all([
     sb.from("notificacoes").select("id, tipo, titulo, texto, link, lida, criado_em").eq("criador_id", perfil.id).eq("oculta", false).neq("tipo", "novidade").order("criado_em", { ascending: false }).limit(30),
     sb.from("pedidos_ajuda").select("id, criador_id, dia, hora, duracao_min, vagas, mapa, descricao, status").eq("status", "aberto").gte("dia", hojeBrasil()).neq("criador_id", perfil.id),
