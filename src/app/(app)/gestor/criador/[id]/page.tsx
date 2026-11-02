@@ -4,7 +4,7 @@ import { Avatar } from "@/components/Avatar";
 import { Cabecalho, Calendario, CardsGanho, TituloCard } from "@/components/Blocos";
 import { Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { REDES } from "@/lib/coleta/redes";
-import { PLATAFORMAS, resumoDoMes, usuarioAtual } from "@/lib/dados";
+import { PLATAFORMAS, resumoDoMes, topVideos, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
 import { ultimosVideos } from "@/lib/seo-canal";
@@ -40,7 +40,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
     sb.from("mapa_dia").select("dia_semana, mapa").eq("criador_id", id),
     sb.from("contas_plataforma").select("plataforma, nome_conta, ultima_coleta, erro").eq("criador_id", id),
   ]);
-  const recentes = await ultimosVideos(id).catch(() => "erro" as const);
+  const [recentes, virais] = await Promise.all([ultimosVideos(id).catch(() => "erro" as const), topVideos(sb, id, mes, 3).catch(() => [])]);
   const dias = new Set((agenda ?? []).map((a) => a.dia_semana as number));
   const fechados = new Set((pags ?? []).map((p) => p.mes as string));
 
@@ -67,6 +67,28 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
       <CardsGanho r={r} />
 
       <section className="card flex flex-col gap-3">
+        <TituloCard icone="trophy" direita={<span style={{ fontSize: 12 }}>Views ganhas em {nomeMes(mes).split(" ")[0].toLowerCase()} · todas as redes</span>}>Mais virais do mês</TituloCard>
+        {virais.length === 0 ? <p style={{ margin: 0, color: "var(--muted)" }}>Ainda sem views de vídeos neste mês.</p> : (
+          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))" }}>
+            {virais.map((v, i) => (
+              <a key={v.id} href={v.url ?? "#"} target="_blank" rel="noreferrer" className="tile flex gap-3" style={{ alignItems: "flex-start", ...(i === 0 ? { borderColor: "#E8B014" } : {}) }}>
+                <span className="relative flex flex-none items-center justify-center" style={{ width: 72, height: 96, borderRadius: 6, overflow: "hidden", background: "var(--bg)" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  {v.capa ? <img src={v.capa} alt="" width={72} height={96} style={{ width: 72, height: 96, objectFit: "cover" }} /> : <LogoPlataforma p={v.plataforma} tamanho={36} />}
+                  <span className="num absolute" style={{ left: 4, top: 4, padding: "0 6px", borderRadius: 4, fontSize: 13, background: i === 0 ? "#E8B014" : "rgba(10,10,10,.8)", color: i === 0 ? "#0A0A0A" : "#fff" }}>{i + 1}º</span>
+                </span>
+                <div className="min-w-0 flex flex-col gap-1.5">
+                  <div style={{ color: "var(--strong)", fontWeight: 600, fontSize: 14, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
+                  <div className="flex items-center gap-1.5" style={{ fontSize: 12, color: "var(--muted)" }}><LogoPlataforma p={v.plataforma} tamanho={16} />{NOME_PLATAFORMA[v.plataforma]} · postado {v.postado_em.split("-").reverse().slice(0, 2).join("/")}</div>
+                  <div className="num" style={{ fontSize: 17, color: "var(--ok)" }}>👁 {formatarNumero(v.views)} <span style={{ fontSize: 12, color: "var(--muted)", fontFamily: "Inter, sans-serif" }}>views no mês</span></div>
+                </div>
+              </a>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="card flex flex-col gap-3">
         <TituloCard icone="video" direita={<span style={{ fontSize: 12 }}>YouTube · atualiza a cada 30 min</span>}>Últimos vídeos</TituloCard>
         {recentes === null && <p style={{ margin: 0, color: "var(--muted)" }}>O YouTube dele não está conectado.</p>}
         {recentes === "erro" && <p style={{ margin: 0, color: "var(--muted)" }}>Não consegui ler o canal agora. Tente de novo mais tarde.</p>}
@@ -79,7 +101,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
                 <img src={v.capa} alt="" width={72} height={96} style={{ width: 72, height: 96, objectFit: "cover", borderRadius: 6, flex: "none", background: "var(--bg)" }} />
                 <div className="min-w-0 flex flex-col gap-1.5">
                   <div style={{ color: "var(--strong)", fontWeight: 600, fontSize: 14, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
-                  <div style={{ fontSize: 12, color: "var(--muted)" }}>{quandoPostou(v.publicadoEm)}</div>
+                  <div className="flex items-center gap-1.5" style={{ fontSize: 12, color: "var(--muted)" }}><LogoPlataforma p="youtube" tamanho={16} />{quandoPostou(v.publicadoEm)}</div>
                   <div className="flex flex-wrap gap-x-3 gap-y-1 num" style={{ fontSize: 15, color: "var(--fg)" }}>
                     <span title="Views">👁 {formatarNumero(v.views)}</span>
                     <span title="Likes">❤️ {formatarNumero(v.likes)}</span>
