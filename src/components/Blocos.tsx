@@ -71,12 +71,12 @@ export function CardsGanho({ r }: { r: ResumoMes }) {
           );
         })() : null}
       </div>
-      <div style={{ background: "linear-gradient(135deg,#E8B014,#FFD966)", boxShadow: "0 0 28px rgba(232,176,20,.35)", borderRadius: 6, padding: 22 }}>
-        <div className="flex items-center gap-2" style={{ color: "#3A2E08" }}><Icone nome="trophy" />Total do mês até agora</div>
-        <div className="num" style={{ fontSize: 34, marginTop: 8, color: "#0A0A0A" }}>{formatarReais(p.totalCentavos)}</div>
-        <div style={{ color: "#3A2E08", fontSize: 13, marginTop: 6 }}>{p.bateuMeta || !r.meta ? "Bruto + bônus conquistados" : `Sem o bônus de meta: +${formatarReais(Math.round(r.meta / 10))} quando bater`}</div>
-        {p.bonusExtraCentavos > 0 && <div style={{ color: "#3A2E08", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusExtraCentavos)} de vídeos extras</div>}
-        {p.ajudas > 0 && <div style={{ color: "#3A2E08", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusAjudaCentavos)} de {p.ajudas} {p.ajudas === 1 ? "gravação ajudada" : "gravações ajudadas"}</div>}
+      <div className="card" style={{ padding: 22 }}>
+        <div className="flex items-center gap-2" style={{ color: "var(--muted)" }}><Icone nome="trophy" />Total do mês até agora</div>
+        <div className="num" style={{ fontSize: 34, marginTop: 8, color: "var(--accent-text)" }}>{formatarReais(p.totalCentavos)}</div>
+        <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 6 }}>{p.bateuMeta || !r.meta ? "Bruto + bônus conquistados" : `Sem o bônus de meta: +${formatarReais(Math.round(r.meta / 10))} quando bater`}</div>
+        {p.bonusExtraCentavos > 0 && <div style={{ color: "var(--text2)", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusExtraCentavos)} de vídeos extras</div>}
+        {p.ajudas > 0 && <div style={{ color: "var(--text2)", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusAjudaCentavos)} de {p.ajudas} {p.ajudas === 1 ? "gravação ajudada" : "gravações ajudadas"}</div>}
       </div>
     </section>
   );
