@@ -40,9 +40,10 @@ export async function criarExtra(f: FormData) {
   if (!(valor >= 100)) volta("Coloque o valor do extra (mínimo R$ 1,00).");
   if (!/^\d{4}-\d{2}-\d{2}$/.test(prazo) || prazo < hojeBrasil()) volta("Escolha o dia do vídeo (de hoje em diante).");
   const admin = supabaseAdmin();
-  const { data: novo } = await admin.from("extras").insert({ titulo, descricao, regras, valor_centavos: valor, prazo }).select("id").single();
+  const pix = f.get("pix") === "1";
+  const { data: novo } = await admin.from("extras").insert({ titulo, descricao, regras, valor_centavos: valor, prazo, ...(pix ? { pix: true } : {}) }).select("id").single();
   const { data: criadores } = await admin.from("perfis").select("id").eq("papel", "criador");
-  await Promise.all((criadores ?? []).map((c) => notificar(c.id, { tipo: "pagamento", titulo: `Extra: +${formatarReais(valor)} 💰`, texto: `${titulo} · ${prazo === hojeBrasil() ? "hoje" : diaBr(prazo)}, 08h–22h`, link: "/dias#extras", chave: `extra:novo:${novo?.id}` }, admin).catch(() => undefined)));
+  await Promise.all((criadores ?? []).map((c) => notificar(c.id, { tipo: "pagamento", titulo: `Extra${pix ? " no Pix" : ""}: +${formatarReais(valor)} 💰`, texto: `${titulo} · ${prazo === hojeBrasil() ? "hoje" : diaBr(prazo)}, 08h–22h`, link: "/dias#extras", chave: `extra:novo:${novo?.id}` }, admin).catch(() => undefined)));
   irPara(`/gestor/extras?ok=${encodeURIComponent("Extra criado! A equipe foi avisada.")}`);
 }
 
@@ -58,11 +59,13 @@ export async function editarExtra(f: FormData) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(prazo)) volta("Escolha o dia do vídeo.");
   if (!(valor >= 100)) volta("Coloque o valor do extra (mínimo R$ 1,00).");
   const admin = supabaseAdmin();
-  const { data: atual } = await admin.from("extras").select("valor_centavos").eq("id", id).maybeSingle();
+  const { data: atual } = await admin.from("extras").select("*").eq("id", id).maybeSingle();
   if (!atual) volta("Extra não encontrado.");
   const { count: aprovados } = await admin.from("entregas_extra").select("extra_id", { count: "exact", head: true }).eq("extra_id", id).eq("status", "aprovado");
   if (aprovados && valor !== atual!.valor_centavos) volta("Esse extra já tem vídeo aprovado: o valor não pode mudar. Duplique o extra para criar um com outro valor.");
-  await admin.from("extras").update({ titulo, prazo, valor_centavos: valor, descricao: t(f, "descricao").slice(0, 1000), regras: t(f, "regras").slice(0, 2000) }).eq("id", id);
+  const pix = f.get("pix") === "1";
+  if (aprovados && pix !== !!atual!.pix) volta("Esse extra já tem vídeo aprovado: a forma de pagamento não pode mudar.");
+  await admin.from("extras").update({ titulo, prazo, valor_centavos: valor, descricao: t(f, "descricao").slice(0, 1000), regras: t(f, "regras").slice(0, 2000), ...(pix || atual!.pix ? { pix } : {}) }).eq("id", id);
   volta("Extra atualizado.", true);
 }
 
@@ -97,12 +100,28 @@ export async function enviarExtra(f: FormData) {
   if (fase === "passou") volta(`O horário desse extra acabou às 22:00 (vale das ${HORARIO_EXTRA}).`);
   const ref = linkReferencia(t(f, "link"));
   if (!ref) volta("Cole o link do vídeo que você postou.");
+  const chave = t(f, "chave_pix").slice(0, 140);
+  if (ex.pix && chave.length < 4) volta("Esse extra é pago no Pix: coloque a sua chave Pix.");
   const { data: atual } = await admin.from("entregas_extra").select("status").eq("extra_id", ex.id).eq("criador_id", perfil.id).maybeSingle();
   if (atual?.status === "aprovado") volta("Esse extra já foi aprovado para você.");
-  await admin.from("entregas_extra").upsert({ extra_id: ex.id, criador_id: perfil.id, link: ref!.url.slice(0, 500), status: "enviado", motivo: "", enviado_em: new Date().toISOString(), aprovado_em: null, mes: null });
+  await admin.from("entregas_extra").upsert({ extra_id: ex.id, criador_id: perfil.id, link: ref!.url.slice(0, 500), status: "enviado", motivo: "", enviado_em: new Date().toISOString(), aprovado_em: null, mes: null, ...(ex.pix ? { chave_pix: chave } : {}) });
   const { data: gestores } = await admin.from("perfis").select("id").eq("papel", "gestor");
   await Promise.all((gestores ?? []).map((g) => notificar(g.id, { tipo: "pagamento", titulo: `${perfil.nome.split(" ")[0]} mandou um extra`, texto: `${ex.titulo} · aprovar`, link: "/gestor/extras", chave: `extra:enviado:${ex.id}:${perfil.id}:${Date.now()}` }, admin).catch(() => undefined)));
-  volta("Link enviado! Assim que o gestor aprovar, o valor entra no seu total do mês.", true);
+  volta(ex.pix ? "Link e chave Pix enviados! Assim que o gestor aprovar, você recebe o Pix." : "Link enviado! Assim que o gestor aprovar, o valor entra no seu total do mês.", true);
+}
+
+/** Extra pago no Pix: o criador coloca ou corrige a chave Pix (vale a qualquer hora, até ser aprovado). */
+export async function salvarChavePix(f: FormData) {
+  const { perfil } = await usuarioAtual();
+  const volta = (e: string, ok = false) => irPara(`/dias?${ok ? "ok" : "erro"}=${encodeURIComponent(e)}#extras`);
+  const chave = t(f, "chave_pix").slice(0, 140);
+  if (chave.length < 4) volta("Coloque a sua chave Pix.");
+  const admin = supabaseAdmin();
+  const { data: ent } = await admin.from("entregas_extra").select("status").eq("extra_id", t(f, "extra")).eq("criador_id", perfil.id).maybeSingle();
+  if (!ent) volta("Mande o link do vídeo primeiro.");
+  if (ent!.status === "aprovado") volta("Esse extra já foi aprovado: fale com o gestor para trocar a chave.");
+  await admin.from("entregas_extra").update({ chave_pix: chave }).eq("extra_id", t(f, "extra")).eq("criador_id", perfil.id);
+  volta("Chave Pix salva!", true);
 }
 
 /** O gestor aprova (o valor entra no mês de hoje) ou recusa a entrega. */
@@ -112,14 +131,16 @@ export async function avaliarEntrega(f: FormData) {
   const criador = t(f, "criador");
   const aprovar = f.get("aprovar") === "1";
   const admin = supabaseAdmin();
-  const { data: ex } = await admin.from("extras").select("titulo, valor_centavos").eq("id", extra).maybeSingle();
+  const { data: ex } = await admin.from("extras").select("*").eq("id", extra).maybeSingle();
   if (!ex) irPara(`/gestor/extras?erro=${encodeURIComponent("Extra não encontrado.")}`);
   const motivo = t(f, "motivo").slice(0, 200);
   await admin.from("entregas_extra").update(aprovar
     ? { status: "aprovado", aprovado_em: new Date().toISOString(), mes: mesDe(hojeBrasil()), motivo: "" }
     : { status: "recusado", aprovado_em: null, mes: null, motivo }).eq("extra_id", extra).eq("criador_id", criador);
   await notificar(criador, aprovar
-    ? { tipo: "pagamento", titulo: `Extra aprovado: +${formatarReais(ex!.valor_centavos)} 💸`, texto: `${ex!.titulo}`, link: "/", chave: `extra:ok:${extra}:${criador}:${Date.now()}` }
+    ? ex!.pix
+      ? { tipo: "pagamento", titulo: `Extra aprovado: ${formatarReais(ex!.valor_centavos)} no Pix 💸`, texto: "Você recebe o Pix em alguns minutos.", link: "/dias#extras", chave: `extra:ok:${extra}:${criador}:${Date.now()}` }
+      : { tipo: "pagamento", titulo: `Extra aprovado: +${formatarReais(ex!.valor_centavos)} 💸`, texto: `${ex!.titulo}`, link: "/", chave: `extra:ok:${extra}:${criador}:${Date.now()}` }
     : { tipo: "pagamento", titulo: "Extra não aprovado", texto: motivo ? `Motivo: ${motivo}` : `${ex!.titulo}`, link: "/dias#extras", chave: `extra:nao:${extra}:${criador}:${Date.now()}` }, admin).catch(() => undefined);
-  irPara(`/gestor/extras?ok=${encodeURIComponent(aprovar ? "Aprovado: o valor entrou no total do mês do criador." : "Recusado. O criador foi avisado.")}`);
+  irPara(`/gestor/extras?ok=${encodeURIComponent(aprovar ? (ex!.pix ? "Aprovado! O criador foi avisado que vai receber o Pix. Agora é só fazer o Pix." : "Aprovado: o valor entrou no total do mês do criador.") : "Recusado. O criador foi avisado.")}`);
 }

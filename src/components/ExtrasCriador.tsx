@@ -1,10 +1,10 @@
-import { enviarExtra } from "@/app/acoes/extras";
+import { enviarExtra, salvarChavePix } from "@/app/acoes/extras";
 import { DIAS_CURTOS, diaDaSemana } from "@/lib/datas";
 import { extrasPorDia, HORARIO_EXTRA, janelaExtra, minutosBrasil, ordemDoExtra, quandoExtra } from "@/lib/prazo";
 import { Icone } from "./Icone";
 
-export interface ExtraCriador { id: string; titulo: string; descricao: string; regras: string | null; valor_centavos: number; prazo: string }
-export interface EntregaCriador { extra_id: string; link: string; status: string; motivo: string }
+export interface ExtraCriador { id: string; titulo: string; descricao: string; regras: string | null; valor_centavos: number; prazo: string; pix?: boolean }
+export interface EntregaCriador { extra_id: string; link: string; status: string; motivo: string; chave_pix?: string }
 
 const valorCurto = (c: number) => (c % 100 === 0 ? `R$ ${(c / 100).toLocaleString("pt-BR")}` : `R$ ${(c / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`);
 const diaCurto = (d: string) => { const n = DIAS_CURTOS[diaDaSemana(d) - 1]; return `${n.charAt(0)}${n.slice(1).toLowerCase()} ${d.slice(8)}/${d.slice(5, 7)}`; };
@@ -14,11 +14,12 @@ const svg = (d: string, t = 18) => <svg width={t} height={t} viewBox="0 0 24 24"
 const CADEADO = "M7 11V8a5 5 0 0 1 10 0v3M5 11h14v10H5z";
 const ENVIAR = "M5 12h14M13 6l6 6-6 6";
 
-function Linha({ x, e, hoje, i, comum }: { x: ExtraCriador; e?: EntregaCriador; hoje: string; i: number; comum: boolean }) {
+function Linha({ x, e, hoje, i, comum, chave }: { x: ExtraCriador; e?: EntregaCriador; hoje: string; i: number; comum: boolean; chave: string }) {
   const j = janelaExtra(x.prazo, hoje, minutosBrasil());
   const ordem = ordemDoExtra(x);
   const aprovado = e?.status === "aprovado";
-  const situacao = aprovado ? "Aprovado ✓" : e?.status === "enviado" ? "Esperando aprovação" : e?.status === "recusado" ? "Não aprovado: mande outro link" : ordem ? `${ordem}º vídeo do dia` : j.fase === "hoje" ? "Vale hoje" : "Agendado";
+  const semChave = !!x.pix && !!e && !aprovado && !e.chave_pix;
+  const situacao = aprovado ? (x.pix ? "Aprovado ✓ · Pix a caminho" : "Aprovado ✓") : semChave ? "Falta a sua chave Pix" : e?.status === "enviado" ? "Esperando aprovação" : e?.status === "recusado" ? "Não aprovado: mande outro link" : ordem ? `${ordem}º vídeo do dia` : j.fase === "hoje" ? "Vale hoje" : "Agendado";
   const regras = regrasEmFrase(x.regras ?? "");
   return (
     <details className="linha-extra" style={{ borderTop: i ? "1px solid var(--line)" : undefined }} open={j.fase === "hoje" && !e ? true : undefined}>
@@ -26,7 +27,7 @@ function Linha({ x, e, hoje, i, comum }: { x: ExtraCriador; e?: EntregaCriador; 
         <span className="num flex flex-none items-center justify-center" style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(232,176,20,.12)", color: "var(--accent-text)", fontSize: 16 }}>{ordem ? `${ordem}º` : i + 1}</span>
         <span className="min-w-0 flex-1">
           <span className="block truncate" style={{ color: "var(--strong)", fontWeight: 600, fontSize: 15 }}>{x.titulo}</span>
-          <span className="block truncate" style={{ fontSize: 12, color: aprovado ? "var(--ok)" : e?.status === "recusado" ? "var(--warn)" : "var(--muted)" }}>{situacao}</span>
+          <span className="block truncate" style={{ fontSize: 12, color: aprovado ? "var(--ok)" : e?.status === "recusado" || semChave ? "var(--warn)" : "var(--muted)" }}>{x.pix && <b style={{ color: "#3DDC97", marginRight: 6 }}>💸 PIX</b>}{situacao}</span>
           <span className="ver-regras flex items-center gap-1" style={{ marginTop: 3, fontSize: 12, fontWeight: 600, color: "var(--accent-text)" }}>
             <span className="txt-ver">👆 Clique para ver as regras</span><span className="txt-fechar">Fechar regras</span>
             <span className="chev" style={{ display: "flex", transition: "transform .2s" }}>{svg("M6 9l6 6 6-6", 13)}</span>
@@ -41,14 +42,22 @@ function Linha({ x, e, hoje, i, comum }: { x: ExtraCriador; e?: EntregaCriador; 
         {((!comum && x.descricao) || regras) && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5 }}>{!comum && x.descricao && <b style={{ color: "var(--strong)" }}>{x.descricao} </b>}{regras && <span style={{ color: "var(--text2)" }}>{regras}</span>}</p>}
         {e?.status === "recusado" && e.motivo && <span style={{ fontSize: 13, color: "var(--warn)" }}>Motivo: {e.motivo}</span>}
         {aprovado ? (
-          <span style={{ fontSize: 13, color: "var(--ok)" }}>O valor entrou no seu total do mês.</span>
+          <span style={{ fontSize: 13, color: "var(--ok)" }}>{x.pix ? "Aprovado! Você recebe o Pix em alguns minutos." : "O valor entrou no seu total do mês."}</span>
+        ) : semChave && j.fase !== "hoje" ? (
+          <form action={salvarChavePix} className="flex flex-wrap gap-2">
+            <input type="hidden" name="extra" value={x.id} />
+            <input className="input" name="chave_pix" defaultValue={chave} maxLength={140} placeholder="Sua chave Pix (CPF, e-mail, celular...)" aria-label="Sua chave Pix" style={{ flex: "1 1 200px", minHeight: 42 }} required />
+            <button className="btn-gold" type="submit" style={{ minHeight: 42 }}>Salvar chave Pix</button>
+          </form>
         ) : j.fase !== "hoje" ? (
           <span style={{ fontSize: 13, color: "var(--muted)" }}>{j.fase === "passou" ? `O horário acabou às 22:00.` : `Poste ${x.prazo === hoje ? "hoje" : `em ${diaCurto(x.prazo).toLowerCase()}`}, das ${HORARIO_EXTRA}. O envio do link abre às 08:00.`}</span>
         ) : (
           <form action={enviarExtra} className="flex flex-wrap gap-2">
             <input type="hidden" name="extra" value={x.id} />
             <input className="input" name="link" type="url" inputMode="url" defaultValue={e?.link ?? ""} placeholder="Link do vídeo que você postou" aria-label="Link do vídeo extra" style={{ flex: "1 1 200px", minHeight: 42 }} required />
+            {x.pix && <input className="input" name="chave_pix" defaultValue={e?.chave_pix || chave} maxLength={140} placeholder="Sua chave Pix (CPF, e-mail, celular...)" aria-label="Sua chave Pix" style={{ flex: "1 1 200px", minHeight: 42 }} required />}
             <button className="btn-gold" type="submit" style={{ minHeight: 42 }}>{e ? "Mandar de novo" : "Mandar link"}</button>
+            {x.pix && <span style={{ width: "100%", fontSize: 12, color: "var(--muted)" }}>Esse extra é pago no Pix: não entra no total do mês. Quando o gestor aprovar, você recebe o Pix em alguns minutos.</span>}
           </form>
         )}
       </div>
@@ -74,18 +83,19 @@ function textoComum(extras: ExtraCriador[]) {
   return extras[0].descricao && extras.every((x) => x.descricao === extras[0].descricao) ? extras[0].descricao : null;
 }
 
-function Dia({ extras, hoje, entrega }: { extras: ExtraCriador[]; hoje: string; entrega: (id: string) => EntregaCriador | undefined }) {
+function Dia({ extras, hoje, entrega, chave }: { extras: ExtraCriador[]; hoje: string; entrega: (id: string) => EntregaCriador | undefined; chave: string }) {
   const comum = textoComum(extras);
   return (
     <>
       {comum && <p style={{ margin: "8px 0 2px", fontSize: 14, lineHeight: 1.5, color: "var(--strong)", fontWeight: 600 }}>{comum}</p>}
-      <div>{extras.map((x, i) => <Linha key={x.id} x={x} e={entrega(x.id)} hoje={hoje} i={i} comum={!!comum} />)}</div>
+      <div>{extras.map((x, i) => <Linha key={x.id} x={x} e={entrega(x.id)} hoje={hoje} i={i} comum={!!comum} chave={chave} />)}</div>
     </>
   );
 }
 
 /** Vídeos extras do criador, separados por dia: o dia mais perto aberto, os outros dias fechados (toque para abrir). */
 export function ExtrasCriador({ extras, entregas, hoje }: { extras: ExtraCriador[]; entregas: EntregaCriador[]; hoje: string }) {
+  const chave = entregas.find((e) => e.chave_pix)?.chave_pix ?? ""; // última chave Pix usada (já vem preenchida)
   if (!extras.length) return null;
   const entrega = (id: string) => entregas.find((e) => e.extra_id === id);
   const dias = extrasPorDia(extras, hoje);
@@ -99,7 +109,7 @@ export function ExtrasCriador({ extras, entregas, hoje }: { extras: ExtraCriador
       </div>
       <div style={{ marginTop: 14, padding: "12px 14px 4px", borderRadius: 12, background: "var(--bg)", border: "1px solid var(--line)" }}>
         <CabecaDia dia={primeiro.dia} hoje={hoje} extras={primeiro.extras} />
-        <Dia extras={primeiro.extras} hoje={hoje} entrega={entrega} />
+        <Dia extras={primeiro.extras} hoje={hoje} entrega={entrega} chave={chave} />
       </div>
       {outros.map((d) => (
         <details key={d.dia} className="dia-extra" style={{ marginTop: 10, borderRadius: 12, border: "1px solid var(--line)", padding: "0 14px" }}>
@@ -107,7 +117,7 @@ export function ExtrasCriador({ extras, entregas, hoje }: { extras: ExtraCriador
             <CabecaDia dia={d.dia} hoje={hoje} extras={d.extras} />
             <span className="chev flex-none" style={{ display: "flex", color: "var(--muted)", transition: "transform .2s" }}>{svg("M6 9l6 6 6-6", 18)}</span>
           </summary>
-          <div style={{ paddingBottom: 4 }}><Dia extras={d.extras} hoje={hoje} entrega={entrega} /></div>
+          <div style={{ paddingBottom: 4 }}><Dia extras={d.extras} hoje={hoje} entrega={entrega} chave={chave} /></div>
         </details>
       ))}
       <p style={{ margin: "10px 0 0", fontSize: 12, color: "var(--muted)" }}>Cada extra vale só no seu dia, das 08:00 às 22:00 (Brasília). Poste e mande o link nesse horário.</p>

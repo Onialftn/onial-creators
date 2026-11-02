@@ -8,6 +8,7 @@ import { DIAS_CURTOS, diaDaSemana, hojeBrasil, somarDias } from "@/lib/datas";
 import { extrasPorDia, ordemDoExtra, quandoExtra } from "@/lib/prazo";
 import { formatarReais } from "@/lib/pagamento";
 import { Icone } from "@/components/Icone";
+import { CopiarTexto } from "@/components/CopiarTexto";
 import { AbasGestor, Retorno } from "../comum";
 
 const diaCurto = (d: string) => `${DIAS_CURTOS[diaDaSemana(d) - 1].charAt(0)}${DIAS_CURTOS[diaDaSemana(d) - 1].slice(1).toLowerCase()} ${d.slice(8)}/${d.slice(5, 7)}`;
@@ -50,6 +51,7 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
                   <span className="block truncate" style={{ color: aberto ? "var(--strong)" : "var(--muted)", fontWeight: 600, fontSize: 15 }}>{x.titulo}</span>
                   <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1" style={{ marginTop: 3, fontSize: 12, color: "var(--muted)" }}>
                     <span style={{ padding: "1px 8px", borderRadius: 999, fontWeight: 700, fontSize: 11, background: aberto ? "rgba(232,176,20,.16)" : "var(--chip)", color: aberto ? "var(--accent-text)" : "var(--muted)" }}>{aberto ? "Agendado" : "Encerrado"}</span>
+                    {x.pix && <span style={{ padding: "1px 8px", borderRadius: 999, fontWeight: 700, fontSize: 11, background: "rgba(61,220,151,.15)", color: "#3DDC97" }}>💸 PIX</span>}
                     <span>· {doExtra.length} {doExtra.length === 1 ? "envio" : "envios"}</span>
                     {pendentes > 0 && <span style={{ color: "var(--accent-text)", fontWeight: 600 }}>· {pendentes} para aprovar</span>}
                   </span>
@@ -80,6 +82,7 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
                       <label className="flex flex-col gap-1" style={{ gridColumn: "1 / -1" }}><span className="label">TÍTULO</span><input className="input" name="titulo" maxLength={120} defaultValue={x.titulo} required /></label>
                       <label className="flex flex-col gap-1"><span className="label">VALOR (R$)</span><input className="input" name="valor" inputMode="decimal" defaultValue={reais(x.valor_centavos)} readOnly={temAprovado} title={temAprovado ? "Já tem vídeo aprovado: o valor não muda" : undefined} required /></label>
                       <label className="flex flex-col gap-1"><span className="label">DIA DO VÍDEO</span><input className="input" type="date" name="prazo" defaultValue={x.prazo} required /></label>
+                      <label className="flex flex-col gap-1.5"><span className="label">COMO PAGA</span><select className="input" name="pix" defaultValue={x.pix ? "1" : "0"}><option value="0">Soma no total do mês</option><option value="1">💸 Pix (pago na hora, fora do total)</option></select></label>
                     </div>
                     <label className="flex flex-col gap-1"><span className="label">DESCRIÇÃO</span><textarea className="input" name="descricao" rows={2} maxLength={1000} defaultValue={x.descricao} style={{ paddingTop: 8, resize: "vertical" }} /></label>
                     <label className="flex flex-col gap-1"><span className="label">REGRAS (UMA POR LINHA)</span><textarea className="input" name="regras" rows={3} maxLength={2000} defaultValue={x.regras ?? ""} style={{ paddingTop: 8, resize: "vertical" }} /></label>
@@ -107,13 +110,16 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
                       <span className="min-w-0 flex-1" style={{ minWidth: 160 }}>
                         <b style={{ color: "var(--strong)" }}>{p?.nome ?? "?"}</b>{" "}
                         <a href={e.link} target="_blank" rel="noreferrer" style={{ color: "var(--accent-text)", textDecoration: "underline", fontSize: 13 }}>ver vídeo</a>
+                        {x.pix && (e.chave_pix
+                          ? <span className="flex flex-wrap items-center gap-2" style={{ marginTop: 4, fontSize: 13 }}><span style={{ color: "var(--muted)" }}>Pix:</span><b style={{ color: "var(--strong)", wordBreak: "break-all" }}>{e.chave_pix}</b><CopiarTexto texto={e.chave_pix} rotulo="Copiar chave" /></span>
+                          : <span className="block" style={{ marginTop: 4, fontSize: 12, color: "var(--warn)" }}>Ainda sem chave Pix (o criador foi avisado)</span>)}
                       </span>
                       {e.status === "enviado" ? (
                         <span className="flex flex-wrap gap-2">
-                          <form action={avaliarEntrega}><input type="hidden" name="extra" value={x.id} /><input type="hidden" name="criador" value={e.criador_id} /><input type="hidden" name="aprovar" value="1" /><button className="btn-gold" type="submit" style={{ minHeight: 34, fontSize: 13 }}>Aprovar {formatarReais(x.valor_centavos)}</button></form>
+                          <form action={avaliarEntrega}><input type="hidden" name="extra" value={x.id} /><input type="hidden" name="criador" value={e.criador_id} /><input type="hidden" name="aprovar" value="1" /><button className="btn-gold" type="submit" style={{ minHeight: 34, fontSize: 13 }}>Aprovar {formatarReais(x.valor_centavos)}{x.pix ? " no Pix" : ""}</button></form>
                           <form action={avaliarEntrega} className="flex gap-2"><input type="hidden" name="extra" value={x.id} /><input type="hidden" name="criador" value={e.criador_id} /><input type="hidden" name="aprovar" value="0" /><input className="input" name="motivo" placeholder="Motivo (opcional)" style={{ minHeight: 34, width: 150 }} /><button className="btn-line" type="submit" style={{ minHeight: 34, fontSize: 13 }}>Recusar</button></form>
                         </span>
-                      ) : e.status === "aprovado" ? <span className="pill-ok">Aprovado{e.mes ? ` · entra em ${e.mes.split("-").reverse().join("/")}` : ""}</span> : <span className="pill-warn">Recusado</span>}
+                      ) : e.status === "aprovado" ? <span className="pill-ok">{x.pix ? "Aprovado · pagar no Pix" : `Aprovado${e.mes ? ` · entra em ${e.mes.split("-").reverse().join("/")}` : ""}`}</span> : <span className="pill-warn">Recusado</span>}
                     </div>
                   );
                 })}
@@ -154,11 +160,12 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
           <label className="flex flex-col gap-1.5" style={{ gridColumn: "span 2" }}><span className="label">TÍTULO</span><input className="input" name="titulo" maxLength={120} defaultValue={base?.titulo ?? ""} placeholder="Ex.: Short mostrando o farm de XP do 1v1" required /></label>
           <label className="flex flex-col gap-1.5"><span className="label">VALOR (R$)</span><input className="input" name="valor" inputMode="decimal" defaultValue={base ? reais(base.valor_centavos) : ""} placeholder="25,00" required /></label>
-          <label className="flex flex-col gap-1.5"><span className="label">DIA DO VÍDEO (VALE SÓ NESSE DIA, 24H)</span><input className="input" type="date" name="prazo" min={hoje} defaultValue={somarDias(hoje, 1)} required /></label>
+          <label className="flex flex-col gap-1.5"><span className="label">DIA DO VÍDEO (08:00 ÀS 22:00)</span><input className="input" type="date" name="prazo" min={hoje} defaultValue={somarDias(hoje, 1)} required /></label>
+          <label className="flex flex-col gap-1.5"><span className="label">COMO PAGA</span><select className="input" name="pix" defaultValue={base?.pix ? "1" : "0"}><option value="0">Soma no total do mês</option><option value="1">💸 Pix (pago na hora, fora do total)</option></select></label>
         </div>
         <label className="flex flex-col gap-1.5"><span className="label">DESCRIÇÃO</span><textarea className="input" name="descricao" rows={3} maxLength={1000} defaultValue={base?.descricao ?? ""} placeholder="O que precisa ter no vídeo, link de referência..." style={{ paddingTop: 10, resize: "vertical" }} /></label>
         <label className="flex flex-col gap-1.5"><span className="label">REGRAS</span><textarea className="input" name="regras" rows={4} maxLength={2000} defaultValue={base?.regras ?? ""} placeholder={"Uma regra por linha. Ex.:\nPostar no YouTube, TikTok e Instagram\nFalar o código do mapa no vídeo\nMínimo de 30 segundos"} style={{ paddingTop: 10, resize: "vertical" }} /></label>
-        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todos os criadores recebem uma notificação agora e outra no dia. O extra vale só no dia escolhido, das 08:00 às 22:00 (Brasília). Cada um que postar nesse horário e for aprovado ganha o valor. Ao aprovar, confira o horário da postagem.</p>
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todos os criadores recebem uma notificação agora e outra no dia. O extra vale só no dia escolhido, das 08:00 às 22:00 (Brasília). Cada um que postar nesse horário e for aprovado ganha o valor. Ao aprovar, confira o horário da postagem. No Pix: o criador manda o link e a chave Pix; ao aprovar, ele é avisado que o Pix chega em alguns minutos (não entra no total do mês).</p>
         <button className="btn-gold" type="submit" style={{ alignSelf: "flex-start" }}>{base ? "Criar cópia" : "Criar extra"}</button>
       </form>}
 

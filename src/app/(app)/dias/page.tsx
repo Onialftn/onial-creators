@@ -1,7 +1,7 @@
 import { Cabecalho, Calendario, TituloCard } from "@/components/Blocos";
 import { ExtrasCriador, type EntregaCriador, type ExtraCriador } from "@/components/ExtrasCriador";
 import { resumoDoMes, usuarioAtual } from "@/lib/dados";
-import { hojeBrasil, mesDe, nomeMes } from "@/lib/datas";
+import { hojeBrasil, mesDe, nomeMes, somarDias } from "@/lib/datas";
 
 export default async function DiasDePostagem({ searchParams }: { searchParams: Promise<{ ok?: string; erro?: string }> }) {
   const { ok, erro } = await searchParams;
@@ -10,10 +10,13 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
   const hoje = hojeBrasil();
   const [r, { data: extras }, { data: minhas }, { data: mapasDia }] = await Promise.all([
     resumoDoMes(sb, perfil.id, mes),
-    sb.from("extras").select("id, titulo, descricao, regras, valor_centavos, prazo").eq("ativo", true).gte("prazo", hoje).order("prazo"),
-    sb.from("entregas_extra").select("extra_id, link, status, motivo").eq("criador_id", perfil.id),
+    sb.from("extras").select("*").eq("ativo", true).gte("prazo", somarDias(hoje, -14)).order("prazo"),
+    sb.from("entregas_extra").select("*").eq("criador_id", perfil.id).order("enviado_em", { ascending: false }),
     sb.from("mapa_dia").select("dia_semana, mapa").eq("criador_id", perfil.id),
   ]);
+  // extras de hoje em diante + extras no Pix que ainda esperam a chave ou a aprovação
+  const pendentePix = new Set((minhas ?? []).filter((e) => e.status !== "aprovado" && e.status !== "recusado").map((e) => e.extra_id as string));
+  const extrasVisiveis = (extras ?? []).filter((x) => x.prazo >= hoje || (x.pix && pendentePix.has(x.id)));
   const mapas = Object.fromEntries((mapasDia ?? []).map((m) => [m.dia_semana as number, m.mapa as string]));
   const conta = (s: string[]) => r.calendario.filter((d) => s.includes(d.status)).length;
   const pct = r.diasAgendados ? Math.round((r.diasCumpridos / r.diasAgendados) * 100) : 0;
@@ -30,7 +33,7 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
       {ok && <div role="status" className="pill-ok" style={{ padding: "10px 14px", fontSize: 14 }}>{ok}</div>}
       {erro && <div role="alert" className="pill-warn" style={{ padding: "10px 14px", fontSize: 14 }}>{erro}</div>}
 
-      <ExtrasCriador extras={(extras ?? []) as ExtraCriador[]} entregas={(minhas ?? []) as EntregaCriador[]} hoje={hoje} />
+      <ExtrasCriador extras={extrasVisiveis as ExtraCriador[]} entregas={(minhas ?? []) as EntregaCriador[]} hoje={hoje} />
 
 
       <section className="card flex flex-col gap-5">

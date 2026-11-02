@@ -80,7 +80,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     sb.from("ajudas").select("pedido_id, pedidos_ajuda!inner(dia, status)", { count: "exact", head: true }).eq("ajudante_id", criadorId).eq("presente", true)
       .eq("pedidos_ajuda.status", "feito").gte("pedidos_ajuda.dia", ini).lte("pedidos_ajuda.dia", fim),
     // vídeos extras aprovados pelo gestor neste mês
-    sb.from("entregas_extra").select("extras!inner(valor_centavos)").eq("criador_id", criadorId).eq("status", "aprovado").eq("mes", mes),
+    sb.from("entregas_extra").select("extras!inner(*)").eq("criador_id", criadorId).eq("status", "aprovado").eq("mes", mes),
     // vídeos extras postados (enviados ou aprovados) em cada dia: não contam como reposição de falta
     sb.from("entregas_extra").select("status, extras!inner(prazo)").eq("criador_id", criadorId).in("status", ["enviado", "aprovado"]).gte("extras.prazo", semIni).lte("extras.prazo", semFim),
   ]);
@@ -88,8 +88,12 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   for (const e of (extrasNaSemana.data ?? []) as unknown as { extras: { prazo: string } | { prazo: string }[] }[]) {
     for (const x of Array.isArray(e.extras) ? e.extras : [e.extras]) if (x?.prazo) extrasPorDia.set(x.prazo, (extrasPorDia.get(x.prazo) ?? 0) + 1);
   }
-  const extrasCentavos = ((extras.data ?? []) as unknown as { extras: { valor_centavos: number } | { valor_centavos: number }[] }[])
-    .reduce((a, e) => a + (Array.isArray(e.extras) ? e.extras.reduce((x, y) => x + Number(y.valor_centavos), 0) : Number(e.extras?.valor_centavos ?? 0)), 0);
+  // extras pagos no Pix já são pagos na hora: não entram no total do mês
+  type ExtraValor = { valor_centavos: number; pix?: boolean };
+  const extrasCentavos = ((extras.data ?? []) as unknown as { extras: ExtraValor | ExtraValor[] }[])
+    .flatMap((e) => (Array.isArray(e.extras) ? e.extras : [e.extras]))
+    .filter((x) => x && !x.pix)
+    .reduce((a, x) => a + Number(x.valor_centavos), 0);
 
   const viewsPorPlataforma: Record<Plataforma, number> = { tiktok: 0, youtube: 0, instagram: 0 };
   for (const r of views.data ?? []) viewsPorPlataforma[r.plataforma as Plataforma] += Number(r.views);
