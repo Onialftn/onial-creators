@@ -28,7 +28,8 @@ export function TituloCard({ icone, children, direita }: { icone: string; childr
   );
 }
 
-export function CardsGanho({ r }: { r: ResumoMes }) {
+/** gestor = quem está vendo é o gestor: o total aparece em dourado (para o criador, em verde). */
+export function CardsGanho({ r, gestor = false }: { r: ResumoMes; gestor?: boolean }) {
   const p = r.pagamento;
   const constTxt = r.faltas === 0 ? (r.aRepor > 0 ? `${r.aRepor} dia para repor até domingo` : "Em dia: continue postando certinho") : r.faltas === 1 ? "1 falta no mês: caiu para 5%" : `${r.faltas} faltas no mês: sem bônus`;
   return (
@@ -73,7 +74,7 @@ export function CardsGanho({ r }: { r: ResumoMes }) {
       </div>
       <div className="card" style={{ padding: 22 }}>
         <div className="flex items-center gap-2" style={{ color: "var(--muted)" }}><Icone nome="trophy" />Total do mês até agora</div>
-        <div className="num" style={{ fontSize: 34, marginTop: 8, color: "var(--accent-text)" }}>{formatarReais(p.totalCentavos)}</div>
+        <div className="num" style={{ fontSize: 34, marginTop: 8, color: gestor ? "var(--accent-text)" : "var(--ok)" }}>{formatarReais(p.totalCentavos)}</div>
         <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 6 }}>{p.bateuMeta || !r.meta ? "Bruto + bônus conquistados" : `Sem o bônus de meta: +${formatarReais(Math.round(r.meta / 10))} quando bater`}</div>
         {p.bonusExtraCentavos > 0 && <div style={{ color: "var(--text2)", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusExtraCentavos)} de vídeos extras</div>}
         {p.ajudas > 0 && <div style={{ color: "var(--text2)", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusAjudaCentavos)} de {p.ajudas} {p.ajudas === 1 ? "gravação ajudada" : "gravações ajudadas"}</div>}

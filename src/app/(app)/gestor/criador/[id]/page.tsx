@@ -66,7 +66,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
       <AbasGestor ativa="criador" />
       <Retorno ok={ok} erro={erro} />
 
-      <CardsGanho r={r} />
+      <CardsGanho r={r} gestor={perfil.papel === "gestor"} />
 
       <section className="card flex flex-col gap-3">
         <TituloCard icone="trophy" direita={<span style={{ fontSize: 12 }}>Views ganhas em {nomeMes(mes).split(" ")[0].toLowerCase()} · todas as redes</span>}>Mais virais do mês</TituloCard>
