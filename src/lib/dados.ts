@@ -210,6 +210,8 @@ export interface VideoTop {
   plataforma: Plataforma;
   postado_em: string;
   views: number;
+  /** id do vídeo na rede (para buscar a capa) */
+  idExterno?: string | null;
 }
 
 /** Vídeos de um criador com mais views ganhas no mês. */
@@ -235,7 +237,7 @@ export async function topVideos(sb: SB, criadorId: string, mes: string, limite =
   const mapa = new Map<string, VideoTop>();
   for (const r of data as { video_id: string; views: number; videos: { titulo: string; url: string | null; plataforma: Plataforma; postado_em: string; id_externo: string | null } | null }[]) {
     if (!r.videos || r.videos.id_externo?.startsWith(OUTROS_VIDEOS)) continue;
-    if (!mapa.has(r.video_id)) mapa.set(r.video_id, { id: r.video_id, capa: r.videos.plataforma === "youtube" && r.videos.id_externo ? `https://i.ytimg.com/vi/${r.videos.id_externo}/oardefault.jpg` : null, titulo: r.videos.titulo, url: r.videos.url, plataforma: r.videos.plataforma, postado_em: r.videos.postado_em, views: 0 });
+    if (!mapa.has(r.video_id)) mapa.set(r.video_id, { id: r.video_id, capa: r.videos.plataforma === "youtube" && r.videos.id_externo ? `https://i.ytimg.com/vi/${r.videos.id_externo}/oardefault.jpg` : null, titulo: r.videos.titulo, url: r.videos.url, plataforma: r.videos.plataforma, postado_em: r.videos.postado_em, views: 0, idExterno: r.videos.id_externo });
     mapa.get(r.video_id)!.views += Number(r.views);
   }
   return [...mapa.values()].sort((a, b) => b.views - a.views).slice(0, limite);

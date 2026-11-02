@@ -8,6 +8,7 @@ import { PLATAFORMAS, resumoDoMes, topVideos, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
 import { MAPAS } from "@/lib/ia/mapas";
 import { ultimosVideos } from "@/lib/seo-canal";
+import { capasDoCriador } from "@/lib/coleta/capas";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
 import { fecharMes, lancarViews, marcarPago, registrarDia, salvarAgenda, salvarMapasDia, salvarMeta, salvarRecebe, renomearCriador, zerarRede } from "../../acoes";
 import { AbasGestor, Retorno } from "../../comum";
@@ -41,6 +42,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
     sb.from("contas_plataforma").select("plataforma, nome_conta, ultima_coleta, erro").eq("criador_id", id),
   ]);
   const [recentes, virais] = await Promise.all([ultimosVideos(id).catch(() => "erro" as const), topVideos(sb, id, mes, 3).catch(() => [])]);
+  const capas = await capasDoCriador(id, virais).catch(() => ({} as Record<string, string>));
   const dias = new Set((agenda ?? []).map((a) => a.dia_semana as number));
   const fechados = new Set((pags ?? []).map((p) => p.mes as string));
 
@@ -74,7 +76,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
               <a key={v.id} href={v.url ?? "#"} target="_blank" rel="noreferrer" className="tile flex gap-3" style={{ alignItems: "flex-start", ...(i === 0 ? { borderColor: "#E8B014" } : {}) }}>
                 <span className="relative flex flex-none items-center justify-center" style={{ width: 72, height: 96, borderRadius: 6, overflow: "hidden", background: "var(--bg)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {v.capa ? <img src={v.capa} alt="" width={72} height={96} style={{ width: 72, height: 96, objectFit: "cover" }} /> : <LogoPlataforma p={v.plataforma} tamanho={36} />}
+                  {(v.capa || (v.idExterno && capas[v.idExterno])) ? <img src={v.capa || capas[v.idExterno!]} referrerPolicy="no-referrer" alt="" width={72} height={96} style={{ width: 72, height: 96, objectFit: "cover" }} /> : <LogoPlataforma p={v.plataforma} tamanho={36} />}
                   <span className="num absolute" style={{ left: 4, top: 4, padding: "0 6px", borderRadius: 4, fontSize: 13, background: i === 0 ? "#E8B014" : "rgba(10,10,10,.8)", color: i === 0 ? "#0A0A0A" : "#fff" }}>{i + 1}º</span>
                 </span>
                 <div className="min-w-0 flex flex-col gap-1.5">

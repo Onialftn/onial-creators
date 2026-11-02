@@ -226,3 +226,28 @@ Object.assign(ig, { viewsDoDia: igViewsDoDia });
 
 export const REDE = { youtube: yt, tiktok: tk, instagram: ig as typeof ig & { viewsDoDia: typeof igViewsDoDia } } as const;
 export const NOME_REDE: Record<Rede, string> = { youtube: "YouTube", tiktok: "TikTok", instagram: "Instagram" };
+
+/** Capas dos vídeos do TikTok (até 20 por vez). O link da capa vence depois de um tempo: busque de novo quando precisar. */
+export async function capasTikTok(t: Tokens, ids: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  if (!ids.length) return out;
+  const r = await fetch("https://open.tiktokapis.com/v2/video/query/?fields=id,cover_image_url", {
+    method: "POST", headers: { Authorization: `Bearer ${t.access}`, "Content-Type": "application/json" }, body: JSON.stringify({ filters: { video_ids: ids.slice(0, 20) } }),
+  });
+  const d = await json<{ data: { videos: { id: string; cover_image_url?: string }[] } }>(r, "TikTok capas");
+  for (const v of d.data?.videos ?? []) if (v.cover_image_url) out.set(v.id, v.cover_image_url);
+  return out;
+}
+
+/** Capas dos reels do Instagram. */
+export async function capasInstagram(t: Tokens, ids: string[]): Promise<Map<string, string>> {
+  const out = new Map<string, string>();
+  await Promise.all(ids.slice(0, 20).map(async (id) => {
+    try {
+      const d = await json<{ thumbnail_url?: string; media_url?: string }>(await fetch(`${IG}/${id}?fields=thumbnail_url,media_url&access_token=${encodeURIComponent(t.access)}`), "Instagram capa");
+      const u = d.thumbnail_url ?? d.media_url;
+      if (u) out.set(id, u);
+    } catch { /* sem capa */ }
+  }));
+  return out;
+}
