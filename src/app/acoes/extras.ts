@@ -144,3 +144,18 @@ export async function avaliarEntrega(f: FormData) {
     : { tipo: "pagamento", titulo: "Extra não aprovado", texto: motivo ? `Motivo: ${motivo}` : `${ex!.titulo}`, link: "/dias#extras", chave: `extra:nao:${extra}:${criador}:${Date.now()}` }, admin).catch(() => undefined);
   irPara(`/gestor/extras?ok=${encodeURIComponent(aprovar ? (ex!.pix ? "Aprovado! O criador foi avisado que vai receber o Pix. Agora é só fazer o Pix." : "Aprovado: o valor entrou no total do mês do criador.") : "Recusado. O criador foi avisado.")}`);
 }
+
+/** Extra no Pix aprovado: o gestor marca que já fez o Pix (ou desfaz). O criador é avisado. */
+export async function marcarPixPago(f: FormData) {
+  await soGestor();
+  const extra = t(f, "extra");
+  const criador = t(f, "criador");
+  const pago = f.get("pago") === "1";
+  const admin = supabaseAdmin();
+  const { data: ex } = await admin.from("extras").select("*").eq("id", extra).maybeSingle();
+  if (!ex?.pix) irPara(`/gestor/extras?erro=${encodeURIComponent("Esse extra não é pago no Pix.")}`);
+  const { error } = await admin.from("entregas_extra").update({ pix_pago_em: pago ? new Date().toISOString() : null }).eq("extra_id", extra).eq("criador_id", criador).eq("status", "aprovado");
+  if (error) irPara(`/gestor/extras?erro=${encodeURIComponent("Não consegui marcar. Rode o comando do banco do Pix pago e tente de novo.")}`);
+  if (pago) await notificar(criador, { tipo: "pagamento", titulo: `Pix enviado: ${formatarReais(ex!.valor_centavos)} ✅`, texto: ex!.titulo, link: "/dias#extras", chave: `extra:pixpago:${extra}:${criador}` }, admin).catch(() => undefined);
+  irPara(`/gestor/extras?ok=${encodeURIComponent(pago ? "Marcado como pago. O criador foi avisado." : "Desfeito: voltou para Pix a pagar.")}`);
+}

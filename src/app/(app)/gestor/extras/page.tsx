@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { Avatar } from "@/components/Avatar";
 import { Cabecalho, TituloCard } from "@/components/Blocos";
 import Link from "next/link";
-import { avaliarEntrega, criarExtra, editarExtra, encerrarExtra, excluirExtra } from "@/app/acoes/extras";
+import { avaliarEntrega, criarExtra, marcarPixPago, editarExtra, encerrarExtra, excluirExtra } from "@/app/acoes/extras";
 import { usuarioAtual } from "@/lib/dados";
 import { DIAS_CURTOS, diaDaSemana, hojeBrasil, somarDias } from "@/lib/datas";
 import { extrasPorDia, ordemDoExtra, quandoExtra } from "@/lib/prazo";
@@ -119,7 +119,19 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
                           <form action={avaliarEntrega}><input type="hidden" name="extra" value={x.id} /><input type="hidden" name="criador" value={e.criador_id} /><input type="hidden" name="aprovar" value="1" /><button className="btn-gold" type="submit" style={{ minHeight: 34, fontSize: 13 }}>Aprovar {formatarReais(x.valor_centavos)}{x.pix ? " no Pix" : ""}</button></form>
                           <form action={avaliarEntrega} className="flex gap-2"><input type="hidden" name="extra" value={x.id} /><input type="hidden" name="criador" value={e.criador_id} /><input type="hidden" name="aprovar" value="0" /><input className="input" name="motivo" placeholder="Motivo (opcional)" style={{ minHeight: 34, width: 150 }} /><button className="btn-line" type="submit" style={{ minHeight: 34, fontSize: 13 }}>Recusar</button></form>
                         </span>
-                      ) : e.status === "aprovado" ? <span className="pill-ok">{x.pix ? "Aprovado · pagar no Pix" : `Aprovado${e.mes ? ` · entra em ${e.mes.split("-").reverse().join("/")}` : ""}`}</span> : <span className="pill-warn">Recusado</span>}
+                      ) : e.status === "aprovado" ? x.pix ? (
+                        e.pix_pago_em ? (
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="pill-ok">Pix pago ✅ {new Date(e.pix_pago_em).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" })}</span>
+                            <form action={marcarPixPago}><input type="hidden" name="extra" value={x.id} /><input type="hidden" name="criador" value={e.criador_id} /><input type="hidden" name="pago" value="0" /><button type="submit" style={{ color: "var(--muted)", fontSize: 12, textDecoration: "underline" }}>desfazer</button></form>
+                          </span>
+                        ) : (
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="pill-warn" style={{ fontSize: 12 }}>Aprovado · Pix a pagar</span>
+                            <form action={marcarPixPago}><input type="hidden" name="extra" value={x.id} /><input type="hidden" name="criador" value={e.criador_id} /><input type="hidden" name="pago" value="1" /><button className="btn-gold" type="submit" style={{ minHeight: 34, fontSize: 13 }}>Marcar como pago ✅</button></form>
+                          </span>
+                        )
+                      ) : <span className="pill-ok">{`Aprovado${e.mes ? ` · entra em ${e.mes.split("-").reverse().join("/")}` : ""}`}</span> : <span className="pill-warn">Recusado</span>}
                     </div>
                   );
                 })}

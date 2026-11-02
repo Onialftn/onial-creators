@@ -4,7 +4,7 @@ import { extrasPorDia, HORARIO_EXTRA, janelaExtra, minutosBrasil, ordemDoExtra, 
 import { Icone } from "./Icone";
 
 export interface ExtraCriador { id: string; titulo: string; descricao: string; regras: string | null; valor_centavos: number; prazo: string; pix?: boolean }
-export interface EntregaCriador { extra_id: string; link: string; status: string; motivo: string; chave_pix?: string }
+export interface EntregaCriador { extra_id: string; link: string; status: string; motivo: string; chave_pix?: string; pix_pago_em?: string | null }
 
 const valorCurto = (c: number) => (c % 100 === 0 ? `R$ ${(c / 100).toLocaleString("pt-BR")}` : `R$ ${(c / 100).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}`);
 const diaCurto = (d: string) => { const n = DIAS_CURTOS[diaDaSemana(d) - 1]; return `${n.charAt(0)}${n.slice(1).toLowerCase()} ${d.slice(8)}/${d.slice(5, 7)}`; };
@@ -19,7 +19,7 @@ function Linha({ x, e, hoje, i, comum, chave }: { x: ExtraCriador; e?: EntregaCr
   const ordem = ordemDoExtra(x);
   const aprovado = e?.status === "aprovado";
   const semChave = !!x.pix && !!e && !aprovado && !e.chave_pix;
-  const situacao = aprovado ? (x.pix ? "Aprovado ✓ · Pix a caminho" : "Aprovado ✓") : semChave ? "Falta a sua chave Pix" : e?.status === "enviado" ? "Esperando aprovação" : e?.status === "recusado" ? "Não aprovado: mande outro link" : ordem ? `${ordem}º vídeo do dia` : j.fase === "hoje" ? "Vale hoje" : "Agendado";
+  const situacao = aprovado ? (x.pix ? (e?.pix_pago_em ? "Pix pago ✅" : "Aprovado ✓ · Pix a caminho") : "Aprovado ✓") : semChave ? "Falta a sua chave Pix" : e?.status === "enviado" ? "Esperando aprovação" : e?.status === "recusado" ? "Não aprovado: mande outro link" : ordem ? `${ordem}º vídeo do dia` : j.fase === "hoje" ? "Vale hoje" : "Agendado";
   const regras = regrasEmFrase(x.regras ?? "");
   return (
     <details className="linha-extra" style={{ borderTop: i ? "1px solid var(--line)" : undefined }} open={j.fase === "hoje" && !e ? true : undefined}>
@@ -42,7 +42,7 @@ function Linha({ x, e, hoje, i, comum, chave }: { x: ExtraCriador; e?: EntregaCr
         {((!comum && x.descricao) || regras) && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.5 }}>{!comum && x.descricao && <b style={{ color: "var(--strong)" }}>{x.descricao} </b>}{regras && <span style={{ color: "var(--text2)" }}>{regras}</span>}</p>}
         {e?.status === "recusado" && e.motivo && <span style={{ fontSize: 13, color: "var(--warn)" }}>Motivo: {e.motivo}</span>}
         {aprovado ? (
-          <span style={{ fontSize: 13, color: "var(--ok)" }}>{x.pix ? "Aprovado! Você recebe o Pix em alguns minutos." : "O valor entrou no seu total do mês."}</span>
+          <span style={{ fontSize: 13, color: "var(--ok)" }}>{x.pix ? (e?.pix_pago_em ? "O Pix já foi enviado para a sua chave." : "Aprovado! Você recebe o Pix em alguns minutos.") : "O valor entrou no seu total do mês."}</span>
         ) : semChave && j.fase !== "hoje" ? (
           <form action={salvarChavePix} className="flex flex-wrap gap-2">
             <input type="hidden" name="extra" value={x.id} />
