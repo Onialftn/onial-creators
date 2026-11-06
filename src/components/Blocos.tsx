@@ -1,8 +1,9 @@
+import Link from "next/link";
 import { formatarNumero, formatarReais, inicioDaSemana as inicioDaSemanaHoje } from "@/lib/pagamento";
 import { DIAS_CURTOS, diaDaSemana, proximaColeta, quandoFoi } from "@/lib/datas";
-import type { DiaCalendario, LinhaRanking, Plataforma, ResumoMes } from "@/lib/dados";
+import type { DiaCalendario, LinhaRanking, ResumoMes } from "@/lib/dados";
 import { Avatar } from "./Avatar";
-import { COR_PLATAFORMA, Icone, LogoPlataforma, NOME_PLATAFORMA } from "./Icone";
+import { Icone } from "./Icone";
 
 export function Cabecalho({ icone, titulo, sub, direita }: { icone?: string; titulo: string; sub?: React.ReactNode; direita?: React.ReactNode }) {
   return (
@@ -83,87 +84,8 @@ export function CardsGanho({ r, gestor = false }: { r: ResumoMes; gestor?: boole
   );
 }
 
-export function BarrasPlataforma({ por, total }: { por: Record<Plataforma, number>; total: number }) {
-  // em ordem: a rede com mais views primeiro; a barra mostra quanto cada uma representa do total
-  const linhas = (["tiktok", "youtube", "instagram"] as Plataforma[]).map((p) => ({ p, v: por[p] })).sort((x, y) => y.v - x.v);
-  return (
-    <div className="flex flex-col gap-2">
-      <div className="label">Views por plataforma</div>
-      <div className="overflow-x-auto">
-        <table className="table" style={{ minWidth: 480 }}>
-          <thead>
-            <tr><th scope="col">#</th><th scope="col">PLATAFORMA</th><th scope="col">VIEWS</th><th scope="col" style={{ width: "35%" }}>% DAS SUAS VIEWS</th><th scope="col">BRUTO</th></tr>
-          </thead>
-          <tbody>
-            {linhas.map(({ p, v }, i) => {
-              const pct = total ? (v / total) * 100 : 0;
-              return (
-                <tr key={p}>
-                  <td className="num" style={{ fontSize: 18, color: i === 0 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}</td>
-                  <td><span className="flex items-center gap-2.5" style={{ color: "var(--strong)", fontWeight: 600 }}><LogoPlataforma p={p} />{NOME_PLATAFORMA[p]}</span></td>
-                  <td className="num" style={{ fontSize: 18, color: "var(--strong)" }}>{formatarNumero(v)}</td>
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div className="bar flex-1"><span style={{ width: `${pct}%`, background: COR_PLATAFORMA[p] }} /></div>
-                      <span style={{ color: "var(--muted)", fontSize: 13, minWidth: 40, textAlign: "right" }}>{Math.round(pct)}%</span>
-                    </div>
-                  </td>
-                  <td style={{ color: "var(--muted)", whiteSpace: "nowrap" }}>{formatarReais(Math.round(v / 2))}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-      {total === 0 && <p style={{ color: "var(--muted)", margin: 0, fontSize: 13 }}>Nenhuma view registrada neste mês ainda.</p>}
-    </div>
-  );
-}
 
-export function MetaViews({ r }: { r: ResumoMes }) {
-  const pct = r.meta ? Math.min(100, (r.views / r.meta) * 100) : 0;
-  return (
-    <section className="card flex flex-col gap-5">
-      <TituloCard icone="target" direita={r.meta ? (
-        <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <span className="num" style={{ fontSize: 26, color: "var(--strong)", lineHeight: 1 }}>{formatarNumero(r.views)} <span style={{ fontSize: 18, color: "var(--text2)" }}>/ {formatarNumero(r.meta)}</span></span>
-          <span className="num" style={{ fontSize: 18, color: r.views >= r.meta ? "var(--ok)" : "var(--accent-text)" }}>{r.views >= r.meta ? "META BATIDA" : `faltam ${formatarNumero(r.meta - r.views)}`}</span>
-        </span>
-      ) : "Sem meta definida"}>Meta de views</TituloCard>
-      <div className="bar" style={{ height: 14 }}><span style={{ width: `${pct}%`, background: "var(--ok)" }} /></div>
-      <BarrasPlataforma por={r.viewsPorPlataforma} total={r.views} />
-    </section>
-  );
-}
 
-export function RankingTabela({ linhas, meuId, limite }: { linhas: LinhaRanking[]; meuId: string; limite?: number }) {
-  const ls = limite ? linhas.slice(0, limite) : linhas;
-  return (
-    <div className="overflow-x-auto">
-      <table className="table" style={{ minWidth: 420 }}>
-        <thead><tr><th scope="col">#</th><th scope="col">CRIADOR</th><th scope="col">VIEWS</th></tr></thead>
-        <tbody>
-          {ls.map((l, i) => {
-            const eu = l.criadorId === meuId;
-            return (
-              <tr key={l.criadorId} style={eu ? { background: "var(--tint)" } : undefined}>
-                <td className="num" style={{ fontSize: 20, color: i < 3 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}</td>
-                <td>
-                  <span className="flex items-center gap-2.5">
-                    <Avatar foto={l.foto} nome={l.nome} tamanho={36} />
-                    <span style={{ color: "var(--strong)", fontWeight: 600 }}>{l.nome}</span>
-                    {eu && <span className="pill" style={{ background: "var(--gold)", color: "#0A0A0A", fontSize: 10 }}>VOCÊ</span>}
-                  </span>
-                </td>
-                <td className="num" style={{ fontSize: 18, color: "var(--strong)" }}>{formatarNumero(l.views)}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
 
 const ROTULO: Record<DiaCalendario["status"], string> = {
   postado: "Postado", reposto: "Reposto", nao_postado: "Não postado", a_repor: "Repor até domingo", folga: "Folga", hoje: "Postar hoje", a_postar: "Postar",
@@ -204,20 +126,6 @@ export function Calendario({ dias, mapas }: { dias: DiaCalendario[]; mapas?: Rec
   );
 }
 
-export function SemanaAtual({ dias, hoje }: { dias: DiaCalendario[]; hoje: string }) {
-  const seg = inicioDaSemanaHoje(hoje);
-  const semana = dias.filter((d) => d.data >= seg).slice(0, 7);
-  return (
-    <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(110px,1fr))" }}>
-      {semana.map((d) => (
-        <div key={d.data} className={`cal-c ${CLASSE[d.status]}`} style={{ minHeight: 0, padding: 14 }}>
-          <span style={{ fontSize: 12, color: "var(--muted)" }}>{DIAS_CURTOS[diaDaSemana(d.data) - 1]} {Number(d.data.slice(8))}{d.data === hoje ? " · hoje" : ""}</span>
-          <span className="flex items-center gap-1.5" style={{ marginTop: 6, fontWeight: 600 }}>{ICONE[d.status] && <Icone nome={ICONE[d.status]!} tamanho={16} />}{ROTULO[d.status]}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export function EmBreve({ icone, titulo, texto, fase }: { icone: string; titulo: string; texto: string; fase: string }) {
   return (
@@ -243,5 +151,80 @@ export function AvisoAtualizacao({ ultima }: { ultima: string | null }) {
         <span title="O YouTube libera as views com 1 a 3 dias de atraso; o site completa esses dias nas próximas atualizações."> · YouTube com até 3 dias de atraso</span>
       </span>
     </div>
+  );
+}
+
+/** Dashboard (modelo A): meta do mês em poucas linhas. */
+export function MetaCompacta({ r, restam }: { r: ResumoMes; restam: number }) {
+  const pct = r.meta ? Math.min(100, (r.views / r.meta) * 100) : 0;
+  const bateu = r.pagamento.bateuMeta;
+  return (
+    <section className="card flex flex-col" style={{ gap: 12 }}>
+      <TituloCard icone="target">Meta de views</TituloCard>
+      {!r.meta ? (
+        <p style={{ margin: 0, color: "var(--muted)", fontSize: 14 }}>O gestor ainda não definiu sua meta deste mês.</p>
+      ) : (
+        <>
+          <span className="num" style={{ fontSize: 30, color: "var(--strong)", lineHeight: 1 }}>
+            {Math.floor(pct)}% <span style={{ fontSize: 16, color: "var(--muted)" }}>de {formatarNumero(r.meta)}</span>
+          </span>
+          <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} aria-label="Progresso da meta de views" className="bar" style={{ height: 10 }}>
+            <span style={{ width: `${pct}%`, background: bateu ? "var(--ok)" : "var(--gold)" }} />
+          </div>
+          <span style={{ fontSize: 13, color: bateu ? "var(--ok)" : "var(--muted)" }}>
+            {bateu
+              ? `Meta batida! +${formatarReais(r.pagamento.bonusMetaCentavos)} já entraram no total`
+              : `Faltam ${formatarNumero(r.meta - r.views)} · cerca de ${formatarNumero(Math.ceil((r.meta - r.views) / Math.max(1, restam)))} por dia · bônus de ${formatarReais(Math.round(r.meta / 10))}`}
+          </span>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Dashboard (modelo A): a semana em 7 bolinhas. */
+export function SemanaBolinhas({ dias, hoje }: { dias: DiaCalendario[]; hoje: string }) {
+  const seg = inicioDaSemanaHoje(hoje);
+  const semana = dias.filter((d) => d.data >= seg).slice(0, 7);
+  const deHoje = semana.find((d) => d.data === hoje)?.status;
+  const frase = deHoje === "hoje" ? "Hoje é dia de postar" : deHoje === "folga" ? "Hoje é folga" : deHoje === "postado" || deHoje === "reposto" ? "Hoje já está postado" : "Sua semana";
+  return (
+    <section className="card flex flex-col" style={{ gap: 14 }}>
+      <TituloCard icone="cal">Esta semana</TituloCard>
+      <div className="grid gap-1.5" style={{ gridTemplateColumns: "repeat(7, minmax(0, 1fr))" }}>
+        {semana.map((d) => (
+          <div key={d.data} className="flex flex-col items-center gap-1.5" title={`${DIAS_CURTOS[diaDaSemana(d.data) - 1]} ${Number(d.data.slice(8))}: ${ROTULO[d.status]}`}>
+            <span style={{ fontSize: 11, color: d.data === hoje ? "var(--accent-text)" : "var(--muted)", fontWeight: d.data === hoje ? 700 : 400 }}>{DIAS_CURTOS[diaDaSemana(d.data) - 1]}</span>
+            <span className={`bola ${CLASSE[d.status]}`} aria-label={ROTULO[d.status]}>{ICONE[d.status] && d.status !== "folga" && d.status !== "hoje" && <Icone nome={ICONE[d.status]!} tamanho={14} />}</span>
+          </div>
+        ))}
+      </div>
+      <span style={{ fontSize: 13, color: "var(--muted)" }}>{frase} · tracejado = folga · {semana.filter((d) => d.status === "postado" || d.status === "reposto").length} dias feitos</span>
+    </section>
+  );
+}
+
+/** Dashboard (modelo A): top 3 do ranking com a foto e o nome de cada criador; se você não estiver no top 3, aparece embaixo. */
+export function RankingTop3({ linhas, meuId }: { linhas: LinhaRanking[]; meuId: string }) {
+  const minha = linhas.findIndex((l) => l.criadorId === meuId);
+  const mostrar = linhas.slice(0, 3).map((l, i) => ({ l, i }));
+  if (minha >= 3) mostrar.push({ l: linhas[minha], i: minha });
+  return (
+    <section className="card flex flex-col" style={{ gap: 8 }}>
+      <TituloCard icone="trophy">Ranking do mês</TituloCard>
+      {mostrar.length === 0 && <p style={{ margin: 0, color: "var(--muted)", fontSize: 14 }}>Ninguém tem views neste mês ainda.</p>}
+      {mostrar.map(({ l, i }) => {
+        const eu = l.criadorId === meuId;
+        return (
+          <div key={l.criadorId} className="flex items-center gap-2.5" style={{ padding: "6px 8px", borderRadius: 8, background: eu ? "var(--tint)" : undefined, border: `1px solid ${eu ? "var(--gold)" : "transparent"}`, marginTop: i >= 3 ? 6 : 0 }}>
+            <span className="num" style={{ width: 26, fontSize: 18, color: i < 3 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}º</span>
+            <Avatar foto={l.foto} nome={l.nome} tamanho={34} borda={i === 0 ? "#E8B014" : undefined} />
+            <span className="min-w-0 flex-1 truncate" style={{ color: "var(--strong)", fontWeight: eu ? 700 : 600, fontSize: 14 }}>{eu ? "Você" : l.nome.split(" ")[0]}</span>
+            <span className="num" style={{ fontSize: 17, color: eu ? "var(--strong)" : "var(--text2)" }}>{formatarNumero(l.views)}</span>
+          </div>
+        );
+      })}
+      <Link href="/ranking" style={{ marginTop: "auto", paddingTop: 4, color: "var(--accent-text)", fontSize: 13 }}>Ver ranking completo</Link>
+    </section>
   );
 }

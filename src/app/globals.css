@@ -51,6 +51,8 @@ a { color: inherit; text-decoration: none; }
   .table td { padding: 12px; border-top: 1px solid var(--line); }
   /* calendário */
   .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; min-width: 300px; }
+  /* bolinhas da semana na Dashboard: vêm antes das cores do calendário (cal-ok, cal-folga...) para elas valerem */
+  .bola { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; box-sizing: border-box; border-radius: 50%; border: 1px solid var(--line2); }
   .cal-c { min-height: 68px; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--line); background: var(--bg); }
   .cal-ok { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
   .cal-miss { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn); }
@@ -85,13 +87,10 @@ a { color: inherit; text-decoration: none; }
 .aba-on { color: var(--strong); border-bottom-color: var(--gold); }
 .aba-on svg { color: var(--accent-text); }
 [data-aba][hidden] { display: none; }
-/* gráfico do mês na Dashboard (componente GraficoMes), no estilo do YouTube Studio */
-.quadros-mes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
-.quadro-mes { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 104px; padding: 12px 8px; text-align: center; background: var(--chip); border-right: 1px solid var(--line); }
-.quadro-mes:last-child { border-right: 0; }
-.quadro-mes-on { background: var(--panel); box-shadow: inset 0 0 0 2px var(--gold); }
+/* topo da Dashboard (componente GraficoMes, modelo A): valor do mês à esquerda, gráfico à direita */
+.painel-mes { display: grid; grid-template-columns: 290px minmax(0, 1fr); gap: 32px; padding: 28px; }
+@media (max-width: 900px) { .painel-mes { grid-template-columns: minmax(0, 1fr); gap: 24px; padding: 22px; } }
 .grafico-dica { position: absolute; transform: translateX(-50%); padding: 6px 10px; border-radius: 6px; background: var(--side); border: 1px solid var(--line2); box-shadow: 0 6px 18px rgba(0,0,0,.35); pointer-events: none; white-space: nowrap; text-align: center; }
-@media (max-width: 640px) { .quadros-mes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quadro-mes:nth-child(2) { border-right: 0; } .quadro-mes:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
 @media (max-width: 640px) { .aba { padding: 0 10px; font-size: 13px; gap: 6px; } }
 .menu-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 4px; color: var(--text2); }
 .menu-item:hover { background: var(--chip); }

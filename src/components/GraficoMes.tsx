@@ -1,81 +1,98 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { Icone, LogoPlataforma, NOME_PLATAFORMA } from "./Icone";
+import { COR_PLATAFORMA, Icone, LogoPlataforma, NOME_PLATAFORMA } from "./Icone";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
 
 type Plat = "tiktok" | "youtube" | "instagram";
 export type DiaGrafico = { dia: string; tiktok: number; youtube: number; instagram: number };
-type Chave = Plat | "valor";
+/** uma linha da conta do valor do mês (ex.: "Constância 10%" → "+ R$ 207,90") */
+export type LinhaConta = { rotulo: string; valor: string; apagado?: boolean };
 
 /**
- * Visão do mês no estilo do YouTube Studio: 4 quadros (TikTok, YouTube, Instagram e valor do mês)
- * e, embaixo, a linha do ganho bruto de cada dia. Os quadros de views são só para ver (pedido do dono).
+ * Topo da Dashboard (modelo A, escolhido pelo dono): valor do mês com a conta dele à esquerda,
+ * gráfico do ganho bruto de cada dia à direita e, embaixo, as views de cada rede.
  */
-export function GraficoMes({ dias, hoje, totalCentavos, anterior, nomeMesAnterior }: {
+export function GraficoMes({ dias, hoje, totalCentavos, conta, anterior, nomeMesAnterior }: {
   /** todos os dias do mês, com as views ganhas em cada plataforma */
   dias: DiaGrafico[];
   hoje: string;
   /** total do mês até agora, com bônus */
   totalCentavos: number;
+  conta: LinhaConta[];
   /** soma do mesmo período do mês passado (dia 1 até o dia de hoje), para comparar */
   anterior: Record<Plat, number>;
   nomeMesAnterior: string;
 }) {
-  const ate = dias.filter((d) => d.dia <= hoje);
+  // hoje só entra no gráfico quando já tem views (a coleta da madrugada traz o dia anterior)
+  const ate = dias.filter((d) => d.dia < hoje || (d.dia === hoje && d.tiktok + d.youtube + d.instagram > 0));
   const soma = (p: Plat) => ate.reduce((a, d) => a + d[p], 0);
   const views = { tiktok: soma("tiktok"), youtube: soma("youtube"), instagram: soma("instagram") };
   const totalViews = views.tiktok + views.youtube + views.instagram;
   const totalAnterior = anterior.tiktok + anterior.youtube + anterior.instagram;
   const variacao = (agora: number, antes: number) => (antes > 0 ? Math.round(((agora - antes) / antes) * 100) : null);
-
-  const quadros: { id: Chave; rotulo: string; valor: string; delta: number | null }[] = [
-    ...(["tiktok", "youtube", "instagram"] as Plat[]).map((p) => ({ id: p, rotulo: `Views no ${NOME_PLATAFORMA[p]}`, valor: formatarNumero(views[p]), delta: variacao(views[p], anterior[p]) })),
-    { id: "valor", rotulo: "Valor do mês", valor: formatarReais(totalCentavos), delta: variacao(totalViews, totalAnterior) },
-  ];
   // o gráfico mostra o ganho bruto de cada dia (R$ 5 a cada 1.000 views = meio centavo por view); os bônus só fecham no fim do mês
   const serie = ate.map((d) => Math.round((d.tiktok + d.youtube + d.instagram) / 2));
+  const delta = variacao(totalViews, totalAnterior);
 
   return (
-    <section className="card flex flex-col" style={{ gap: 18 }}>
-      <h2 className="h2 m-0 text-center" style={{ fontSize: 20 }}>
-        Você teve {formatarNumero(totalViews)} views neste mês
-      </h2>
-      <div className="quadros-mes">
-        {quadros.map((q) => {
-          const on = q.id === "valor";
+    <>
+      <section className="card painel-mes">
+        <div className="flex flex-col" style={{ gap: 12 }}>
+          <span style={{ fontSize: 13, color: "var(--muted)" }}>Valor do mês até agora</span>
+          <span className="num" style={{ fontSize: 54, color: "var(--ok)", lineHeight: 1 }}>{formatarReais(totalCentavos)}</span>
+          <Variacao delta={delta} nomeMesAnterior={nomeMesAnterior} />
+          <div className="flex flex-col" style={{ gap: 8, marginTop: 6, paddingTop: 14, borderTop: "1px solid var(--line)", fontSize: 13 }}>
+            {conta.map((l) => (
+              <div key={l.rotulo} className="flex justify-between gap-3">
+                <span style={{ color: "var(--muted)" }}>{l.rotulo}</span>
+                <span style={{ color: l.apagado ? "var(--muted)" : "var(--strong)", fontWeight: l.apagado ? 400 : 600, textAlign: "right" }}>{l.valor}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-col" style={{ gap: 8 }}>
+          <span style={{ fontSize: 13, color: "var(--muted)" }}>Ganho bruto de cada dia · {formatarNumero(totalViews)} views no mês</span>
+          <Linha
+            dias={dias.map((d) => d.dia)}
+            valores={serie}
+            cor="var(--ok)"
+            formatar={(v) => formatarReais(v)}
+            formatarEixo={(v) => `R$ ${formatarNumero(Math.round(v / 100))}`}
+            rotulo="Ganho bruto de cada dia"
+          />
+          <p style={{ margin: 0, color: "var(--muted)", fontSize: 12 }}>
+            O gráfico soma TikTok, YouTube e Instagram. O YouTube entrega as views com 2 a 3 dias de atraso, então os últimos dias ainda vão subir.
+          </p>
+        </div>
+      </section>
+
+      <section className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" }}>
+        {(["tiktok", "youtube", "instagram"] as Plat[]).map((p) => {
+          const parte = totalViews ? Math.round((views[p] / totalViews) * 100) : 0;
           return (
-            <div key={q.id} className={`quadro-mes ${on ? "quadro-mes-on" : ""}`}>
-              <span className="flex items-center justify-center gap-1.5" style={{ fontSize: 12, color: "var(--muted)" }}>
-                {q.id === "valor" ? <Icone nome="wallet" tamanho={14} /> : <LogoPlataforma p={q.id} tamanho={16} />}
-                {q.rotulo}
-              </span>
-              <span className="num" style={{ fontSize: 26, color: "var(--strong)", lineHeight: 1.1 }}>{q.valor}</span>
-              <span style={{ fontSize: 11, color: "var(--muted)" }}>
-                {q.delta === null ? "sem dados do mês passado" : (
-                  <span className="inline-flex items-center gap-1">
-                    <span style={{ color: q.delta >= 0 ? "var(--ok)" : "var(--warn)", display: "inline-flex" }}><Icone nome={q.delta >= 0 ? "up" : "down"} tamanho={11} /></span>
-                    {q.delta >= 0 ? "+" : ""}{formatarNumero(q.delta)}% vs. mesmo período de {nomeMesAnterior}
-                  </span>
-                )}
-              </span>
+            <div key={p} className="card flex flex-col" style={{ padding: "18px 20px", gap: 10 }}>
+              <div className="flex items-center justify-between gap-2" style={{ fontSize: 13, color: "var(--muted)" }}>
+                <span className="flex items-center gap-2"><LogoPlataforma p={p} tamanho={20} />{NOME_PLATAFORMA[p]}</span>
+                <span>{parte}% das views</span>
+              </div>
+              <span className="num" style={{ fontSize: 30, color: "var(--strong)", lineHeight: 1 }}>{formatarNumero(views[p])}</span>
+              <div className="bar" style={{ height: 6 }}><span style={{ width: `${parte}%`, background: COR_PLATAFORMA[p] }} /></div>
+              <span style={{ fontSize: 12, color: "var(--muted)" }}><Variacao delta={variacao(views[p], anterior[p])} nomeMesAnterior={nomeMesAnterior} curto /></span>
             </div>
           );
         })}
-      </div>
-      <div>
-        <Linha
-          dias={dias.map((d) => d.dia)}
-          valores={serie}
-          cor="var(--ok)"
-          formatar={(v) => formatarReais(v)}
-          formatarEixo={(v) => `R$ ${formatarNumero(Math.round(v / 100))}`}
-          rotulo="Ganho bruto de cada dia"
-        />
-        <p style={{ margin: "10px 0 0", color: "var(--muted)", fontSize: 12 }}>
-          O valor do mês já soma os bônus. O gráfico mostra o ganho bruto de cada dia (R$ 5 a cada 1.000 views), somando TikTok, YouTube e Instagram. O YouTube entrega as views com 2 a 3 dias de atraso, então os últimos dias ainda vão subir.
-        </p>
-      </div>
-    </section>
+      </section>
+    </>
+  );
+}
+
+function Variacao({ delta, nomeMesAnterior, curto = false }: { delta: number | null; nomeMesAnterior: string; curto?: boolean }) {
+  if (delta === null) return <span style={{ fontSize: curto ? 12 : 13, color: "var(--muted)" }}>sem dados do mês passado</span>;
+  return (
+    <span className="inline-flex items-center gap-1" style={{ fontSize: curto ? 12 : 13, color: "var(--text2)" }}>
+      <span style={{ color: delta >= 0 ? "var(--ok)" : "var(--warn)", display: "inline-flex" }}><Icone nome={delta >= 0 ? "up" : "down"} tamanho={curto ? 11 : 13} /></span>
+      {delta >= 0 ? "+" : ""}{formatarNumero(delta)}% vs. {curto ? nomeMesAnterior : `mesmo período de ${nomeMesAnterior}`}
+    </span>
   );
 }
 
@@ -105,7 +122,7 @@ function Linha({ dias, valores, cor, formatar, formatarEixo, rotulo }: {
     return () => ro.disconnect();
   }, []);
 
-  const altura = 220;
+  const altura = 210;
   const m = { cima: 12, baixo: 26, esq: 4, dir: 58 };
   const w = Math.max(0, largura - m.esq - m.dir);
   const h = altura - m.cima - m.baixo;
