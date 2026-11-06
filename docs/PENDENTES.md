@@ -4,6 +4,8 @@ Resumo para quem continuar o projeto (por exemplo, no Claude Code). As regras do
 
 ## Banco de dados
 - Os comandos de banco ficam em `supabase/migrations/` e **não rodam sozinhos**: o gestor cola cada um no SQL Editor da Supabase e clica em Run.
+- Rodar a `0025_trava_rede_views.sql` (trava no banco: views sempre na mesma rede do vídeo; não apaga nada).
+- Problema reportado (views do YouTube parecendo somadas no Instagram): rodar as consultas de `docs/conferir-views.sql` para o criador e ver se precisa corrigir algum dado antigo (pedir antes de apagar ou mudar).
 - Rodar a `0024_views_por_dia.sql` (deixa o gráfico do mês da Dashboard mais rápido; sem ela o gráfico funciona, só demora um pouco mais).
 - Confirmar se a `0023_pix_pago.sql` (botão "Marcar como pago ✅" dos extras no Pix) já foi rodada. As anteriores (0020 novidades/sugestões, 0021 curtidos, 0022 extras no Pix) já estão no banco.
 - Ideia aprovada em conversa, ainda não feita: GitHub Actions que roda as migrações sozinho a cada push (o gestor precisa colar a connection string do banco em Settings → Secrets → Actions).

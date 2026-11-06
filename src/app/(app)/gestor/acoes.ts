@@ -115,14 +115,18 @@ export async function lancarViews(f: FormData) {
   if (!["tiktok", "youtube", "instagram"].includes(plataforma) || !titulo || !postado || !dia) voltar(criador, "Preencha plataforma, título, data de postagem e o dia das views.");
   // acha o vídeo pelo link (ou título) ou cria
   let videoId: string | null = null;
-  const busca = url ? await sb.from("videos").select("id").eq("criador_id", criador).eq("url", url).maybeSingle() : await sb.from("videos").select("id").eq("criador_id", criador).eq("titulo", titulo).eq("plataforma", plataforma).maybeSingle();
+  // sempre da mesma rede: um link de outra rede gravava as views em cima de um vídeo do YouTube, por exemplo
+  const busca = url
+    ? await sb.from("videos").select("id").eq("criador_id", criador).eq("plataforma", plataforma).eq("url", url).limit(1).maybeSingle()
+    : await sb.from("videos").select("id").eq("criador_id", criador).eq("plataforma", plataforma).eq("titulo", titulo).limit(1).maybeSingle();
   if (busca.data) videoId = busca.data.id;
   else {
     const novo = await sb.from("videos").insert({ criador_id: criador, plataforma, titulo, url, postado_em: postado, id_externo: url }).select("id").single();
     videoId = novo.data?.id ?? null;
   }
   if (!videoId) voltar(criador, "Não consegui salvar o vídeo. Confira os dados.");
-  await sb.from("views_diarias").upsert({ video_id: videoId, dia, criador_id: criador, plataforma, views });
+  const { error } = await sb.from("views_diarias").upsert({ video_id: videoId, dia, criador_id: criador, plataforma, views });
+  if (error) voltar(criador, `Não consegui lançar as views: ${error.message}`);
   await anotarSaldo(criador).catch(() => undefined);
   voltar(criador, "Views lançadas.");
 }
