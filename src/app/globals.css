@@ -67,7 +67,13 @@ a { color: inherit; text-decoration: none; }
 .app { display: flex; flex-wrap: wrap; min-height: 100vh; }
 .menu { flex: 0 0 248px; position: sticky; top: 0; align-self: flex-start; min-height: 100vh; box-sizing: border-box; padding: 28px 18px; background: var(--side); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 26px; }
 .menu-grupo { display: flex; flex-direction: column; gap: 4px; }
-.menu-titulo { font-size: 11px; letter-spacing: 1.5px; color: var(--muted); padding: 0 10px 6px; }
+.menu-pastas { display: flex; flex-direction: column; gap: 6px; }
+.menu-pasta { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 0 10px; border-radius: 4px; font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-align: left; }
+.menu-pasta:hover { background: var(--chip); color: var(--fg); }
+.menu-seta { flex: none; transition: transform .15s ease; }
+.menu-seta-on { transform: rotate(90deg); }
+.menu-itens { display: flex; flex-direction: column; gap: 4px; }
+.menu-itens[hidden] { display: none; }
 .menu-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 4px; color: var(--text2); }
 .menu-item:hover { background: var(--chip); }
 .menu-ativo { background: var(--tint); color: var(--strong); font-weight: 600; box-shadow: inset 0 0 0 1px var(--gold), 0 0 18px rgba(232, 176, 20, .35); }
