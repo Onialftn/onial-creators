@@ -9,6 +9,8 @@
   --ok: #2ee6a6; --ok-bg: #0f2a22; --ok-line: #1f5a47; --warn: #ff8a3d; --warn-bg: #2e1a08; --warn-line: #6a3a12;
   --gold: #e8b014; --ink: #0a0a0a; --accent-vivo: #ffcc33;
   /* cores de medalha e de destaque: NÃO mudam com o tema (ranking, coroa, mais viral, totais) */
+  /* partes de uma barra de dinheiro (Painel do gestor): paleta validada para daltonismo; não muda com o tema */
+  --cat-1: #3987e5; --cat-2: #199e70; --cat-3: #c98500; --cat-4: #d55181; --cat-5: #9085e9;
   --ouro: #e8b014; --ouro-texto: #ffcc33; --ouro-vivo: #ffcc33; --prata: #9aa4b5; --prata-texto: #c3cad6; --bronze: #c26a3a; --bronze-texto: #e08a5a;
   --font-inter: "Inter"; --font-rajdhani: "Rajdhani";
   color-scheme: dark;
@@ -18,6 +20,7 @@ html[data-mode="light"] {
   --fg: #1a1712; --strong: #0e0c08; --text2: #3d372a; --muted: #6b6450; --accent-text: #8a5e00; --tint: #fbefc8; --tint-text: #6e5000; --halo: #f7e3a6;
   --ok: #0b7a57; --ok-bg: #ddf5ec; --ok-line: #9ed9c3; --warn: #b0500c; --warn-bg: #fde7d6; --warn-line: #f0b88a;
   --ouro-texto: #8a5e00; --prata-texto: #5b6472; --bronze-texto: #9a4a1f;
+  --cat-1: #2a78d6; --cat-2: #1baf7a; --cat-3: #eda100; --cat-4: #e87ba4; --cat-5: #6250d6;
   color-scheme: light;
 }
 
@@ -157,6 +160,11 @@ a { color: inherit; text-decoration: none; }
 .capa-grade { display: grid; column-gap: 0; row-gap: 8px; align-items: end; align-content: start; }
 .capa-grade .capa-fileira { position: relative; z-index: 1; }
 @media (max-width: 640px) { .rank-grande { font-size: 96px; margin-right: -14px; } }
+/* Painel do gestor: criadores em barras (views e traço da meta) */
+.linha-criador { display: grid; grid-template-columns: 180px minmax(0, 1fr) 100px 110px 120px; gap: 16px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
+.linha-criador:first-of-type { border-top: 0; }
+.trilho-meta { position: relative; display: block; height: 14px; border-radius: 4px; background: var(--track); }
+@media (max-width: 760px) { .linha-criador { grid-template-columns: minmax(0, 1fr) auto; row-gap: 8px; } .linha-criador .trilho-meta { grid-column: 1 / -1; grid-row: 2; } }
 /* bolinha amarela: alguém precisa de ajuda para gravar */
 .bolinha-ajuda { width: 11px; height: 11px; border-radius: 6px; background: var(--gold); box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent); animation: pulsar-ajuda 2s infinite; flex: none; }
 @keyframes pulsar-ajuda { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent); } 70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--gold) 0%, transparent); } 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 0%, transparent); } }

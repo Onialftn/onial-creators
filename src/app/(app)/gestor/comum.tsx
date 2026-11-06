@@ -29,14 +29,3 @@ export function Retorno({ ok, erro }: { ok?: string; erro?: string }) {
     </>
   );
 }
-
-/** Número grande de resumo. */
-export function Numero({ rotulo, valor, sub, cor }: { rotulo: string; valor: string; sub?: string; cor?: string }) {
-  return (
-    <div className="card" style={{ padding: 20 }}>
-      <div style={{ color: "var(--muted)", fontSize: 13 }}>{rotulo}</div>
-      <div className="num" style={{ fontSize: 30, marginTop: 6, color: cor ?? "var(--strong)", lineHeight: 1.1 }}>{valor}</div>
-      {sub && <div style={{ color: "var(--muted)", fontSize: 12, marginTop: 6 }}>{sub}</div>}
-    </div>
-  );
-}

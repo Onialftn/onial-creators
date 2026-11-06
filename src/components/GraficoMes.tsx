@@ -96,6 +96,29 @@ function Variacao({ delta, nomeMesAnterior, curto = false }: { delta: number | n
   );
 }
 
+/** Painel do gestor (modelo C): views da equipe em cada dia do mês, com a comparação com o mesmo período do mês passado. */
+export function GraficoEquipe({ dias, valores, total, delta, nomeMesAnterior }: { dias: string[]; valores: number[]; total: number; delta: number | null; nomeMesAnterior: string }) {
+  return (
+    <section className="card flex min-w-0 flex-col" style={{ gap: 10 }}>
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div className="flex flex-col" style={{ gap: 4 }}>
+          <span style={{ fontSize: 13, color: "var(--muted)" }}>Views da equipe no mês</span>
+          <span className="num" style={{ fontSize: 40, color: "var(--strong)", lineHeight: 1 }}>{formatarNumero(total)}</span>
+        </div>
+        <Variacao delta={delta} nomeMesAnterior={nomeMesAnterior} />
+      </div>
+      <Linha dias={dias} valores={valores} cor="var(--gold)" formatar={(v) => `${formatarNumero(v)} views`} formatarEixo={compacto} rotulo="Views da equipe em cada dia" />
+    </section>
+  );
+}
+
+/** "1,2 mi", "35 mil", "800" */
+function compacto(v: number) {
+  if (v >= 1_000_000) return `${formatarNumero(Math.round(v / 100_000) / 10)} mi`;
+  if (v >= 1000) return `${formatarNumero(Math.round(v / 100) / 10)} mil`;
+  return formatarNumero(Math.round(v));
+}
+
 /** degraus "redondos" para o eixo: 1, 2, 2,5 ou 5 × 10ⁿ */
 function degrau(maximo: number, linhas = 3) {
   const bruto = Math.max(1, maximo) / linhas;
