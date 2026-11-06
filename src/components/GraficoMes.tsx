@@ -9,7 +9,7 @@ type Chave = Plat | "valor";
 
 /**
  * Visão do mês no estilo do YouTube Studio: 4 quadros (TikTok, YouTube, Instagram e valor do mês)
- * e, embaixo, a linha de cada dia do mês do quadro escolhido.
+ * e, embaixo, a linha do ganho bruto de cada dia. Os quadros de views são só para ver (pedido do dono).
  */
 export function GraficoMes({ dias, hoje, totalCentavos, anterior, nomeMesAnterior }: {
   /** todos os dias do mês, com as views ganhas em cada plataforma */
@@ -21,7 +21,6 @@ export function GraficoMes({ dias, hoje, totalCentavos, anterior, nomeMesAnterio
   anterior: Record<Plat, number>;
   nomeMesAnterior: string;
 }) {
-  const [aba, setAba] = useState<Chave>("youtube");
   const ate = dias.filter((d) => d.dia <= hoje);
   const soma = (p: Plat) => ate.reduce((a, d) => a + d[p], 0);
   const views = { tiktok: soma("tiktok"), youtube: soma("youtube"), instagram: soma("instagram") };
@@ -33,19 +32,19 @@ export function GraficoMes({ dias, hoje, totalCentavos, anterior, nomeMesAnterio
     ...(["tiktok", "youtube", "instagram"] as Plat[]).map((p) => ({ id: p, rotulo: `Views no ${NOME_PLATAFORMA[p]}`, valor: formatarNumero(views[p]), delta: variacao(views[p], anterior[p]) })),
     { id: "valor", rotulo: "Valor do mês", valor: formatarReais(totalCentavos), delta: variacao(totalViews, totalAnterior) },
   ];
-  // valor: o gráfico mostra o ganho bruto de cada dia (R$ 5 a cada 1.000 views); os bônus só fecham no fim do mês
-  const serie = ate.map((d) => (aba === "valor" ? Math.round((d.tiktok + d.youtube + d.instagram) / 2) : d[aba]));
+  // o gráfico mostra o ganho bruto de cada dia (R$ 5 a cada 1.000 views = meio centavo por view); os bônus só fecham no fim do mês
+  const serie = ate.map((d) => Math.round((d.tiktok + d.youtube + d.instagram) / 2));
 
   return (
     <section className="card flex flex-col" style={{ gap: 18 }}>
       <h2 className="h2 m-0 text-center" style={{ fontSize: 20 }}>
         Você teve {formatarNumero(totalViews)} views neste mês
       </h2>
-      <div role="tablist" aria-label="O que mostrar no gráfico" className="quadros-mes">
+      <div className="quadros-mes">
         {quadros.map((q) => {
-          const on = aba === q.id;
+          const on = q.id === "valor";
           return (
-            <button key={q.id} type="button" role="tab" aria-selected={on} aria-controls="grafico-mes" onClick={() => setAba(q.id)} className={`quadro-mes ${on ? "quadro-mes-on" : ""}`}>
+            <div key={q.id} className={`quadro-mes ${on ? "quadro-mes-on" : ""}`}>
               <span className="flex items-center justify-center gap-1.5" style={{ fontSize: 12, color: "var(--muted)" }}>
                 {q.id === "valor" ? <Icone nome="wallet" tamanho={14} /> : <LogoPlataforma p={q.id} tamanho={16} />}
                 {q.rotulo}
@@ -59,37 +58,25 @@ export function GraficoMes({ dias, hoje, totalCentavos, anterior, nomeMesAnterio
                   </span>
                 )}
               </span>
-            </button>
+            </div>
           );
         })}
       </div>
-      <div id="grafico-mes" role="tabpanel">
+      <div>
         <Linha
-          key={aba}
           dias={dias.map((d) => d.dia)}
           valores={serie}
-          cor={aba === "valor" ? "var(--ok)" : "var(--accent-text)"}
-          formatar={aba === "valor" ? (v) => formatarReais(v) : (v) => `${formatarNumero(v)} views`}
-          formatarEixo={aba === "valor" ? (v) => `R$ ${formatarNumero(Math.round(v / 100))}` : compacto}
-          rotulo={aba === "valor" ? "Ganho bruto de cada dia" : `Views de cada dia no ${NOME_PLATAFORMA[aba]}`}
+          cor="var(--ok)"
+          formatar={(v) => formatarReais(v)}
+          formatarEixo={(v) => `R$ ${formatarNumero(Math.round(v / 100))}`}
+          rotulo="Ganho bruto de cada dia"
         />
         <p style={{ margin: "10px 0 0", color: "var(--muted)", fontSize: 12 }}>
-          {aba === "valor"
-            ? "O valor do mês já soma os bônus. O gráfico mostra o ganho bruto de cada dia (R$ 5 a cada 1.000 views)."
-            : aba === "youtube"
-              ? "O YouTube entrega as views de cada dia com 2 a 3 dias de atraso: os últimos dias ainda vão subir."
-              : "Views ganhas em cada dia, somando todos os seus vídeos (inclusive os antigos)."}
+          O valor do mês já soma os bônus. O gráfico mostra o ganho bruto de cada dia (R$ 5 a cada 1.000 views), somando TikTok, YouTube e Instagram. O YouTube entrega as views com 2 a 3 dias de atraso, então os últimos dias ainda vão subir.
         </p>
       </div>
     </section>
   );
-}
-
-/** "1,2 mi", "35 mil", "800" */
-function compacto(v: number) {
-  if (v >= 1_000_000) return `${formatarNumero(Math.round(v / 100_000) / 10)} mi`;
-  if (v >= 1000) return `${formatarNumero(Math.round(v / 100) / 10)} mil`;
-  return formatarNumero(Math.round(v));
 }
 
 /** degraus "redondos" para o eixo: 1, 2, 2,5 ou 5 × 10ⁿ */
