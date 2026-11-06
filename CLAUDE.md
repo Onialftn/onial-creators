@@ -14,6 +14,8 @@ Todo o texto do site é em português do Brasil.
 - Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Gravações, Ranking do mês), OTIMIZAÇÕES (Ideias & roteiros, Limpar narração, Avaliar vídeo, SEO para vídeos, Pomodoro), INFORMAÇÕES (Pagamentos, Minhas redes), EM BREVE (Meta coletiva). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
 - No celular: barra fixa no topo (logo, BETA, nome da aba e botão ☰) e o menu abre pela lateral (decisão do dono).
 - A Dashboard é só para informações rápidas. Funções novas ganham aba própria, nunca entram na Dashboard.
+- Menu em pastas (pedido do dono): cada grupo abre e fecha; só a pasta da aba atual fica aberta.
+- Páginas compridas ficam divididas em abinhas no topo (`src/components/Abas.tsx`), para não precisar descer a página: Metas de views (Resumo, Vídeos do mês, Histórico), ficha do criador no painel do gestor (Vídeos, Meta e dias, Pagamentos, Correções) e Configurações do gestor. Vários quadros na mesma aba vão dentro de `<Grupo>`.
 
 ## Tecnologia
 

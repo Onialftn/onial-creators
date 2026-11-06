@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Abas, Grupo } from "@/components/Abas";
 import { AvisoAtualizacao, Cabecalho, TituloCard } from "@/components/Blocos";
 import { CapaVideo } from "@/components/CapaVideo";
 import { COR_PLATAFORMA, Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
@@ -33,6 +34,8 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
       <Cabecalho icone="target" titulo="Metas de views" sub={`Seus números de TikTok, YouTube e Instagram em ${nomeMes(mes).toLowerCase()}, até hoje (dia ${diaHoje}).`} />
       <AvisoAtualizacao ultima={ultima} />
 
+      <Abas abas={[{ id: "resumo", rotulo: "Resumo", icone: "target" }, { id: "videos", rotulo: "Vídeos do mês", icone: "video" }, { id: "historico", rotulo: "Histórico", icone: "stats" }]}>
+      <Grupo>
       <section className="card flex flex-wrap items-center gap-7">
         <div className="relative flex-none" style={{ width: 180, height: 180 }}>
           <svg width="180" height="180" viewBox="0 0 180 180" aria-hidden="true">
@@ -90,7 +93,9 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
           );
         })}
       </section>
+      </Grupo>
 
+      <Grupo>
       <section className="flex flex-col gap-4">
         <TituloCard icone="zap">Vídeos mais virais do mês</TituloCard>
         {viral.length === 0 ? (
@@ -140,8 +145,10 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
           </table>
         </div>
       </section>
+      </Grupo>
 
       <HistoricoAno ano={ano} anoAtual={anoAtual} mesAtual={mes} hist={hist} todos={q.todos === "1"} />
+      </Abas>
     </>
   );
 }

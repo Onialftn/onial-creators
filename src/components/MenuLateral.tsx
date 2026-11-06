@@ -80,6 +80,11 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
     return () => { window.removeEventListener("keydown", f); document.body.style.overflow = ""; };
   }, [aberto]);
   const atual = [...EXTRAS, ...GRUPOS.flatMap((g) => g.itens)].find((i) => ativo(i.href));
+  // pastas do menu: só a pasta da aba atual fica aberta; as outras abrem com um clique no título
+  const pastaAtual = GRUPOS.find((g) => g.itens.some((i) => ativo(i.href)))?.titulo;
+  const [abertas, setAbertas] = useState<string[]>(pastaAtual ? [pastaAtual] : ["Principal"]);
+  useEffect(() => setAbertas(pastaAtual ? [pastaAtual] : ["Principal"]), [pastaAtual]);
+  const alternarPasta = (titulo: string) => setAbertas((a) => (a.includes(titulo) ? a.filter((t) => t !== titulo) : [...a, titulo]));
 
   return (
     <>
@@ -115,9 +120,19 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
           </Link>
         ))}
       </nav>
-      {GRUPOS.filter((g) => !g.soGestor || papel === "gestor").map((g) => (
+      <div className="menu-pastas">
+      {GRUPOS.filter((g) => !g.soGestor || papel === "gestor").map((g) => {
+        const estaAberta = abertas.includes(g.titulo);
+        const idLista = `pasta-${g.titulo.toLowerCase().replace(/\s+/g, "-")}`;
+        const temAjuda = g.itens.some((i) => i.href === "/gravar") && precisamAjuda > 0;
+        return (
         <nav key={g.titulo} className="menu-grupo" aria-label={g.titulo}>
-          <div className="menu-titulo">{g.titulo.toUpperCase()}</div>
+          <button type="button" className="menu-pasta" onClick={() => alternarPasta(g.titulo)} aria-expanded={estaAberta} aria-controls={idLista}>
+            <svg className={`menu-seta ${estaAberta ? "menu-seta-on" : ""}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
+            <span>{g.titulo.toUpperCase()}</span>
+            {!estaAberta && temAjuda && <span className="bolinha-ajuda" style={{ marginLeft: "auto" }} aria-label="Alguém precisa de ajuda para gravar" />}
+          </button>
+          <div id={idLista} className="menu-itens" hidden={!estaAberta}>
           {g.itens.map((i) => (
             <Link key={i.href} href={i.href} className={`menu-item ${ativo(i.href) ? "menu-ativo" : ""}`} aria-current={ativo(i.href) ? "page" : undefined}>
               <Icone nome={i.icone} />
@@ -126,8 +141,11 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
               {i.href === "/gravar" && precisamAjuda > 0 && <span className="bolinha-ajuda" style={{ marginLeft: 2 }} title={`${precisamAjuda} ${precisamAjuda === 1 ? "pedido precisa" : "pedidos precisam"} de ajuda`} aria-label={`${precisamAjuda} ${precisamAjuda === 1 ? "pedido precisa" : "pedidos precisam"} de ajuda`} />}
             </Link>
           ))}
+          </div>
         </nav>
-      ))}
+        );
+      })}
+      </div>
       <button type="button" onClick={alternarTema} className="menu-tema" aria-label={claro ? "Mudar para modo escuro" : "Mudar para modo claro"}>
         <Icone nome={claro ? "moon" : "sun"} tamanho={18} />
         <span>{claro ? "Modo escuro" : "Modo claro"}</span>
