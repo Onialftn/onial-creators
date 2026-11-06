@@ -2,7 +2,7 @@ import "server-only";
 import { hojeBrasil, intervalo, mesAnterior, mesDe, primeiroDia, somarDias } from "@/lib/datas";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { OUTROS_VIDEOS } from "@/lib/dados";
-import { viewsGanhas } from "./ganho";
+import { outrosInstagram, viewsGanhas } from "./ganho";
 import { notificar } from "@/lib/notificacoes";
 import { REDE, type Rede, type Tokens } from "./redes";
 
@@ -130,29 +130,38 @@ export async function coletarConta(contaId: string, completo = false) {
       }
 
       if (rede === "instagram") {
-        // O Instagram também informa as views da conta inteira por dia. Com isso:
-        // - dias sem nada gravado (antes de conectar) recebem o total do dia em "Outros conteúdos";
-        // - ontem: o que o total da conta tiver a mais que a soma dos reels vai para "Outros conteúdos".
+        // O Instagram também informa as views da conta inteira. Com isso:
+        // - ao conectar (completo): dias sem nada gravado (antes de conectar) recebem o total do dia em "Outros conteúdos";
+        // - ontem: "Outros conteúdos" = total da conta no mês − reels do mês − outros já gravados no mês (outrosInstagram).
+        //   A conta é no mês acumulado para não contar a mais (os reels são medidos das 06:00 às 06:00 e a conta, por dia).
         const inicio = primeiroDia(mesAnterior(mesDe(hoje)));
+        const iniMes = primeiroDia(mesDe(ontem));
         const { data: gravados } = await admin.from("views_diarias").select("dia, video_id, views").eq("criador_id", criador).eq("plataforma", rede).gte("dia", inicio).lte("dia", ontem).limit(5000);
         const idO = porExterno.get(outros)?.id;
-        const somaReels = new Map<string, number>();
-        const temDia = new Set<string>();
-        for (const g of gravados ?? []) {
-          temDia.add(String(g.dia));
-          if (g.video_id !== idO) somaReels.set(String(g.dia), (somaReels.get(String(g.dia)) ?? 0) + Number(g.views));
-        }
-        const dias = intervalo(inicio, ontem).filter((d) => d === ontem || (completo && !temDia.has(d)) || (!completo && d >= somarDias(ontem, -3) && !temDia.has(d)));
-        const totais: number[] = [];
-        let falhaIg: string | undefined;
-        for (let i = 0; i < dias.length; i += 6) totais.push(...(await Promise.all(dias.slice(i, i + 6).map((d) => REDE.instagram.viewsDoDia(tokens, d).catch((e) => { falhaIg ??= e instanceof Error ? e.message : String(e); return -1; })))));
-        if (dias.length && totais.every((n) => n < 0)) throw new Error(`Views da conta do Instagram: ${falhaIg}`);
+        const temDia = new Set((gravados ?? []).map((g) => String(g.dia)));
         const rows: { video_id: string; dia: string; criador_id: string; plataforma: Rede; views: number }[] = [];
-        for (let i = 0; i < dias.length; i++) {
-          const resto = totais[i] - (somaReels.get(dias[i]) ?? 0);
-          if (totais[i] < 0 || resto <= 0) continue;
+
+        const vazios = completo ? intervalo(inicio, somarDias(ontem, -1)).filter((d) => !temDia.has(d)) : [];
+        const totais: number[] = [];
+        for (let i = 0; i < vazios.length; i += 6) totais.push(...(await Promise.all(vazios.slice(i, i + 6).map((d) => REDE.instagram.viewsDoDia(tokens, d).catch(() => -1)))));
+        for (let i = 0; i < vazios.length; i++) {
+          if (totais[i] <= 0) continue;
           const id = await idOutros(inicio);
-          if (id) rows.push({ video_id: id, dia: dias[i], criador_id: criador, plataforma: rede, views: resto });
+          if (id) rows.push({ video_id: id, dia: vazios[i], criador_id: criador, plataforma: rede, views: totais[i] });
+        }
+
+        let contaMes: number;
+        try { contaMes = await REDE.instagram.viewsPeriodo(tokens, iniMes, ontem); }
+        catch (e) { throw new Error(`Views da conta do Instagram: ${e instanceof Error ? e.message : String(e)}`); }
+        const doMes = (gravados ?? []).filter((g) => String(g.dia) >= iniMes);
+        const reelsMes = doMes.filter((g) => g.video_id !== idO).reduce((a, g) => a + Number(g.views), 0);
+        const outrosAntes = doMes.filter((g) => g.video_id === idO && String(g.dia) < ontem).reduce((a, g) => a + Number(g.views), 0)
+          + rows.filter((r) => r.dia >= iniMes).reduce((a, r) => a + r.views, 0);
+        const outrosOntem = outrosInstagram(contaMes, reelsMes, outrosAntes);
+        const jaTinha = doMes.some((g) => g.video_id === idO && String(g.dia) === ontem);
+        if (outrosOntem > 0 || jaTinha) {
+          const id = await idOutros(inicio);
+          if (id) rows.push({ video_id: id, dia: ontem, criador_id: criador, plataforma: rede, views: outrosOntem });
         }
         if (rows.length) await admin.from("views_diarias").upsert(rows);
         linhas += rows.length;

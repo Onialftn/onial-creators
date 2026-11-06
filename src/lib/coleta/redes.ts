@@ -209,22 +209,31 @@ const ig = {
   },
 };
 
-/** Views da conta inteira do Instagram em um dia (Brasília), sem contar stories. */
-async function igViewsDoDia(t: Tokens, dia: string): Promise<number> {
-  const ini = Math.floor(new Date(`${dia}T03:00:00Z`).getTime() / 1000); // 00:00 em Brasília
+/** Views da conta inteira do Instagram de um dia até outro (Brasília, os dois inclusos), sem contar stories. */
+async function igViewsPeriodo(t: Tokens, de: string, ate: string): Promise<number> {
+  const meiaNoite = (dia: string) => Math.floor(new Date(`${dia}T03:00:00Z`).getTime() / 1000); // 00:00 em Brasília
   type R = { data: { name: string; total_value?: { value?: number; breakdowns?: { results?: { dimension_values: string[]; value: number }[] }[] } }[] };
-  const pedir = (extra: Record<string, string>) =>
-    fetch(`${IG}/me/insights?${new URLSearchParams({ metric: "views", period: "day", metric_type: "total_value", since: String(ini), until: String(ini + 86_400), access_token: t.access, ...extra })}`).then((r) => json<R>(r, "Instagram views da conta"));
-  // com a divisão por tipo (para tirar os stories); se o Instagram não aceitar, pede só o total
-  const d = await pedir({ breakdown: "media_product_type" }).catch(() => pedir({}));
-  const tv = d.data.find((x) => x.name === "views")?.total_value;
-  const partes = tv?.breakdowns?.[0]?.results;
-  if (partes?.length) return partes.filter((r) => !r.dimension_values.includes("STORY")).reduce((a, r) => a + Number(r.value), 0);
-  return Number(tv?.value ?? 0);
+  const pedir = (since: number, until: number, extra: Record<string, string>) =>
+    fetch(`${IG}/me/insights?${new URLSearchParams({ metric: "views", period: "day", metric_type: "total_value", since: String(since), until: String(until), access_token: t.access, ...extra })}`).then((r) => json<R>(r, "Instagram views da conta"));
+  async function trecho(since: number, until: number) {
+    // com a divisão por tipo (para tirar os stories); se o Instagram não aceitar, pede só o total
+    const d = await pedir(since, until, { breakdown: "media_product_type" }).catch(() => pedir(since, until, {}));
+    const tv = d.data.find((x) => x.name === "views")?.total_value;
+    const partes = tv?.breakdowns?.[0]?.results;
+    if (partes?.length) return partes.filter((r) => !r.dimension_values.includes("STORY")).reduce((a, r) => a + Number(r.value), 0);
+    return Number(tv?.value ?? 0);
+  }
+  // o Instagram aceita no máximo 30 dias por pedido: vai em pedaços de até 28
+  const fim = meiaNoite(ate) + 86_400;
+  let total = 0;
+  for (let ini = meiaNoite(de); ini < fim; ini += 28 * 86_400) total += await trecho(ini, Math.min(fim, ini + 28 * 86_400));
+  return total;
 }
-Object.assign(ig, { viewsDoDia: igViewsDoDia });
+/** Views da conta inteira do Instagram em um dia (Brasília), sem contar stories. */
+const igViewsDoDia = (t: Tokens, dia: string) => igViewsPeriodo(t, dia, dia);
+Object.assign(ig, { viewsDoDia: igViewsDoDia, viewsPeriodo: igViewsPeriodo });
 
-export const REDE = { youtube: yt, tiktok: tk, instagram: ig as typeof ig & { viewsDoDia: typeof igViewsDoDia } } as const;
+export const REDE = { youtube: yt, tiktok: tk, instagram: ig as typeof ig & { viewsDoDia: typeof igViewsDoDia; viewsPeriodo: typeof igViewsPeriodo } } as const;
 export const NOME_REDE: Record<Rede, string> = { youtube: "YouTube", tiktok: "TikTok", instagram: "Instagram" };
 
 /** Capas dos vídeos do TikTok (até 20 por vez). O link da capa vence depois de um tempo: busque de novo quando precisar. */
