@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Abas, Grupo } from "@/components/Abas";
-import { AvisoAtualizacao, Cabecalho, TituloCard } from "@/components/Blocos";
+import { AvisoAtualizacao, COR_POSICAO, Cabecalho, TituloCard } from "@/components/Blocos";
 import { CapaVideo } from "@/components/CapaVideo";
 import { COR_PLATAFORMA, Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { PLATAFORMAS, historicoDoAno, resumoDoMes, topVideos, ultimaColeta, usuarioAtual, type Plataforma } from "@/lib/dados";
@@ -57,7 +57,7 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
           <div className="grid gap-2.5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}>
             {[
               ["Faltam", r.meta ? formatarNumero(Math.max(0, r.meta - r.views)) : "—", "var(--strong)"],
-              ["Por dia até o fim do mês", r.meta ? formatarNumero(porDia) : "—", "var(--accent-text)"],
+              ["Por dia até o fim do mês", r.meta ? formatarNumero(porDia) : "—", "var(--ouro-texto)"],
               ["Projeção no ritmo atual", formatarNumero(projecao), "var(--ok)"],
               ["Bônus ao bater a meta", r.meta ? formatarReais(Math.round(r.meta / 10)) : "—", "var(--ok)"],
             ].map(([l, v, c]) => (
@@ -104,12 +104,12 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
           <div className="overflow-x-auto">
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))", minWidth: 600 }}>
               {viral.map((v, i) => (
-                <a key={v.id} href={v.url ?? undefined} target="_blank" rel="noreferrer" className="card flex min-w-0 flex-col gap-3" style={{ padding: 14, ...(i === 0 ? { borderColor: "var(--gold)", boxShadow: "0 0 30px color-mix(in srgb, var(--gold) 25%, transparent)" } : {}) }}>
+                <a key={v.id} href={v.url ?? undefined} target="_blank" rel="noreferrer" className="card flex min-w-0 flex-col gap-3" style={{ padding: 14, ...(i === 0 ? { borderColor: "var(--ouro)", boxShadow: "0 0 30px color-mix(in srgb, var(--ouro) 25%, transparent)" } : {}) }}>
                   <div className="relative overflow-hidden" style={{ aspectRatio: "4/5", borderRadius: 6, background: "linear-gradient(160deg,#2A2208,#0A0A0A 75%)" }}>
                     {v.capa && <CapaVideo src={v.capa} alt={`Capa de ${v.titulo || "vídeo"}`} />}
                     <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.45) 0,transparent 28%,transparent 60%,rgba(0,0,0,.8) 100%)" }} />
                     {i === 0 ? (
-                      <span className="pill absolute" style={{ left: 10, top: 10, background: "var(--gold)", color: "#0A0A0A", fontSize: 11 }}><Icone nome="crown" tamanho={12} />MAIS VIRAL DO MÊS</span>
+                      <span className="pill absolute" style={{ left: 10, top: 10, background: "var(--ouro)", color: "#0A0A0A", fontSize: 11 }}><Icone nome="crown" tamanho={12} />MAIS VIRAL DO MÊS</span>
                     ) : (
                       <span className="pill absolute" style={{ left: 10, top: 10, background: "rgba(10,10,10,.75)", color: "#fff", fontSize: 11 }}>{i + 1}º MAIS VIRAL</span>
                     )}
@@ -133,7 +133,7 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
             <tbody>
               {top.slice(0, 6).map((t, i) => (
                 <tr key={t.id}>
-                  <td className="num" style={{ fontSize: 18, color: i === 0 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}</td>
+                  <td className="num" style={{ fontSize: 18, color: COR_POSICAO[i] ?? "var(--muted)" }}>{i + 1}</td>
                   <td style={{ color: "var(--strong)", fontWeight: 600 }}>{t.url ? <a href={t.url} target="_blank" rel="noreferrer">{t.titulo || "Vídeo sem título"}</a> : t.titulo || "Vídeo sem título"}</td>
                   <td><span className="flex items-center gap-2"><LogoPlataforma p={t.plataforma} tamanho={24} />{NOME_PLATAFORMA[t.plataforma]}</span></td>
                   <td className="num" style={{ fontSize: 17, color: "var(--strong)" }}>{formatarNumero(t.views)}</td>
@@ -199,7 +199,7 @@ function HistoricoAno({ ano, anoAtual, mesAtual, hist, todos }: { ano: number; a
               <tr>
                 <td style={{ color: "var(--accent-text)", fontWeight: 700 }}>TOTAL {ano}</td>
                 {PLATAFORMAS.map((p) => <td key={p} className="num" style={{ fontSize: 16, color: "var(--strong)" }}>{formatarNumero(soma((m) => m.por[p]))}</td>)}
-                <td className="num" style={{ fontSize: 19, color: "var(--accent-text)" }}>{formatarNumero(soma((m) => m.total))}</td>
+                <td className="num" style={{ fontSize: 19, color: "var(--ouro-texto)" }}>{formatarNumero(soma((m) => m.total))}</td>
                 <td colSpan={2} style={{ color: "var(--muted)", fontSize: 13 }}>{meses.filter((m) => m.mes !== mesAtual && m.meta !== null && m.total >= m.meta).length} meta(s) batida(s)</td>
               </tr>
             )}

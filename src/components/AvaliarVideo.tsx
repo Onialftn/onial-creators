@@ -7,7 +7,7 @@ import { Medidor } from "./Seo";
 
 export interface Historico { id: string; arquivo: string; nota: number; resultado: Avaliacao; criado_em: string }
 
-const corNota = (x: number) => (x >= 70 ? "var(--ok)" : x >= 45 ? "var(--gold)" : "var(--warn)");
+const corNota = (x: number) => (x >= 70 ? "var(--ok)" : x >= 45 ? "var(--ouro)" : "var(--warn)");
 const caixa = { padding: "12px 14px", borderRadius: 8, background: "var(--bg)", border: "1px solid var(--line)" } as const;
 const data = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 const mb = (b: number) => `${(b / 1024 / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} MB`;

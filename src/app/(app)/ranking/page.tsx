@@ -1,5 +1,5 @@
 import { Avatar } from "@/components/Avatar";
-import { Cabecalho } from "@/components/Blocos";
+import { COR_POSICAO, Cabecalho } from "@/components/Blocos";
 import { Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { PLATAFORMAS, rankingDoMes, usuarioAtual, type LinhaRanking } from "@/lib/dados";
 import { hojeBrasil, mesDe, nomeMes } from "@/lib/datas";
@@ -9,7 +9,7 @@ function Podio({ pos, l, altura, cor, eu }: { pos: number; l?: LinhaRanking; alt
   if (!l) return <div style={{ flex: "1 1 0", minWidth: 0, maxWidth: 220 }} />;
   return (
     <div className="flex min-w-0 flex-col items-center gap-2" style={{ flex: "1 1 0", maxWidth: 220 }}>
-      {pos === 1 ? <span style={{ color: "var(--accent-text)" }}><Icone nome="crown" tamanho={24} /></span> : <span style={{ height: 24 }} />}
+      {pos === 1 ? <span style={{ color: "var(--ouro-texto)" }}><Icone nome="crown" tamanho={24} /></span> : <span style={{ height: 24 }} />}
       <Avatar foto={l.foto} nome={l.nome} tamanho={pos === 1 ? 72 : 56} borda={cor} />
       <div className="w-full min-w-0 text-center">
         <div className="truncate" style={{ color: "var(--strong)", fontWeight: 700, fontSize: 14 }}>{eu ? "Você" : l.nome}</div>
@@ -32,9 +32,9 @@ export default async function Ranking() {
     <>
       <Cabecalho icone="trophy" titulo="Ranking do mês" sub={`Quem mais gerou views na equipe em ${nomeMes(mes).toLowerCase()}. Só views, sem valores.`} />
       <section className="card flex items-end justify-center" style={{ paddingTop: 24, gap: "clamp(8px, 2.5vw, 16px)" }}>
-        <Podio pos={2} l={linhas[1]} altura={120} cor="#9AA4B5" eu={linhas[1]?.criadorId === perfil.id} />
-        <Podio pos={1} l={linhas[0]} altura={170} cor="var(--gold)" eu={linhas[0]?.criadorId === perfil.id} />
-        <Podio pos={3} l={linhas[2]} altura={90} cor="#C26A3A" eu={linhas[2]?.criadorId === perfil.id} />
+        <Podio pos={2} l={linhas[1]} altura={120} cor="var(--prata)" eu={linhas[1]?.criadorId === perfil.id} />
+        <Podio pos={1} l={linhas[0]} altura={170} cor="var(--ouro)" eu={linhas[0]?.criadorId === perfil.id} />
+        <Podio pos={3} l={linhas[2]} altura={90} cor="var(--bronze)" eu={linhas[2]?.criadorId === perfil.id} />
       </section>
       {acima && (
         <section className="card flex flex-wrap items-center gap-4" style={{ borderColor: "var(--gold)" }}>
@@ -51,7 +51,7 @@ export default async function Ranking() {
                 const eu = l.criadorId === perfil.id;
                 return (
                   <tr key={l.criadorId} style={eu ? { background: "var(--tint)", boxShadow: "inset 3px 0 0 var(--gold)" } : undefined}>
-                    <td className="num" style={{ fontSize: 20, color: i < 3 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}</td>
+                    <td className="num" style={{ fontSize: 20, color: COR_POSICAO[i] ?? "var(--muted)" }}>{i + 1}</td>
                     <td style={{ color: "var(--strong)", fontWeight: 600 }}><span className="flex items-center gap-2.5"><Avatar foto={l.foto} nome={l.nome} tamanho={36} />{eu ? `${l.nome} (você)` : l.nome}</span></td>
                     <td className="num" style={{ fontSize: 18, color: "var(--strong)" }}>{formatarNumero(l.views)}</td>
                     {PLATAFORMAS.map((p) => <td key={p} style={{ color: "var(--text2)", fontVariantNumeric: "tabular-nums" }}>{formatarNumero(l.porPlataforma[p])}</td>)}

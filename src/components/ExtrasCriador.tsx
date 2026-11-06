@@ -24,7 +24,7 @@ function Linha({ x, e, hoje, i, comum, chave }: { x: ExtraCriador; e?: EntregaCr
   return (
     <details className="linha-extra" style={{ borderTop: i ? "1px solid var(--line)" : undefined }} open={j.fase === "hoje" && !e ? true : undefined}>
       <summary className="flex items-center gap-2.5" style={{ minHeight: 60, padding: "8px 0", cursor: "pointer", listStyle: "none" }}>
-        <span className="num flex flex-none items-center justify-center" style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--gold) 12%, transparent)", color: "var(--accent-text)", fontSize: 16 }}>{ordem ? `${ordem}º` : i + 1}</span>
+        <span className="num flex flex-none items-center justify-center" style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--ouro) 12%, transparent)", color: "var(--ouro-texto)", fontSize: 16 }}>{ordem ? `${ordem}º` : i + 1}</span>
         <span className="min-w-0 flex-1">
           <span className="block truncate" style={{ color: "var(--strong)", fontWeight: 600, fontSize: 15 }}>{x.titulo}</span>
           <span className="block truncate" style={{ fontSize: 12, color: aprovado ? "var(--ok)" : e?.status === "recusado" || semChave ? "var(--warn)" : "var(--muted)" }}>{x.pix && <b style={{ color: "#3DDC97", marginRight: 6 }}>💸 PIX</b>}{situacao}</span>
