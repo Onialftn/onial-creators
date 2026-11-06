@@ -110,7 +110,9 @@ a { color: inherit; text-decoration: none; }
 .menu-item:hover { background: var(--chip); }
 .menu-ativo { background: var(--tint); color: var(--strong); font-weight: 600; box-shadow: inset 0 0 0 1px var(--gold), 0 0 18px color-mix(in srgb, var(--gold) 35%, transparent); }
 .menu-selo { margin-left: auto; padding: 2px 7px; border-radius: 999px; background: var(--tint); border: 1px solid var(--line2); color: var(--accent-text); font-size: 10px; font-weight: 700; letter-spacing: .8px; }
-.menu-tema { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--text2); margin-top: auto; }
+.menu-tema { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--text2); }
+.menu-tema:hover { background: var(--chip); color: var(--strong); }
+.menu-rodape { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
 .menu-perfil { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); font-size: 13px; }
 .conteudo { flex: 1 1 640px; min-width: 0; box-sizing: border-box; padding: 32px 36px; display: flex; flex-direction: column; gap: 24px; }
 .topo-movel, .menu-fundo, .menu-fechar { display: none; }
