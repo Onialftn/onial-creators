@@ -44,9 +44,10 @@ export default async function Ideias({ searchParams }: { searchParams: Promise<{
         <Link href={`/ideias?mapa=${mapa.id}&aba=curtidos`} className={aba === "curtidos" ? "btn-gold" : "btn-line"} aria-current={aba === "curtidos" ? "page" : undefined} style={{ minHeight: 40 }}>❤️ Curtidos{curtidos.length ? ` (${curtidos.length})` : ""}</Link>
       </nav>
 
-      <section className="card flex flex-col gap-4">
+      <section className="card grid gap-5" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(min(100%,340px),1fr))" }}>
+      <div className="flex flex-col gap-3">
         <TituloCard icone="target">{aba === "curtidos" ? "Para qual mapa é o roteiro?" : "1. Qual mapa você vai divulgar?"}</TituloCard>
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
+        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))" }}>
           {MAPAS.map((m, i) => {
             const ativo = m.id === mapa.id;
             return (
@@ -58,20 +59,22 @@ export default async function Ideias({ searchParams }: { searchParams: Promise<{
             );
           })}
         </div>
+      </div>
+      {aba === "explorar" && (
+        <div className="flex flex-col gap-3">
+          <TituloCard icone="bulb">2. Qual o tema do vídeo?</TituloCard>
+          <div className="flex flex-wrap gap-2">
+            {mapa.temas.map((t) => (
+              <Link key={t} href={`/ideias?mapa=${mapa.id}&tema=${encodeURIComponent(t)}`} className={t === tema ? "btn-gold" : "btn-line"} aria-current={t === tema ? "true" : undefined}>{t}</Link>
+            ))}
+          </div>
+        </div>
+      )}
       </section>
 
       {aba === "curtidos" ? (
         <IdeiasVideos mapa={mapa.id} tema={tema} melhores={[]} recentes={[]} iaPronta={iaConfigurada()} automatico={geminiConfigurado()} traduzidos={traduzidosCurtidos} curtidos={curtidos} soCurtidos />
       ) : <>
-      <section className="card flex flex-col gap-4">
-        <TituloCard icone="bulb">2. Qual o tema do vídeo?</TituloCard>
-        <div className="flex flex-wrap gap-2">
-          {mapa.temas.map((t) => (
-            <Link key={t} href={`/ideias?mapa=${mapa.id}&tema=${encodeURIComponent(t)}`} className={t === tema ? "btn-gold" : "btn-line"} aria-current={t === tema ? "true" : undefined}>{t}</Link>
-          ))}
-        </div>
-      </section>
-
       {!canais?.length ? (
         <section className="card" style={{ color: "var(--muted)" }}>
           {perfil.papel === "gestor" ? <>Nenhum canal de referência para <b style={{ color: "var(--fg)" }}>{tema}</b> ainda. Cadastre em <Link href="/gestor/config#referencias" style={{ color: "var(--accent-text)" }}>Painel do gestor → Canais de referência</Link>.</> : <>O gestor ainda não cadastrou os canais de referência de <b style={{ color: "var(--fg)" }}>{tema}</b>.</>}
