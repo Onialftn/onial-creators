@@ -14,7 +14,8 @@ Todo o texto do site é em português do Brasil.
 - Menu lateral: PRINCIPAL (Dashboard, Dias de postagem, Metas de views, Gravações, Ranking do mês), OTIMIZAÇÕES (Ideias & roteiros, Limpar narração, Avaliar vídeo, SEO para vídeos, Pomodoro), INFORMAÇÕES (Pagamentos, Minhas redes), EM BREVE (Meta coletiva). A aba Roteiros foi tirada a pedido do dono: a tradução do roteiro fica em cada vídeo da aba Ideias.
 - No celular: barra fixa no topo (logo, BETA, nome da aba e botão ☰) e o menu abre pela lateral (decisão do dono).
 - A Dashboard é só para informações rápidas. Funções novas ganham aba própria, nunca entram na Dashboard.
-- Menu em pastas (pedido do dono): cada grupo abre e fecha, com ícone, nome, número de abas e seta; só a pasta da aba atual fica aberta.
+- Menu em pastas (pedido do dono): cada grupo abre e fecha, com ícone, nome, número de abas e seta. A pasta Principal e a pasta da aba atual ficam abertas.
+- Notificações, Novidades e Sugestões ficam em três quadradinhos lado a lado no topo do menu (no celular, o sino fica na barra do topo).
 - Dashboard, gráfico do mês no estilo do YouTube Studio (pedido do dono, `src/components/GraficoMes.tsx`): 4 quadros (views no TikTok, YouTube e Instagram e valor do mês, com a comparação com o mesmo período do mês passado) e a linha de cada dia do quadro escolhido. No valor do mês, o número já tem os bônus, e o gráfico mostra o bruto de cada dia. As views de cada dia vêm da view views_por_dia (migração 0024), com reserva lendo views_diarias.
 - Páginas compridas ficam divididas em abinhas no topo (`src/components/Abas.tsx`), para não precisar descer a página: Metas de views (Resumo, Vídeos do mês, Histórico), ficha do criador no painel do gestor (Vídeos, Meta e dias, Pagamentos, Correções) e Configurações do gestor. Vários quadros na mesma aba vão dentro de `<Grupo>`.
 
