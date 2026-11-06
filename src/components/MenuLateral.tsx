@@ -40,11 +40,12 @@ const GRUPOS: { titulo: string; icone: string; itens: Item[]; soGestor?: boolean
     ],
   },
   { titulo: "Em breve", icone: "timer", itens: [{ href: "/coletiva", rotulo: "Meta coletiva", icone: "users", emBreve: true }] },
-  { titulo: "Gestão", icone: "gear", soGestor: true, itens: [{ href: "/gestor", rotulo: "Painel do gestor", icone: "gear" }] },
 ];
 
 /** No pé do menu, acima do botão de modo claro/escuro (pedido do dono). */
 const CONFIG: Item = { href: "/configuracoes", rotulo: "Configurações", icone: "ajustes" };
+/** Só para o gestor: sozinho, logo acima da pasta Principal (pedido do dono). */
+const GESTOR: Item = { href: "/gestor", rotulo: "Painel do gestor", icone: "crown" };
 
 /** Logo abaixo de Notificações. */
 const EXTRAS: Item[] = [
@@ -91,7 +92,7 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
     document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", f); document.body.style.overflow = ""; };
   }, [aberto]);
-  const atual = [...EXTRAS, CONFIG, ...GRUPOS.flatMap((g) => g.itens)].find((i) => ativo(i.href));
+  const atual = [...EXTRAS, GESTOR, CONFIG, ...GRUPOS.flatMap((g) => g.itens)].find((i) => ativo(i.href));
   // pastas do menu: Principal e a pasta da aba atual ficam abertas; as outras abrem com um clique no título
   const pastaAtual = GRUPOS.find((g) => g.itens.some((i) => ativo(i.href)))?.titulo;
   const inicio = () => [...new Set(["Principal", ...(pastaAtual ? [pastaAtual] : [])])];
@@ -136,6 +137,12 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
         ))}
       </nav>
       <div className="menu-pastas">
+      {papel === "gestor" && (
+        <Link href={GESTOR.href} className={`menu-pasta menu-gestor ${ativo(GESTOR.href) ? "menu-pasta-on" : ""}`} aria-current={ativo(GESTOR.href) ? "page" : undefined}>
+          <span className="menu-pasta-icone"><Icone nome={GESTOR.icone} tamanho={16} /></span>
+          <span className="flex-1 truncate">{GESTOR.rotulo}</span>
+        </Link>
+      )}
       {GRUPOS.filter((g) => !g.soGestor || papel === "gestor").map((g) => {
         const estaAberta = abertas.includes(g.titulo);
         const idLista = `pasta-${g.titulo.toLowerCase().replace(/\s+/g, "-")}`;
