@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import webpush from "web-push";
+import { Abas, Grupo } from "@/components/Abas";
 import { Cabecalho, TituloCard } from "@/components/Blocos";
 import { Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { REDES, redeConfigurada } from "@/lib/coleta/redes";
@@ -43,6 +44,13 @@ export default async function ConfigGestor({ searchParams }: { searchParams: Pro
       <AbasGestor ativa="config" />
       <Retorno ok={ok} erro={erro} />
 
+      <Abas abas={[
+        { id: "servicos", rotulo: "Serviços", icone: "zap" },
+        { id: "redes", rotulo: pendentes ? `Liberar redes (${pendentes})` : "Liberar redes", icone: "users" },
+        { id: "avisos", rotulo: "Avisos e IA", icone: "bell" },
+        { id: "canais", rotulo: "Canais de referência", icone: "bulb" },
+        { id: "novo", rotulo: "Cadastrar criador", icone: "plus" },
+      ]}>
       <section className="card flex flex-col gap-3">
         <TituloCard icone="zap">Serviços do site</TituloCard>
         <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
@@ -96,6 +104,7 @@ export default async function ConfigGestor({ searchParams }: { searchParams: Pro
         )}
       </section>
 
+      <Grupo>
       <section className="card flex flex-col gap-3">
         <TituloCard icone="bell" direita={<form action={gerarAvisosAgora}><button className="btn-line" type="submit" style={{ minHeight: 36 }}>Gerar as notificações de hoje agora</button></form>}>Notificações</TituloCard>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Todo dia, depois da coleta das 6h: dia de postar com o mapa da semana, dias para repor, faltas, marcos da meta, vídeo bombando (2× a média do criador) e subida no ranking. Rede com problema, mês fechado e pagamento feito avisam na hora.</p>
@@ -128,6 +137,7 @@ export default async function ConfigGestor({ searchParams }: { searchParams: Pro
         </div>
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Estimativa do site; o valor cobrado de verdade fica no console da Anthropic. Roteiros já traduzidos por alguém não contam de novo. Os limites zeram todo dia 1º.</p>
       </section>
+      </Grupo>
 
       <section id="referencias" className="card flex flex-col gap-4">
         <TituloCard icone="bulb">Canais de referência (Ideias & roteiros)</TituloCard>
@@ -163,6 +173,7 @@ export default async function ConfigGestor({ searchParams }: { searchParams: Pro
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Os dias de postagem começam de segunda a sexta. Envie o e-mail e a senha para o criador. Depois ele conecta as redes em Minhas redes (Instagram precisa ser conta profissional e testador do app; TikTok precisa estar na lista do Sandbox até a aprovação).</p>
         <button className="btn-gold" type="submit">Cadastrar</button>
       </form>
+      </Abas>
     </>
   );
 }

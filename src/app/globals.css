@@ -74,6 +74,15 @@ a { color: inherit; text-decoration: none; }
 .menu-seta-on { transform: rotate(90deg); }
 .menu-itens { display: flex; flex-direction: column; gap: 4px; }
 .menu-itens[hidden] { display: none; }
+/* abinhas dentro de uma página comprida (componente Abas) */
+.abas { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
+.abas::-webkit-scrollbar { display: none; }
+.aba { display: flex; align-items: center; gap: 8px; flex: none; min-height: 44px; padding: 0 14px; margin-bottom: -1px; border-bottom: 2px solid transparent; color: var(--muted); font-weight: 600; font-size: 14px; white-space: nowrap; }
+.aba:hover { color: var(--fg); }
+.aba-on { color: var(--strong); border-bottom-color: var(--gold); }
+.aba-on svg { color: var(--accent-text); }
+[data-aba][hidden] { display: none; }
+@media (max-width: 640px) { .aba { padding: 0 10px; font-size: 13px; gap: 6px; } }
 .menu-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 4px; color: var(--text2); }
 .menu-item:hover { background: var(--chip); }
 .menu-ativo { background: var(--tint); color: var(--strong); font-weight: 600; box-shadow: inset 0 0 0 1px var(--gold), 0 0 18px rgba(232, 176, 20, .35); }

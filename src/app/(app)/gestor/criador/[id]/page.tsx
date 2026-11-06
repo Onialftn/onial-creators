@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Abas, Grupo } from "@/components/Abas";
 import { Avatar } from "@/components/Avatar";
 import { Cabecalho, Calendario, CardsGanho, TituloCard } from "@/components/Blocos";
-import { Icone, LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
+import { LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { REDES } from "@/lib/coleta/redes";
 import { PLATAFORMAS, resumoDoMes, topVideos, usuarioAtual } from "@/lib/dados";
 import { DIAS_NOMES, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@/lib/datas";
@@ -68,6 +69,8 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
 
       <CardsGanho r={r} gestor={perfil.papel === "gestor"} />
 
+      <Abas abas={[{ id: "videos", rotulo: "Vídeos", icone: "video" }, { id: "agenda", rotulo: "Meta e dias", icone: "cal" }, { id: "pagar", rotulo: "Pagamentos", icone: "wallet" }, { id: "correcoes", rotulo: "Correções", icone: "gear" }]}>
+      <Grupo>
       <section className="card flex flex-col gap-3">
         <TituloCard icone="trophy" direita={<span style={{ fontSize: 12 }}>Views ganhas em {nomeMes(mes).split(" ")[0].toLowerCase()} · todas as redes</span>}>Mais virais do mês</TituloCard>
         {virais.length === 0 ? <p style={{ margin: 0, color: "var(--muted)" }}>Ainda sem views de vídeos neste mês.</p> : (
@@ -149,7 +152,9 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
           </div>
         </details>
       </section>
+      </Grupo>
 
+      <Grupo>
       <section className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))" }}>
         <form id="meta" action={salvarMeta} className="card flex flex-col gap-3">
           <TituloCard icone="target">Meta de {nomeMes(mes).split(" ")[0]}</TituloCard>
@@ -194,6 +199,7 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
         <Calendario dias={r.calendario} mapas={Object.fromEntries((mapas ?? []).map((m) => [m.dia_semana as number, m.mapa as string]))} />
         <p style={{ margin: 0, color: "var(--muted)", fontSize: 13 }}>Os dias são marcados sozinhos pelos vídeos postados nas redes conectadas, uns 10 minutos depois de postar (as views do dia entram na coleta das 06:00).</p>
       </section>
+      </Grupo>
 
       <section id="pagamentos" className="card flex flex-col gap-4">
         <TituloCard icone="wallet">Pagamentos</TituloCard>
@@ -225,13 +231,9 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
         </div>
       </section>
 
-      <details className="card">
-        <summary className="flex cursor-pointer items-center gap-2.5" style={{ listStyle: "none" }}>
-          <span style={{ color: "var(--accent-text)", display: "flex" }}><Icone nome="gear" /></span>
-          <span className="h2 m-0" style={{ fontSize: 18 }}>Correções manuais</span>
-          <span style={{ marginLeft: "auto", color: "var(--muted)", fontSize: 13 }}>Só se precisar · clique para abrir</span>
-        </summary>
-        <p style={{ color: "var(--muted)", fontSize: 13 }}>As views e os dias de postagem são automáticos. Use isto só para redes que ainda não estão conectadas (ex.: TikTok antes de conectar) ou para corrigir um dia.</p>
+      <section className="card flex flex-col gap-3">
+        <TituloCard icone="gear" direita="Só se precisar">Correções manuais</TituloCard>
+        <p style={{ color: "var(--muted)", fontSize: 13, margin: 0 }}>As views e os dias de postagem são automáticos. Use isto só para redes que ainda não estão conectadas (ex.: TikTok antes de conectar) ou para corrigir um dia.</p>
         <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(300px,1fr))" }}>
           <form action={lancarViews} className="tile flex flex-col gap-3">
             <TituloCard icone="eye">Lançar views</TituloCard>
@@ -257,7 +259,8 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
             <button className="btn-line" type="submit">Registrar</button>
           </form>
         </div>
-      </details>
+      </section>
+      </Abas>
     </>
   );
 }
