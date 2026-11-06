@@ -53,7 +53,7 @@ export function GraficoMes({ dias, hoje, totalCentavos, conta, anterior, nomeMes
         <div className="flex min-w-0 flex-col" style={{ gap: 8 }}>
           <span style={{ fontSize: 13, color: "var(--muted)" }}>Ganho bruto de cada dia · {formatarNumero(totalViews)} views no mês</span>
           <Linha
-            dias={dias.map((d) => d.dia)}
+            dias={ate.map((d) => d.dia)}
             valores={serie}
             cor="var(--ok)"
             formatar={(v) => formatarReais(v)}
@@ -91,7 +91,7 @@ function Variacao({ delta, nomeMesAnterior, curto = false }: { delta: number | n
   return (
     <span className="inline-flex items-center gap-1" style={{ fontSize: curto ? 12 : 13, color: "var(--text2)" }}>
       <span style={{ color: delta >= 0 ? "var(--ok)" : "var(--warn)", display: "inline-flex" }}><Icone nome={delta >= 0 ? "up" : "down"} tamanho={curto ? 11 : 13} /></span>
-      {delta >= 0 ? "+" : ""}{formatarNumero(delta)}% vs. {curto ? nomeMesAnterior : `mesmo período de ${nomeMesAnterior}`}
+      {delta > 999 ? ">999" : `${delta >= 0 ? "+" : ""}${formatarNumero(delta)}`}% vs. {curto ? nomeMesAnterior : `mesmo período de ${nomeMesAnterior}`}
     </span>
   );
 }
@@ -134,7 +134,10 @@ function Linha({ dias, valores, cor, formatar, formatarEixo, rotulo }: {
   const caminho = pontos.length ? `M${pontos.join("L")}` : "";
   const area = pontos.length ? `${caminho}L${x(valores.length - 1).toFixed(1)},${y(0)}L${x(0)},${y(0)}Z` : "";
   const marcas = Array.from({ length: Math.round(topo / passo) + 1 }, (_, i) => i * passo);
-  const rotulosX = dias.map((d, i) => ({ d, i })).filter(({ i }) => i % 7 === 0 || i === dias.length - 1).filter(({ i }, k, arr) => k === arr.length - 1 || dias.length - 1 - i >= 3 || i === 0);
+  // a linha ocupa a largura toda com os dias que já passaram (como no YouTube); até 7 dias mostra todas as datas, depois 5 espalhadas
+  const n = dias.length;
+  const indicesX = n <= 7 ? dias.map((_, i) => i) : [...new Set([0, 1, 2, 3, 4].map((k) => Math.round((k * (n - 1)) / 4)))];
+  const rotulosX = indicesX.map((i) => ({ d: dias[i], i }));
   const dataCurta = (d: string) => `${d.slice(8)}/${d.slice(5, 7)}`;
 
   function mover(e: React.PointerEvent<SVGSVGElement>) {
