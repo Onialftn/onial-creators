@@ -4,7 +4,7 @@ import { Configuracoes } from "@/components/Configuracoes";
 export default function PaginaConfiguracoes() {
   return (
     <>
-      <Cabecalho icone="gear" titulo="Configurações" sub="Deixe o site do seu jeito: cor, modo claro ou escuro, tamanho do texto e animações." />
+      <Cabecalho icone="ajustes" titulo="Configurações" sub="Deixe o site do seu jeito: cor, modo claro ou escuro, tamanho do texto e animações." />
       <Configuracoes />
     </>
   );

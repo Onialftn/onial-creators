@@ -37,12 +37,14 @@ const GRUPOS: { titulo: string; icone: string; itens: Item[]; soGestor?: boolean
     itens: [
       { href: "/pagamentos", rotulo: "Pagamentos", icone: "wallet" },
       { href: "/redes", rotulo: "Minhas redes", icone: "zap" },
-      { href: "/configuracoes", rotulo: "Configurações", icone: "gear" },
     ],
   },
   { titulo: "Em breve", icone: "timer", itens: [{ href: "/coletiva", rotulo: "Meta coletiva", icone: "users", emBreve: true }] },
   { titulo: "Gestão", icone: "gear", soGestor: true, itens: [{ href: "/gestor", rotulo: "Painel do gestor", icone: "gear" }] },
 ];
+
+/** No pé do menu, acima do botão de modo claro/escuro (pedido do dono). */
+const CONFIG: Item = { href: "/configuracoes", rotulo: "Configurações", icone: "ajustes" };
 
 /** Logo abaixo de Notificações. */
 const EXTRAS: Item[] = [
@@ -89,7 +91,7 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
     document.body.style.overflow = "hidden";
     return () => { window.removeEventListener("keydown", f); document.body.style.overflow = ""; };
   }, [aberto]);
-  const atual = [...EXTRAS, ...GRUPOS.flatMap((g) => g.itens)].find((i) => ativo(i.href));
+  const atual = [...EXTRAS, CONFIG, ...GRUPOS.flatMap((g) => g.itens)].find((i) => ativo(i.href));
   // pastas do menu: Principal e a pasta da aba atual ficam abertas; as outras abrem com um clique no título
   const pastaAtual = GRUPOS.find((g) => g.itens.some((i) => ativo(i.href)))?.titulo;
   const inicio = () => [...new Set(["Principal", ...(pastaAtual ? [pastaAtual] : [])])];
@@ -161,10 +163,16 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
         );
       })}
       </div>
+      <div className="menu-rodape">
+      <Link href={CONFIG.href} className={`menu-tema ${ativo(CONFIG.href) ? "menu-ativo" : ""}`} aria-current={ativo(CONFIG.href) ? "page" : undefined}>
+        <Icone nome={CONFIG.icone} tamanho={18} />
+        <span>{CONFIG.rotulo}</span>
+      </Link>
       <button type="button" onClick={alternarTema} className="menu-tema" aria-label={claro ? "Mudar para modo escuro" : "Mudar para modo claro"}>
         <Icone nome={claro ? "moon" : "sun"} tamanho={18} />
         <span>{claro ? "Modo escuro" : "Modo claro"}</span>
       </button>
+      </div>
       <div className="menu-perfil">
         <Avatar foto={foto} nome={nome} tamanho={36} />
         <div className="min-w-0">
