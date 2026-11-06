@@ -46,11 +46,11 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
           return (
             <details key={x.id} id={`extra-${x.id}`} className="linha-extra" open={editando || undefined} style={{ borderTop: i ? "1px solid var(--line)" : undefined }}>
               <summary className="flex items-center gap-3" style={{ minHeight: 60, padding: "10px 16px 10px 18px", cursor: "pointer", listStyle: "none" }}>
-                <span className="num flex flex-none items-center justify-center" style={{ width: 36, height: 36, borderRadius: 10, background: aberto ? "rgba(232,176,20,.12)" : "var(--chip)", color: aberto ? "var(--accent-text)" : "var(--muted)", fontSize: 15 }}>{ordemDoExtra(x) ? `${ordemDoExtra(x)}º` : i + 1}</span>
+                <span className="num flex flex-none items-center justify-center" style={{ width: 36, height: 36, borderRadius: 10, background: aberto ? "color-mix(in srgb, var(--gold) 12%, transparent)" : "var(--chip)", color: aberto ? "var(--accent-text)" : "var(--muted)", fontSize: 15 }}>{ordemDoExtra(x) ? `${ordemDoExtra(x)}º` : i + 1}</span>
                 <span className="min-w-0 flex-1">
                   <span className="block truncate" style={{ color: aberto ? "var(--strong)" : "var(--muted)", fontWeight: 600, fontSize: 15 }}>{x.titulo}</span>
                   <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1" style={{ marginTop: 3, fontSize: 12, color: "var(--muted)" }}>
-                    <span style={{ padding: "1px 8px", borderRadius: 999, fontWeight: 700, fontSize: 11, background: aberto ? "rgba(232,176,20,.16)" : "var(--chip)", color: aberto ? "var(--accent-text)" : "var(--muted)" }}>{aberto ? "Agendado" : "Encerrado"}</span>
+                    <span style={{ padding: "1px 8px", borderRadius: 999, fontWeight: 700, fontSize: 11, background: aberto ? "color-mix(in srgb, var(--gold) 16%, transparent)" : "var(--chip)", color: aberto ? "var(--accent-text)" : "var(--muted)" }}>{aberto ? "Agendado" : "Encerrado"}</span>
                     {x.pix && <span style={{ padding: "1px 8px", borderRadius: 999, fontWeight: 700, fontSize: 11, background: "rgba(61,220,151,.15)", color: "#3DDC97" }}>💸 PIX</span>}
                     <span>· {doExtra.length} {doExtra.length === 1 ? "envio" : "envios"}</span>
                     {pendentes > 0 && <span style={{ color: "var(--accent-text)", fontWeight: 600 }}>· {pendentes} para aprovar</span>}
@@ -151,7 +151,7 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
     return (
       <div style={{ borderTop: "1px solid var(--line)" }}>
         <div className="flex flex-wrap items-center gap-2" style={{ padding: "12px 16px 6px 18px", background: "var(--bg)" }}>
-          <span className="num" style={{ padding: "3px 10px", borderRadius: 8, fontSize: 15, background: dia < hoje ? "var(--chip)" : ehHoje ? "var(--ok)" : "#E8B014", color: dia < hoje ? "var(--muted)" : "#0A0A0A", letterSpacing: 0.5 }}>{diaCurto(dia).toUpperCase()}</span>
+          <span className="num" style={{ padding: "3px 10px", borderRadius: 8, fontSize: 15, background: dia < hoje ? "var(--chip)" : ehHoje ? "var(--ok)" : "var(--gold)", color: dia < hoje ? "var(--muted)" : "#0A0A0A", letterSpacing: 0.5 }}>{diaCurto(dia).toUpperCase()}</span>
           <span style={{ fontWeight: 700, fontSize: 14, color: dia < hoje ? "var(--muted)" : ehHoje ? "var(--ok)" : "var(--accent-text)" }}>{quandoExtra(dia, hoje)}</span>
           <span style={{ fontSize: 14, color: "var(--text2)" }}>· {lista.length} {lista.length === 1 ? "extra" : "extras"} · <b className="num" style={{ color: dia < hoje ? "var(--muted)" : "var(--ok)", fontSize: 20 }}>{valorCurto(total)}</b> por criador</span>
           {pend > 0 && <span className="pill-warn" style={{ fontSize: 11, marginLeft: "auto" }}>{pend} para aprovar</span>}
@@ -167,7 +167,7 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
       <AbasGestor ativa="extras" />
       <Retorno ok={ok} erro={erro} />
 
-      {(novo || base) && <form id="novo" key={base?.id ?? "novo"} action={criarExtra} className="card flex flex-col gap-3" style={base ? { borderColor: "#E8B014" } : undefined}>
+      {(novo || base) && <form id="novo" key={base?.id ?? "novo"} action={criarExtra} className="card flex flex-col gap-3" style={base ? { borderColor: "var(--gold)" } : undefined}>
         <TituloCard icone="plus" direita={<Link href="/gestor/extras" style={{ color: "var(--muted)", fontSize: 13, textDecoration: "underline" }}>Fechar</Link>}>{base ? `Duplicando: ${base.titulo}` : "Novo vídeo extra"}</TituloCard>
         <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))" }}>
           <label className="flex flex-col gap-1.5" style={{ gridColumn: "span 2" }}><span className="label">TÍTULO</span><input className="input" name="titulo" maxLength={120} defaultValue={base?.titulo ?? ""} placeholder="Ex.: Short mostrando o farm de XP do 1v1" required /></label>
@@ -181,12 +181,12 @@ export default async function ExtrasGestor({ searchParams }: { searchParams: Pro
         <button className="btn-gold" type="submit" style={{ alignSelf: "flex-start" }}>{base ? "Criar cópia" : "Criar extra"}</button>
       </form>}
 
-      <section className="flex flex-col" style={{ borderRadius: 16, border: "1px solid rgba(232,176,20,.28)", background: "var(--panel)", overflow: "hidden" }}>
+      <section className="flex flex-col" style={{ borderRadius: 16, border: "1px solid color-mix(in srgb, var(--gold) 28%, transparent)", background: "var(--panel)", overflow: "hidden" }}>
         <div className="flex items-center gap-3" style={{ padding: "14px 14px 14px 18px", borderBottom: "1px solid var(--line)" }}>
           <span style={{ color: "var(--accent-text)", display: "flex" }}><Icone nome="wallet" tamanho={22} /></span>
           <h2 className="h2 m-0 flex-1" style={{ fontSize: 18 }}>EXTRAS E ENTREGAS</h2>
           {esperando > 0 && <span className="pill-warn" style={{ fontSize: 12 }}>{esperando} para aprovar</span>}
-          <Link href={novo ? "/gestor/extras" : "/gestor/extras?novo=1#novo"} aria-label={novo ? "Fechar novo extra" : "Criar novo extra"} className="flex flex-none items-center justify-center" style={{ width: 44, height: 44, borderRadius: 10, background: "#E8B014", color: "#0A0A0A" }}>
+          <Link href={novo ? "/gestor/extras" : "/gestor/extras?novo=1#novo"} aria-label={novo ? "Fechar novo extra" : "Criar novo extra"} className="flex flex-none items-center justify-center" style={{ width: 44, height: 44, borderRadius: 10, background: "var(--gold)", color: "#0A0A0A" }}>
             {novo ? <Icone nome="x" tamanho={20} /> : <Icone nome="plus" tamanho={22} />}
           </Link>
         </div>

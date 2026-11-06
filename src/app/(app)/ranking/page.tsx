@@ -33,12 +33,12 @@ export default async function Ranking() {
       <Cabecalho icone="trophy" titulo="Ranking do mês" sub={`Quem mais gerou views na equipe em ${nomeMes(mes).toLowerCase()}. Só views, sem valores.`} />
       <section className="card flex items-end justify-center" style={{ paddingTop: 24, gap: "clamp(8px, 2.5vw, 16px)" }}>
         <Podio pos={2} l={linhas[1]} altura={120} cor="#9AA4B5" eu={linhas[1]?.criadorId === perfil.id} />
-        <Podio pos={1} l={linhas[0]} altura={170} cor="#E8B014" eu={linhas[0]?.criadorId === perfil.id} />
+        <Podio pos={1} l={linhas[0]} altura={170} cor="var(--gold)" eu={linhas[0]?.criadorId === perfil.id} />
         <Podio pos={3} l={linhas[2]} altura={90} cor="#C26A3A" eu={linhas[2]?.criadorId === perfil.id} />
       </section>
       {acima && (
-        <section className="card flex flex-wrap items-center gap-4" style={{ borderColor: "#E8B014" }}>
-          <span className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 6, background: "#E8B014", color: "#0A0A0A" }}><Icone nome="target" tamanho={24} /></span>
+        <section className="card flex flex-wrap items-center gap-4" style={{ borderColor: "var(--gold)" }}>
+          <span className="flex items-center justify-center" style={{ width: 48, height: 48, borderRadius: 6, background: "var(--gold)", color: "#0A0A0A" }}><Icone nome="target" tamanho={24} /></span>
           <div className="flex-1" style={{ color: "var(--strong)", fontWeight: 600, fontSize: 16 }}>Faltam {formatarNumero(acima.views - linhas[minhaPos].views + 1)} views para você passar o {minhaPos}º lugar</div>
         </section>
       )}
@@ -50,7 +50,7 @@ export default async function Ranking() {
               {linhas.map((l, i) => {
                 const eu = l.criadorId === perfil.id;
                 return (
-                  <tr key={l.criadorId} style={eu ? { background: "var(--tint)", boxShadow: "inset 3px 0 0 #E8B014" } : undefined}>
+                  <tr key={l.criadorId} style={eu ? { background: "var(--tint)", boxShadow: "inset 3px 0 0 var(--gold)" } : undefined}>
                     <td className="num" style={{ fontSize: 20, color: i < 3 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}</td>
                     <td style={{ color: "var(--strong)", fontWeight: 600 }}><span className="flex items-center gap-2.5"><Avatar foto={l.foto} nome={l.nome} tamanho={36} />{eu ? `${l.nome} (você)` : l.nome}</span></td>
                     <td className="num" style={{ fontSize: 18, color: "var(--strong)" }}>{formatarNumero(l.views)}</td>

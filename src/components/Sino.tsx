@@ -79,7 +79,7 @@ function AvisosCelular({ chavePublica }: { chavePublica: string | null }) {
   const rotulo = ligado ? "Desligar notificações no celular" : "Ligar notificações no celular";
   return (
     <span className="relative flex">
-      <button type="button" onClick={clicar} aria-label={rotulo} title={rotulo} aria-pressed={ligado} className="flex items-center justify-center" style={{ width: 40, height: 40, borderRadius: 8, color: ligado ? "#E8B014" : "var(--muted)" }}>
+      <button type="button" onClick={clicar} aria-label={rotulo} title={rotulo} aria-pressed={ligado} className="flex items-center justify-center" style={{ width: 40, height: 40, borderRadius: 8, color: ligado ? "var(--gold)" : "var(--muted)" }}>
         <Icone nome={ligado ? "bell" : "bell-off"} tamanho={18} />
       </button>
       {(dica || erro) && texto && <span role="status" style={{ position: "absolute", top: 44, right: 0, width: 230, zIndex: 2, padding: "8px 10px", borderRadius: 8, background: "var(--panel)", border: "1px solid var(--line)", fontSize: 12, color: "var(--text2)" }}>{texto}</span>}
@@ -157,7 +157,7 @@ export function Sino({ itens: iniciais, chavePublica, compacto = false, bloco = 
                 <div className="flex gap-3" style={{ padding: 12, paddingRight: 40, borderRadius: 8, background: n.lida ? "transparent" : "var(--tint)", border: "1px solid var(--line)" }}>
                   <span style={{ color: "var(--accent-text)", display: "flex", paddingTop: 2 }}><Icone nome={ICONE[n.tipo] ?? "zap"} tamanho={18} /></span>
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-start justify-between gap-2"><b style={{ color: "var(--strong)", fontSize: 14, lineHeight: 1.35 }}>{n.titulo}</b><span style={{ color: "var(--muted)", fontSize: 11, whiteSpace: "nowrap" }}>{!n.lida && <span aria-label="Nova" style={{ display: "inline-block", width: 7, height: 7, borderRadius: 4, background: "#E8B014", marginRight: 5 }} />}{ha(n.criado_em)}</span></span>
+                    <span className="flex items-start justify-between gap-2"><b style={{ color: "var(--strong)", fontSize: 14, lineHeight: 1.35 }}>{n.titulo}</b><span style={{ color: "var(--muted)", fontSize: 11, whiteSpace: "nowrap" }}>{!n.lida && <span aria-label="Nova" style={{ display: "inline-block", width: 7, height: 7, borderRadius: 4, background: "var(--gold)", marginRight: 5 }} />}{ha(n.criado_em)}</span></span>
                     {n.texto && <span style={{ display: "block", color: "var(--text2)", fontSize: 13, marginTop: 3, lineHeight: 1.45 }}>{n.texto}</span>}
                   </span>
                 </div>

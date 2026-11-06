@@ -51,7 +51,7 @@ export default async function Ideias({ searchParams }: { searchParams: Promise<{
           {MAPAS.map((m, i) => {
             const ativo = m.id === mapa.id;
             return (
-              <Link key={m.id} href={`/ideias?mapa=${m.id}${aba === "curtidos" ? "&aba=curtidos" : ""}`} aria-current={ativo ? "true" : undefined} className="flex items-center gap-3" style={{ minHeight: 64, padding: "12px 16px", borderRadius: 8, border: `1px solid ${ativo ? "#E8B014" : "var(--line)"}`, background: ativo ? "var(--tint)" : "var(--bg)" }}>
+              <Link key={m.id} href={`/ideias?mapa=${m.id}${aba === "curtidos" ? "&aba=curtidos" : ""}`} aria-current={ativo ? "true" : undefined} className="flex items-center gap-3" style={{ minHeight: 64, padding: "12px 16px", borderRadius: 8, border: `1px solid ${ativo ? "var(--gold)" : "var(--line)"}`, background: ativo ? "var(--tint)" : "var(--bg)" }}>
                 <span style={{ fontSize: 24 }}>{m.emoji}</span>
                 <span className="flex flex-col"><span className="label">Opção {i + 1}</span><span style={{ color: "var(--strong)", fontWeight: 600 }}>{m.nome}</span></span>
                 {ativo && <span style={{ marginLeft: "auto", color: "var(--accent-text)", display: "flex" }}><Icone nome="check" /></span>}

@@ -4,7 +4,7 @@ import { notaTitulo } from "@/lib/seo-nota";
 import { Icone } from "./Icone";
 
 const VERDE = { background: "#3DDC97", color: "#0A0A0A", borderColor: "#3DDC97" } as const;
-const corNota = (x: number) => (x >= 70 ? "var(--ok)" : x >= 45 ? "#E8B014" : "var(--warn)");
+const corNota = (x: number) => (x >= 70 ? "var(--ok)" : x >= 45 ? "var(--gold)" : "var(--warn)");
 const n = (v: number) => (v >= 1e6 ? `${(v / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi` : v >= 1e3 ? `${Math.round(v / 1e3)} mil` : String(v));
 
 /** Botão que copia e fica verde por 2 segundos. */
@@ -39,7 +39,7 @@ function Passo({ num, titulo, feito, children, direita }: { num: number; titulo:
   return (
     <section className="card flex flex-col gap-3">
       <div className="flex items-center gap-3">
-        <span className="num flex items-center justify-center flex-none" style={{ width: 30, height: 30, borderRadius: 15, fontSize: 16, background: feito ? "var(--ok)" : "#E8B014", color: "#0A0A0A" }}>{feito ? <Icone nome="check" tamanho={16} /> : num}</span>
+        <span className="num flex items-center justify-center flex-none" style={{ width: 30, height: 30, borderRadius: 15, fontSize: 16, background: feito ? "var(--ok)" : "var(--gold)", color: "#0A0A0A" }}>{feito ? <Icone nome="check" tamanho={16} /> : num}</span>
         <h2 className="num flex-1" style={{ margin: 0, fontSize: 19, color: "var(--strong)" }}>{titulo}</h2>
         {direita}
       </div>
@@ -127,7 +127,7 @@ export function Seo({ pronta, usados: usadosIni, limite }: { pronta: boolean; us
               const ns = notaTitulo(s).nota;
               const ativo = escolhido === s;
               return (
-                <div key={s} className="flex flex-wrap items-center gap-3" style={{ ...caixa, borderColor: ativo ? "#E8B014" : "var(--line)" }}>
+                <div key={s} className="flex flex-wrap items-center gap-3" style={{ ...caixa, borderColor: ativo ? "var(--gold)" : "var(--line)" }}>
                   <span className="num flex-none" style={{ fontSize: 18, color: corNota(ns), width: 34 }}>{ns}</span>
                   <span className="flex-1" style={{ color: "var(--strong)", minWidth: 180 }}>{s}<span style={{ color: "var(--muted)", fontSize: 12 }}> · {s.length} letras</span></span>
                   <Copiar texto={s} />
@@ -167,7 +167,7 @@ export function Seo({ pronta, usados: usadosIni, limite }: { pronta: boolean; us
           <>
             <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(180px,1fr))" }}>
               {horarios.faixas.map((f, i) => (
-                <div key={f.faixa} className="tile" style={i === 0 ? { borderColor: "#E8B014" } : undefined}>
+                <div key={f.faixa} className="tile" style={i === 0 ? { borderColor: "var(--gold)" } : undefined}>
                   <div style={{ fontSize: 12, color: "var(--muted)" }}>{i === 0 ? "🥇 MELHOR HORÁRIO" : `${i + 1}º HORÁRIO`}</div>
                   <div className="num" style={{ fontSize: 24, color: "var(--strong)" }}>{f.faixa}</div>
                   <div style={{ fontSize: 12, color: "var(--muted)" }}>~{n(f.mediana)} views por vídeo · {f.videos} vídeos</div>

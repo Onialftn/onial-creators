@@ -63,7 +63,7 @@ export function CardsGanho({ r, gestor = false }: { r: ResumoMes; gestor?: boole
           return (
             <div style={{ marginTop: 12 }}>
               <div role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.floor(pct)} aria-label="Progresso da meta de views" style={{ height: 10, borderRadius: 5, background: "var(--track)", overflow: "hidden" }}>
-                <div style={{ width: `${pct}%`, height: "100%", borderRadius: 5, background: p.bateuMeta ? "var(--ok)" : "linear-gradient(90deg,#B8860B,#E8B014)", transition: "width .4s" }} />
+                <div style={{ width: `${pct}%`, height: "100%", borderRadius: 5, background: p.bateuMeta ? "var(--ok)" : "linear-gradient(90deg,color-mix(in srgb, var(--gold) 72%, #000),var(--gold))", transition: "width .4s" }} />
               </div>
               <div className="flex justify-between" style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
                 <span className="num" style={{ fontSize: 14, color: p.bateuMeta ? "var(--ok)" : "var(--accent-text)" }}>{Math.floor(pct)}%</span>
@@ -131,7 +131,7 @@ export function EmBreve({ icone, titulo, texto, fase }: { icone: string; titulo:
   return (
     <div className="flex flex-1 items-center justify-center" style={{ minHeight: "70vh" }}>
       <div className="flex flex-col items-center gap-4 text-center" style={{ maxWidth: 460 }}>
-        <div className="flex items-center justify-center rounded-full" style={{ width: 84, height: 84, background: "var(--tint)", border: "1px solid var(--line2)", color: "var(--accent-text)", boxShadow: "0 0 40px rgba(232,176,20,.25)" }}><Icone nome={icone} tamanho={40} /></div>
+        <div className="flex items-center justify-center rounded-full" style={{ width: 84, height: 84, background: "var(--tint)", border: "1px solid var(--line2)", color: "var(--accent-text)", boxShadow: "0 0 40px color-mix(in srgb, var(--gold) 25%, transparent)" }}><Icone nome={icone} tamanho={40} /></div>
         <span className="pill" style={{ background: "var(--gold)", color: "#0A0A0A", letterSpacing: 1.2 }}>EM BREVE · {fase}</span>
         <h1 className="h1 m-0" style={{ fontSize: 40 }}>{titulo}</h1>
         <p style={{ color: "var(--muted)", lineHeight: 1.6, margin: 0 }}>{texto}</p>
@@ -218,7 +218,7 @@ export function RankingTop3({ linhas, meuId }: { linhas: LinhaRanking[]; meuId: 
         return (
           <div key={l.criadorId} className="flex items-center gap-2.5" style={{ padding: "6px 8px", borderRadius: 8, background: eu ? "var(--tint)" : undefined, border: `1px solid ${eu ? "var(--gold)" : "transparent"}`, marginTop: i >= 3 ? 6 : 0 }}>
             <span className="num" style={{ width: 26, fontSize: 18, color: i < 3 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}º</span>
-            <Avatar foto={l.foto} nome={l.nome} tamanho={34} borda={i === 0 ? "#E8B014" : undefined} />
+            <Avatar foto={l.foto} nome={l.nome} tamanho={34} borda={i === 0 ? "var(--gold)" : undefined} />
             <span className="min-w-0 flex-1 truncate" style={{ color: "var(--strong)", fontWeight: eu ? 700 : 600, fontSize: 14 }}>{eu ? "Você" : l.nome.split(" ")[0]}</span>
             <span className="num" style={{ fontSize: 17, color: eu ? "var(--strong)" : "var(--text2)" }}>{formatarNumero(l.views)}</span>
           </div>

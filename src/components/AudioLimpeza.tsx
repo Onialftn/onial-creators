@@ -53,7 +53,7 @@ export function AudioLimpeza() {
     for (const r of edit.regs) { g.fillStyle = r.t === "sil" ? "rgba(229,72,77,.22)" : "rgba(77,163,255,.28)"; g.fillRect((r.s / dur) * w, 0, Math.max(1, ((r.e - r.s) / dur) * w), h); }
     for (let x = 0; x < w; x++) {
       const t = (x / w) * dur, reg = edit.regs.find((r) => t >= r.s && t < r.e), v = (env[x] / mx) * (h / 2) * 0.92;
-      g.fillStyle = reg ? (reg.t === "sil" ? "#E5484D" : "#4DA3FF") : "#E8B014"; g.globalAlpha = reg ? 0.7 : 1; g.fillRect(x, h / 2 - v, 1, Math.max(1, v * 2));
+      g.fillStyle = reg ? (reg.t === "sil" ? "#E5484D" : "#4DA3FF") : "var(--gold)"; g.globalAlpha = reg ? 0.7 : 1; g.fillRect(x, h / 2 - v, 1, Math.max(1, v * 2));
     }
     g.globalAlpha = 1;
   }, [orig, edit]);
@@ -76,7 +76,7 @@ export function AudioLimpeza() {
   const Opcao = ({ k, t, s }: { k: keyof typeof opc; t: string; s: string }) => (
     <label className="flex cursor-pointer items-center justify-between gap-3" style={{ minHeight: 48 }}>
       <span>{t}<small style={{ display: "block", color: "var(--muted)", fontSize: 12 }}>{s}</small></span>
-      <input type="checkbox" checked={opc[k]} onChange={(e) => setOpc({ ...opc, [k]: e.target.checked })} style={{ width: 20, height: 20, accentColor: "#E8B014" }} />
+      <input type="checkbox" checked={opc[k]} onChange={(e) => setOpc({ ...opc, [k]: e.target.checked })} style={{ width: 20, height: 20, accentColor: "var(--gold)" }} />
     </label>
   );
 
@@ -101,7 +101,7 @@ export function AudioLimpeza() {
           <div className="label" style={{ marginTop: 10 }}>Intensidade do corte</div>
           <div className="flex flex-wrap gap-2" style={{ marginTop: 6 }}>
             {(["leve", "media", "forte"] as Nivel[]).map((n) => (
-              <button key={n} aria-pressed={nivel === n} onClick={() => setNivel(n)} className="btn" style={nivel === n ? { background: "#E8B014", color: "#0A0A0A", fontWeight: 600 } : { background: "var(--bg)", border: "1px solid var(--line2)", color: "var(--text2)" }}>
+              <button key={n} aria-pressed={nivel === n} onClick={() => setNivel(n)} className="btn" style={nivel === n ? { background: "var(--gold)", color: "#0A0A0A", fontWeight: 600 } : { background: "var(--bg)", border: "1px solid var(--line2)", color: "var(--text2)" }}>
                 {n === "leve" ? "Leve" : n === "media" ? "Média" : "Forte"}
               </button>
             ))}

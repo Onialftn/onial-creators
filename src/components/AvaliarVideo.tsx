@@ -7,7 +7,7 @@ import { Medidor } from "./Seo";
 
 export interface Historico { id: string; arquivo: string; nota: number; resultado: Avaliacao; criado_em: string }
 
-const corNota = (x: number) => (x >= 70 ? "var(--ok)" : x >= 45 ? "#E8B014" : "var(--warn)");
+const corNota = (x: number) => (x >= 70 ? "var(--ok)" : x >= 45 ? "var(--gold)" : "var(--warn)");
 const caixa = { padding: "12px 14px", borderRadius: 8, background: "var(--bg)", border: "1px solid var(--line)" } as const;
 const data = (iso: string) => new Date(iso).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", timeZone: "America/Sao_Paulo" });
 const mb = (b: number) => `${(b / 1024 / 1024).toLocaleString("pt-BR", { maximumFractionDigits: 0 })} MB`;
@@ -138,7 +138,7 @@ export function AvaliarVideo({ pronta, usados: usadosIni, limite, historico: his
             onDragOver={(e) => { e.preventDefault(); setArrastando(true); }} onDragLeave={() => setArrastando(false)}
             onDrop={(e) => { e.preventDefault(); setArrastando(false); if (!etapa) escolher(e.dataTransfer.files[0]); }}
             className="flex flex-1 cursor-pointer flex-col items-center justify-center gap-2 text-center"
-            style={{ minWidth: 240, minHeight: previa ? 120 : 200, padding: 20, borderRadius: 10, border: `2px dashed ${arrastando ? "#E8B014" : "var(--line)"}`, background: arrastando ? "var(--tint)" : "var(--bg)" }}>
+            style={{ minWidth: 240, minHeight: previa ? 120 : 200, padding: 20, borderRadius: 10, border: `2px dashed ${arrastando ? "var(--gold)" : "var(--line)"}`, background: arrastando ? "var(--tint)" : "var(--bg)" }}>
             <input type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" className="sr-only" disabled={!!etapa} onChange={(e) => escolher(e.target.files?.[0])} />
             <span style={{ color: "var(--accent-text)" }}><Icone nome="video" tamanho={28} /></span>
             <b style={{ color: "var(--strong)" }}>{arquivo ? arquivo.name : "Escolha ou arraste o vídeo aqui"}</b>
@@ -155,7 +155,7 @@ export function AvaliarVideo({ pronta, usados: usadosIni, limite, historico: his
         </div>
         {etapa && (
           <div className="flex flex-col gap-1.5">
-            <div className="bar" style={{ height: 8 }}><span style={{ width: `${progresso}%`, background: "#E8B014", transition: "width .8s" }} /></div>
+            <div className="bar" style={{ height: 8 }}><span style={{ width: `${progresso}%`, background: "var(--gold)", transition: "width .8s" }} /></div>
             <span style={{ color: "var(--muted)", fontSize: 13 }}>{etapa === "enviando" ? `Enviando: ${progresso}%` : "A IA está assistindo ao vídeo inteiro (imagem e som). Leva de 1 a 3 minutos: não feche esta tela."}</span>
           </div>
         )}

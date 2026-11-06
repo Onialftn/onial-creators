@@ -7,7 +7,7 @@
   --bg: #0a0a0a; --side: #0f0f0f; --panel: #141414; --chip: #1b1b1b; --line: #2b2616; --line2: #4a3f1e; --track: #26231c;
   --fg: #f5f1e6; --strong: #ffffff; --text2: #ddd7c4; --muted: #b5ae99; --accent-text: #ffcc33; --tint: #2e2508; --tint-text: #e8dfc0; --halo: #2a2006;
   --ok: #2ee6a6; --ok-bg: #0f2a22; --ok-line: #1f5a47; --warn: #ff8a3d; --warn-bg: #2e1a08; --warn-line: #6a3a12;
-  --gold: #e8b014; --ink: #0a0a0a;
+  --gold: #e8b014; --ink: #0a0a0a; --accent-vivo: #ffcc33;
   --font-inter: "Inter"; --font-rajdhani: "Rajdhani";
   color-scheme: dark;
 }
@@ -17,6 +17,20 @@ html[data-mode="light"] {
   --ok: #0b7a57; --ok-bg: #ddf5ec; --ok-line: #9ed9c3; --warn: #b0500c; --warn-bg: #fde7d6; --warn-line: #f0b88a;
   color-scheme: light;
 }
+
+/* Temas de cor (aba Configurações, guardado no aparelho): trocam o dourado por outra cor, nos modos escuro e claro */
+html[data-tema="vermelho"] { --gold: #ef4444; --accent-vivo: #ff7a7a; --accent-text: #ff7a7a; --tint: #2e0b0d; --tint-text: #f2c9c9; --halo: #2a0709; --line: #2e1a1a; --line2: #5a2a2a; --track: #2a1f1f; }
+html[data-mode="light"][data-tema="vermelho"] { --accent-text: #b91c1c; --tint: #fde2e2; --tint-text: #8a1414; --halo: #fbd0d0; --line: #ecdcdc; --line2: #d4a5a5; --track: #f1e4e4; }
+html[data-tema="verde"] { --gold: #22c55e; --accent-vivo: #4ade80; --accent-text: #4ade80; --tint: #0b2a14; --tint-text: #c9efd3; --halo: #06240f; --line: #182a1c; --line2: #24502e; --track: #1c261e; }
+html[data-mode="light"][data-tema="verde"] { --accent-text: #15803d; --tint: #dcf5e3; --tint-text: #11612e; --halo: #c8efd4; --line: #d9e6dc; --line2: #9fcaa9; --track: #e2ede4; }
+html[data-tema="azul"] { --gold: #3b82f6; --accent-vivo: #7cb4ff; --accent-text: #7cb4ff; --tint: #0b1a33; --tint-text: #c9dcf7; --halo: #06152c; --line: #18202e; --line2: #26406a; --track: #1c212b; }
+html[data-mode="light"][data-tema="azul"] { --accent-text: #1d4ed8; --tint: #dde9fd; --tint-text: #183c9e; --halo: #cddffb; --line: #d9e0ec; --line2: #a5badf; --track: #e3e8f1; }
+html[data-tema="roxo"] { --gold: #a855f7; --accent-vivo: #c79bff; --accent-text: #c79bff; --tint: #1f0f33; --tint-text: #e3d1fa; --halo: #1a0a2c; --line: #241a2e; --line2: #46306a; --track: #241e2b; }
+html[data-mode="light"][data-tema="roxo"] { --accent-text: #7e22ce; --tint: #efe1fd; --tint-text: #5e1a9a; --halo: #e6d2fb; --line: #e3dcec; --line2: #c0a8df; --track: #ebe4f1; }
+/* Texto maior (aba Configurações) */
+html[data-texto="grande"] { zoom: 1.12; }
+/* Menos animações (aba Configurações) */
+html[data-animacoes="poucas"] *, html[data-animacoes="poucas"] *::before, html[data-animacoes="poucas"] *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
 
 html, body { background: var(--bg); color: var(--fg); }
 body {
@@ -36,7 +50,7 @@ a { color: inherit; text-decoration: none; }
   .label { font-size: 12px; letter-spacing: 1.2px; color: var(--muted); text-transform: uppercase; }
   .num { @apply display; font-variant-numeric: tabular-nums; }
   .btn { @apply inline-flex items-center justify-center gap-2; min-height: 44px; padding: 0 16px; border-radius: 4px; font-size: 14px; }
-  .btn-gold { @apply btn; background: var(--gold); color: var(--ink); font-weight: 600; box-shadow: 0 0 22px rgba(232, 176, 20, .3); }
+  .btn-gold { @apply btn; background: var(--gold); color: var(--ink); font-weight: 600; box-shadow: 0 0 22px color-mix(in srgb, var(--gold) 30%, transparent); }
   .btn-line { @apply btn; border: 1px solid var(--line2); color: var(--fg); background: transparent; }
   .btn-gold:disabled, .btn-line:disabled { opacity: .5; cursor: default; }
   .input { min-height: 44px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line2); background: var(--bg); color: var(--fg); width: 100%; }
@@ -94,7 +108,7 @@ a { color: inherit; text-decoration: none; }
 @media (max-width: 640px) { .aba { padding: 0 10px; font-size: 13px; gap: 6px; } }
 .menu-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 4px; color: var(--text2); }
 .menu-item:hover { background: var(--chip); }
-.menu-ativo { background: var(--tint); color: var(--strong); font-weight: 600; box-shadow: inset 0 0 0 1px var(--gold), 0 0 18px rgba(232, 176, 20, .35); }
+.menu-ativo { background: var(--tint); color: var(--strong); font-weight: 600; box-shadow: inset 0 0 0 1px var(--gold), 0 0 18px color-mix(in srgb, var(--gold) 35%, transparent); }
 .menu-selo { margin-left: auto; padding: 2px 7px; border-radius: 999px; background: var(--tint); border: 1px solid var(--line2); color: var(--accent-text); font-size: 10px; font-weight: 700; letter-spacing: .8px; }
 .menu-tema { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--text2); margin-top: auto; }
 .menu-perfil { display: flex; align-items: center; gap: 10px; padding: 12px; border-radius: 6px; background: var(--panel); border: 1px solid var(--line); font-size: 13px; }
@@ -137,8 +151,8 @@ a { color: inherit; text-decoration: none; }
 .capa-grade .capa-fileira { position: relative; z-index: 1; }
 @media (max-width: 640px) { .rank-grande { font-size: 96px; margin-right: -14px; } }
 /* bolinha amarela: alguém precisa de ajuda para gravar */
-.bolinha-ajuda { width: 11px; height: 11px; border-radius: 6px; background: #E8B014; box-shadow: 0 0 0 0 rgba(232,176,20,.7); animation: pulsar-ajuda 2s infinite; flex: none; }
-@keyframes pulsar-ajuda { 0% { box-shadow: 0 0 0 0 rgba(232,176,20,.7); } 70% { box-shadow: 0 0 0 7px rgba(232,176,20,0); } 100% { box-shadow: 0 0 0 0 rgba(232,176,20,0); } }
+.bolinha-ajuda { width: 11px; height: 11px; border-radius: 6px; background: var(--gold); box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent); animation: pulsar-ajuda 2s infinite; flex: none; }
+@keyframes pulsar-ajuda { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 70%, transparent); } 70% { box-shadow: 0 0 0 7px color-mix(in srgb, var(--gold) 0%, transparent); } 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--gold) 0%, transparent); } }
 @media (prefers-reduced-motion: reduce) { .bolinha-ajuda { animation: none; } }
 
 /* Extras e entregas: linha que abre e fecha (chevron gira) */

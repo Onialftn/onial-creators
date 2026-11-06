@@ -51,10 +51,10 @@ export default async function Novidades({ searchParams }: { searchParams: Promis
       {lista.map((n, i) => {
         const m = MAPAS.find((x) => x.id === n.mapa);
         return (
-          <article key={n.id} id={`n-${n.id}`} className="card flex flex-col gap-3" style={i === 0 && !filtro ? { borderColor: "#E8B014" } : undefined}>
+          <article key={n.id} id={`n-${n.id}`} className="card flex flex-col gap-3" style={i === 0 && !filtro ? { borderColor: "var(--gold)" } : undefined}>
             <div className="flex flex-wrap items-center gap-2" style={{ fontSize: 13 }}>
               <span className="pill-tint">{m ? `${m.emoji} ${m.nome}` : "📱 Site/App"}</span>
-              {i === 0 && !filtro && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, padding: "2px 7px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A" }}>MAIS RECENTE</span>}
+              {i === 0 && !filtro && <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.2, padding: "2px 7px", borderRadius: 4, background: "var(--gold)", color: "#0A0A0A" }}>MAIS RECENTE</span>}
               <span style={{ color: "var(--muted)", marginLeft: "auto" }}>{quando(n.criado_em)}</span>
             </div>
             <TituloCard icone="megafone">{n.titulo}</TituloCard>

@@ -78,7 +78,9 @@ function ajustarMinutos(min: number) {
 const useEstadoTimer = () => useSyncExternalStore((f) => { ouvintes.add(f); return () => ouvintes.delete(f); }, () => estado, () => estado);
 
 /* ---------- componente ---------- */
-const AZUL = "#4DA3FF", OURO = "#E8B014";
+const AZUL = "#4DA3FF", OURO = "var(--gold)";
+/** a tela do "picture-in-picture" não entende var(--gold): lê a cor do tema escolhido em Configurações */
+const ouroReal = () => getComputedStyle(document.documentElement).getPropertyValue("--gold").trim() || "#E8B014";
 const IB = { width: 44, height: 44, borderRadius: 10, background: "var(--chip)", border: "1px solid var(--line)", color: "var(--muted)", display: "flex", alignItems: "center", justifyContent: "center" } as const;
 
 /* ---------- janela flutuante (fica por cima das outras janelas do computador) ---------- */
@@ -120,11 +122,11 @@ async function abrirPiPVideo(): Promise<() => void> {
   const desenhar = () => {
     const e = estado;
     ctx.fillStyle = "#0E0E0E"; ctx.fillRect(0, 0, 320, 180);
-    ctx.fillStyle = e.modo === "foco" ? OURO : AZUL; ctx.font = "600 18px Inter, sans-serif"; ctx.textAlign = "center";
+    ctx.fillStyle = e.modo === "foco" ? ouroReal() : AZUL; ctx.font = "600 18px Inter, sans-serif"; ctx.textAlign = "center";
     ctx.fillText(`${e.modo === "foco" ? "FOCO" : "PAUSA"}${e.ativo === e.modo ? "" : " · pausado"}`, 160, 44);
     ctx.fillStyle = "#F5F1E6"; ctx.font = "300 72px Inter, sans-serif"; ctx.fillText(fmtT(e.restante[e.modo]), 160, 125);
     const frac = Math.min(1, e.restante[e.modo] / ESCALA);
-    ctx.fillStyle = "#2a2618"; ctx.fillRect(40, 150, 240, 6); ctx.fillStyle = e.modo === "foco" ? OURO : AZUL; ctx.fillRect(40, 150, 240 * frac, 6);
+    ctx.fillStyle = "#2a2618"; ctx.fillRect(40, 150, 240, 6); ctx.fillStyle = e.modo === "foco" ? ouroReal() : AZUL; ctx.fillRect(40, 150, 240 * frac, 6);
   };
   desenhar();
   const video = document.createElement("video");
@@ -202,7 +204,7 @@ export function Pomodoro() {
 
   return (
     <div className="relative flex w-full flex-col items-center gap-5 overflow-hidden" style={{ maxWidth: 560, background: "var(--panel)", border: "1px solid var(--line)", borderRadius: 16, padding: "20px 20px 24px" }}>
-      <div className="pointer-events-none absolute rounded-full" style={{ left: "50%", top: "44%", width: 300, height: 300, transform: "translate(-50%,-50%)", background: `radial-gradient(circle,${e.modo === "foco" ? "rgba(232,176,20,.12)" : "rgba(77,163,255,.14)"},transparent 65%)` }} />
+      <div className="pointer-events-none absolute rounded-full" style={{ left: "50%", top: "44%", width: 300, height: 300, transform: "translate(-50%,-50%)", background: `radial-gradient(circle,${e.modo === "foco" ? "color-mix(in srgb, var(--gold) 12%, transparent)" : "rgba(77,163,255,.14)"},transparent 65%)` }} />
       <div className="absolute flex flex-col gap-2.5" style={{ left: 16, top: 16 }}>
         <button style={IB} aria-label="Configurações do pomodoro" aria-expanded={painel} onClick={() => setPainel(!painel)}><Icone nome="gear" tamanho={18} /></button>
         <button style={IB} aria-label="Estatísticas de foco" onClick={() => setStats(true)}><Icone nome="stats" tamanho={18} /></button>
@@ -257,7 +259,7 @@ export function Pomodoro() {
 
       <div className="relative flex items-center gap-4">
         <button style={{ ...IB, width: 48, height: 48 }} aria-label="Reiniciar" onClick={reiniciarTela}><Icone nome="reset" tamanho={18} /></button>
-        <button aria-label={rodando ? "Pausar" : "Iniciar"} onClick={() => (rodando ? parar() : iniciar())} className="flex items-center justify-center rounded-full" style={{ width: 68, height: 68, background: cor, color: "#0A0A0A", boxShadow: `0 0 28px ${e.modo === "foco" ? "rgba(232,176,20,.45)" : "rgba(77,163,255,.45)"}` }}>
+        <button aria-label={rodando ? "Pausar" : "Iniciar"} onClick={() => (rodando ? parar() : iniciar())} className="flex items-center justify-center rounded-full" style={{ width: 68, height: 68, background: cor, color: "#0A0A0A", boxShadow: `0 0 28px ${e.modo === "foco" ? "color-mix(in srgb, var(--gold) 45%, transparent)" : "rgba(77,163,255,.45)"}` }}>
           {rodando ? <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14" /></svg> : <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5l12 7-12 7z" /></svg>}
         </button>
         <button style={{ ...IB, width: 48, height: 48 }} aria-label={e.modo === "foco" ? "Pular para a pausa" : "Pular para o foco"} onClick={pular}><Icone nome="timer" tamanho={18} /></button>
@@ -319,7 +321,7 @@ function Estatisticas({ fechar }: { fechar: () => void }) {
         <div className="text-center" style={{ fontSize: 40, fontWeight: 600, lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{hm(total)}</div>
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Tempo de foco no período" style={{ width: "100%", height: "auto" }}>
           <line x1="4" x2={W - 4} y1={H - PB} y2={H - PB} stroke="var(--line)" />
-          {P.length > 0 && <><path d={`${linha} L${P[P.length - 1][0]},${H - PB} L${P[0][0]},${H - PB} Z`} fill="rgba(232,176,20,.18)" /><path d={linha} fill="none" stroke={OURO} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></>}
+          {P.length > 0 && <><path d={`${linha} L${P[P.length - 1][0]},${H - PB} L${P[0][0]},${H - PB} Z`} fill="color-mix(in srgb, var(--gold) 18%, transparent)" /><path d={linha} fill="none" stroke={OURO} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></>}
           {p.rot.map((t, i) => t && <text key={i} x={X(i)} y={H - 6} textAnchor={i === 0 ? "start" : i === n - 1 ? "end" : "middle"} fontSize="10" fill="var(--muted)">{t}</text>)}
         </svg>
         <div className="grid grid-cols-3 gap-2">
