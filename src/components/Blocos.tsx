@@ -5,6 +5,9 @@ import type { DiaCalendario, LinhaRanking, ResumoMes } from "@/lib/dados";
 import { Avatar } from "./Avatar";
 import { Icone } from "./Icone";
 
+/** Cores de medalha do 1º, 2º e 3º lugar: fixas, não mudam com o tema escolhido em Configurações. */
+export const COR_POSICAO = ["var(--ouro-texto)", "var(--prata-texto)", "var(--bronze-texto)"];
+
 export function Cabecalho({ icone, titulo, sub, direita }: { icone?: string; titulo: string; sub?: React.ReactNode; direita?: React.ReactNode }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-3">
@@ -66,7 +69,7 @@ export function CardsGanho({ r, gestor = false }: { r: ResumoMes; gestor?: boole
                 <div style={{ width: `${pct}%`, height: "100%", borderRadius: 5, background: p.bateuMeta ? "var(--ok)" : "linear-gradient(90deg,color-mix(in srgb, var(--gold) 72%, #000),var(--gold))", transition: "width .4s" }} />
               </div>
               <div className="flex justify-between" style={{ marginTop: 6, fontSize: 12, color: "var(--muted)" }}>
-                <span className="num" style={{ fontSize: 14, color: p.bateuMeta ? "var(--ok)" : "var(--accent-text)" }}>{Math.floor(pct)}%</span>
+                <span className="num" style={{ fontSize: 14, color: p.bateuMeta ? "var(--ok)" : "var(--ouro-texto)" }}>{Math.floor(pct)}%</span>
                 <span>{p.bateuMeta ? `${formatarNumero(r.views)} views` : `faltam ${formatarNumero(Math.max(0, r.meta - r.views))} views`}</span>
               </div>
             </div>
@@ -75,7 +78,7 @@ export function CardsGanho({ r, gestor = false }: { r: ResumoMes; gestor?: boole
       </div>
       <div className="card" style={{ padding: 22 }}>
         <div className="flex items-center gap-2" style={{ color: "var(--muted)" }}><Icone nome="trophy" />Total do mês até agora</div>
-        <div className="num" style={{ fontSize: 34, marginTop: 8, color: gestor ? "var(--accent-text)" : "var(--ok)" }}>{formatarReais(p.totalCentavos)}</div>
+        <div className="num" style={{ fontSize: 34, marginTop: 8, color: gestor ? "var(--ouro-texto)" : "var(--ok)" }}>{formatarReais(p.totalCentavos)}</div>
         <div style={{ color: "var(--muted)", fontSize: 13, marginTop: 6 }}>{p.bateuMeta || !r.meta ? "Bruto + bônus conquistados" : `Sem o bônus de meta: +${formatarReais(Math.round(r.meta / 10))} quando bater`}</div>
         {p.bonusExtraCentavos > 0 && <div style={{ color: "var(--text2)", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusExtraCentavos)} de vídeos extras</div>}
         {p.ajudas > 0 && <div style={{ color: "var(--text2)", fontSize: 13, marginTop: 4, fontWeight: 600 }}>Inclui {formatarReais(p.bonusAjudaCentavos)} de {p.ajudas} {p.ajudas === 1 ? "gravação ajudada" : "gravações ajudadas"}</div>}
@@ -217,8 +220,8 @@ export function RankingTop3({ linhas, meuId }: { linhas: LinhaRanking[]; meuId: 
         const eu = l.criadorId === meuId;
         return (
           <div key={l.criadorId} className="flex items-center gap-2.5" style={{ padding: "6px 8px", borderRadius: 8, background: eu ? "var(--tint)" : undefined, border: `1px solid ${eu ? "var(--gold)" : "transparent"}`, marginTop: i >= 3 ? 6 : 0 }}>
-            <span className="num" style={{ width: 26, fontSize: 18, color: i < 3 ? "var(--accent-text)" : "var(--muted)" }}>{i + 1}º</span>
-            <Avatar foto={l.foto} nome={l.nome} tamanho={34} borda={i === 0 ? "var(--gold)" : undefined} />
+            <span className="num" style={{ width: 26, fontSize: 18, color: COR_POSICAO[i] ?? "var(--muted)" }}>{i + 1}º</span>
+            <Avatar foto={l.foto} nome={l.nome} tamanho={34} borda={i === 0 ? "var(--ouro)" : undefined} />
             <span className="min-w-0 flex-1 truncate" style={{ color: "var(--strong)", fontWeight: eu ? 700 : 600, fontSize: 14 }}>{eu ? "Você" : l.nome.split(" ")[0]}</span>
             <span className="num" style={{ fontSize: 17, color: eu ? "var(--strong)" : "var(--text2)" }}>{formatarNumero(l.views)}</span>
           </div>

@@ -217,14 +217,14 @@ function Fileira({ titulo, direita, children }: { titulo: React.ReactNode; direi
 function CapaFileira({ v, abrir, largura = 150, destaque = false, posicao }: { v: VideoRef & { porDia?: number }; abrir: () => void; largura?: number; destaque?: boolean; /** número grande atrás da capa (Em alta) */ posicao?: number }) {
   return (
     <div className="capa-grade" style={{ gridTemplateColumns: posicao ? `auto ${largura}px` : `${largura}px` }}>
-      {posicao && <span className="rank-grande" aria-hidden="true">{posicao}</span>}
+      {posicao && <span className="rank-grande" aria-hidden="true" style={posicao <= 3 ? { WebkitTextStroke: `2px ${["var(--ouro)", "var(--prata)", "var(--bronze)"][posicao - 1]}` } : undefined}>{posicao}</span>}
       <button type="button" onClick={abrir} className="capa-fileira relative overflow-hidden" aria-label={`Assistir ${v.titulo}`}
-        style={{ aspectRatio: "9/16", borderRadius: 10, background: "#111", border: `${destaque ? 2 : 1}px solid ${destaque ? "var(--gold)" : "var(--line)"}`, boxShadow: destaque ? "0 0 24px color-mix(in srgb, var(--gold) 30%, transparent)" : undefined }}>
+        style={{ aspectRatio: "9/16", borderRadius: 10, background: "#111", border: `${destaque ? 2 : 1}px solid ${destaque ? "var(--ouro)" : "var(--line)"}`, boxShadow: destaque ? "0 0 24px color-mix(in srgb, var(--ouro) 30%, transparent)" : undefined }}>
         <CapaVideo src={v.capa} alt="" />
         <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 55%,rgba(0,0,0,.88))" }} />
         <span className="absolute flex flex-col items-start" style={{ left: 8, bottom: 6, color: "#fff", lineHeight: 1.1 }}>
           <span className="num" style={{ fontSize: 20 }}>{n(v.views)}</span>
-          {v.porDia ? <span style={{ fontSize: 11, color: "var(--accent-vivo)", fontWeight: 600 }}>+{n(v.porDia)}/dia</span> : null}
+          {v.porDia ? <span style={{ fontSize: 11, color: "var(--ouro-vivo)", fontWeight: 600 }}>+{n(v.porDia)}/dia</span> : null}
         </span>
         <span className="capa-assistir"><span><Icone nome="play" tamanho={16} />Assistir</span></span>
       </button>

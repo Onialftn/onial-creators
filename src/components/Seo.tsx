@@ -4,7 +4,7 @@ import { notaTitulo } from "@/lib/seo-nota";
 import { Icone } from "./Icone";
 
 const VERDE = { background: "#3DDC97", color: "#0A0A0A", borderColor: "#3DDC97" } as const;
-const corNota = (x: number) => (x >= 70 ? "var(--ok)" : x >= 45 ? "var(--gold)" : "var(--warn)");
+const corNota = (x: number) => (x >= 70 ? "var(--ok)" : x >= 45 ? "var(--ouro)" : "var(--warn)");
 const n = (v: number) => (v >= 1e6 ? `${(v / 1e6).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} mi` : v >= 1e3 ? `${Math.round(v / 1e3)} mil` : String(v));
 
 /** Botão que copia e fica verde por 2 segundos. */
