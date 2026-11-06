@@ -272,3 +272,34 @@ export async function historicoDoAno(sb: SB, criadorId: string, ano: number): Pr
   }
   return { meses, primeiroAno: primeiro.data ? Number(String(primeiro.data.mes).slice(0, 4)) : ano };
 }
+
+export interface DiaViews {
+  dia: string;
+  por: Record<Plataforma, number>;
+}
+
+/** Views ganhas em cada dia do mês, por plataforma (todos os dias do mês, com zero onde não teve). */
+export async function viewsPorDia(sb: SB, criadorId: string, mes: string): Promise<DiaViews[]> {
+  const ini = primeiroDia(mes);
+  const fim = ultimoDia(mes);
+  const mapa = new Map<string, Record<Plataforma, number>>(intervalo(ini, fim).map((d) => [d, { tiktok: 0, youtube: 0, instagram: 0 }]));
+  const somar = (linhas: { dia: string; plataforma: string; views: number | string }[]) => {
+    for (const l of linhas) {
+      const d = mapa.get(l.dia);
+      if (d && l.plataforma in d) d[l.plataforma as Plataforma] += Number(l.views);
+    }
+  };
+  // soma pronta no banco (migração 0024); sem ela, lê views_diarias em páginas de 1.000 linhas
+  const pronta = await sb.from("views_por_dia").select("dia, plataforma, views").eq("criador_id", criadorId).gte("dia", ini).lte("dia", fim).limit(1000);
+  if (!pronta.error) {
+    somar(pronta.data ?? []);
+  } else {
+    for (let de = 0; de < 50_000; de += 1000) {
+      const { data, error } = await sb.from("views_diarias").select("dia, plataforma, views").eq("criador_id", criadorId).gte("dia", ini).lte("dia", fim).order("video_id").order("dia").range(de, de + 999);
+      if (error) break;
+      somar(data ?? []);
+      if (!data || data.length < 1000) break;
+    }
+  }
+  return [...mapa].map(([dia, por]) => ({ dia, por }));
+}

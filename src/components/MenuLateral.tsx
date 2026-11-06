@@ -8,9 +8,10 @@ import { Icone } from "./Icone";
 import { Sino, type Notificacao } from "./Sino";
 
 type Item = { href: string; rotulo: string; icone: string; emBreve?: boolean };
-const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
+const GRUPOS: { titulo: string; icone: string; itens: Item[]; soGestor?: boolean }[] = [
   {
     titulo: "Principal",
+    icone: "dash",
     itens: [
       { href: "/", rotulo: "Dashboard", icone: "dash" },
       { href: "/dias", rotulo: "Dias de postagem", icone: "cal" },
@@ -21,6 +22,7 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
   },
   {
     titulo: "Otimizações",
+    icone: "zap",
     itens: [
       { href: "/ideias", rotulo: "Ideias & roteiros", icone: "bulb" },
       { href: "/audio", rotulo: "Limpar narração", icone: "wave" },
@@ -31,13 +33,14 @@ const GRUPOS: { titulo: string; itens: Item[]; soGestor?: boolean }[] = [
   },
   {
     titulo: "Informações",
+    icone: "stats",
     itens: [
       { href: "/pagamentos", rotulo: "Pagamentos", icone: "wallet" },
       { href: "/redes", rotulo: "Minhas redes", icone: "zap" },
     ],
   },
-  { titulo: "Em breve", itens: [{ href: "/coletiva", rotulo: "Meta coletiva", icone: "users", emBreve: true }] },
-  { titulo: "Gestão", soGestor: true, itens: [{ href: "/gestor", rotulo: "Painel do gestor", icone: "gear" }] },
+  { titulo: "Em breve", icone: "timer", itens: [{ href: "/coletiva", rotulo: "Meta coletiva", icone: "users", emBreve: true }] },
+  { titulo: "Gestão", icone: "gear", soGestor: true, itens: [{ href: "/gestor", rotulo: "Painel do gestor", icone: "gear" }] },
 ];
 
 /** Logo abaixo de Notificações. */
@@ -127,10 +130,12 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
         const temAjuda = g.itens.some((i) => i.href === "/gravar") && precisamAjuda > 0;
         return (
         <nav key={g.titulo} className="menu-grupo" aria-label={g.titulo}>
-          <button type="button" className="menu-pasta" onClick={() => alternarPasta(g.titulo)} aria-expanded={estaAberta} aria-controls={idLista}>
-            <svg className={`menu-seta ${estaAberta ? "menu-seta-on" : ""}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
-            <span>{g.titulo.toUpperCase()}</span>
-            {!estaAberta && temAjuda && <span className="bolinha-ajuda" style={{ marginLeft: "auto" }} aria-label="Alguém precisa de ajuda para gravar" />}
+          <button type="button" className={`menu-pasta ${estaAberta ? "menu-pasta-on" : ""}`} onClick={() => alternarPasta(g.titulo)} aria-expanded={estaAberta} aria-controls={idLista}>
+            <span className="menu-pasta-icone"><Icone nome={g.icone} tamanho={16} /></span>
+            <span className="flex-1 truncate">{g.titulo}</span>
+            {!estaAberta && temAjuda && <span className="bolinha-ajuda" aria-label="Alguém precisa de ajuda para gravar" />}
+            <span className="menu-pasta-conta" aria-hidden="true">{g.itens.length}</span>
+            <svg className={`menu-seta ${estaAberta ? "menu-seta-on" : ""}`} width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6" /></svg>
           </button>
           <div id={idLista} className="menu-itens" hidden={!estaAberta}>
           {g.itens.map((i) => (
