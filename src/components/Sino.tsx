@@ -88,7 +88,7 @@ function AvisosCelular({ chavePublica }: { chavePublica: string | null }) {
 }
 
 /** Sino com a lista de avisos (abre um painel pela direita). */
-export function Sino({ itens: iniciais, chavePublica, compacto = false }: { itens: Notificacao[]; chavePublica: string | null; compacto?: boolean }) {
+export function Sino({ itens: iniciais, chavePublica, compacto = false, bloco = false }: { itens: Notificacao[]; chavePublica: string | null; compacto?: boolean; /** quadradinho do menu (ícone com o nome embaixo) */ bloco?: boolean }) {
   const [aberto, setAberto] = useState(false);
   const [itens, setItens] = useState(iniciais);
   const [, iniciar] = useTransition();
@@ -122,10 +122,11 @@ export function Sino({ itens: iniciais, chavePublica, compacto = false }: { iten
   }
   return (
     <>
-      <button type="button" onClick={abrir} aria-label={naoLidas ? `Notificações: ${naoLidas} novas` : "Notificações"} className={compacto ? "relative flex items-center justify-center" : "menu-item relative w-full"} style={compacto ? { width: 44, height: 44, borderRadius: 8, border: "1px solid var(--line)", background: "var(--panel)", color: "var(--fg)" } : undefined}>
+      <button type="button" onClick={abrir} aria-label={naoLidas ? `Notificações: ${naoLidas} novas` : "Notificações"} className={compacto ? "relative flex items-center justify-center" : bloco ? `menu-atalho ${aberto ? "menu-atalho-on" : ""}` : "menu-item relative w-full"} style={compacto ? { width: 44, height: 44, borderRadius: 8, border: "1px solid var(--line)", background: "var(--panel)", color: "var(--fg)" } : undefined}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10 21h4" /></svg>
-        {!compacto && "Notificações"}
-        {naoLidas > 0 && <span className="num" style={{ position: compacto ? "absolute" : "static", top: -6, right: -6, marginLeft: compacto ? 0 : "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 10, background: "#FF5C5C", color: "#fff", fontSize: 12, lineHeight: "20px", textAlign: "center" }}>{naoLidas > 9 ? "9+" : naoLidas}</span>}
+        {bloco ? <span className="menu-atalho-nome">Notificações</span> : !compacto && "Notificações"}
+        {naoLidas > 0 && bloco && <span className="num menu-atalho-num">{naoLidas > 9 ? "9+" : naoLidas}</span>}
+        {naoLidas > 0 && !bloco && <span className="num" style={{ position: compacto ? "absolute" : "static", top: -6, right: -6, marginLeft: compacto ? 0 : "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 10, background: "#FF5C5C", color: "#fff", fontSize: 12, lineHeight: "20px", textAlign: "center" }}>{naoLidas > 9 ? "9+" : naoLidas}</span>}
       </button>
       {aberto && (
         <div className="fixed inset-0 z-[60]" style={{ background: "rgba(0,0,0,.55)" }} onClick={(e) => e.target === e.currentTarget && setAberto(false)}>

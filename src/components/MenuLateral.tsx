@@ -83,10 +83,12 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
     return () => { window.removeEventListener("keydown", f); document.body.style.overflow = ""; };
   }, [aberto]);
   const atual = [...EXTRAS, ...GRUPOS.flatMap((g) => g.itens)].find((i) => ativo(i.href));
-  // pastas do menu: só a pasta da aba atual fica aberta; as outras abrem com um clique no título
+  // pastas do menu: Principal e a pasta da aba atual ficam abertas; as outras abrem com um clique no título
   const pastaAtual = GRUPOS.find((g) => g.itens.some((i) => ativo(i.href)))?.titulo;
-  const [abertas, setAbertas] = useState<string[]>(pastaAtual ? [pastaAtual] : ["Principal"]);
-  useEffect(() => setAbertas(pastaAtual ? [pastaAtual] : ["Principal"]), [pastaAtual]);
+  const inicio = () => [...new Set(["Principal", ...(pastaAtual ? [pastaAtual] : [])])];
+  const [abertas, setAbertas] = useState<string[]>(inicio);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => setAbertas(inicio()), [pastaAtual]);
   const alternarPasta = (titulo: string) => setAbertas((a) => (a.includes(titulo) ? a.filter((t) => t !== titulo) : [...a, titulo]));
 
   return (
@@ -114,12 +116,13 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
           <span title="Site em desenvolvimento" style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, padding: "2px 7px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A", lineHeight: 1.3 }}>BETA</span>
         </span>
       </Link>
-      <div className="menu-sino"><Sino itens={avisos} chavePublica={chavePush} /></div>
-      <nav className="menu-grupo menu-extra" aria-label="Novidades e sugestões">
+      <nav className="menu-atalhos" aria-label="Notificações, novidades e sugestões">
+        <div className="menu-sino"><Sino itens={avisos} chavePublica={chavePush} bloco /></div>
         {EXTRAS.map((i) => (
-          <Link key={i.href} href={i.href} className={`menu-item ${ativo(i.href) ? "menu-ativo" : ""}`} aria-current={ativo(i.href) ? "page" : undefined}>
-            <Icone nome={i.icone} />{i.rotulo}
-            {i.href === "/novidades" && novasNovidades > 0 && <span className="num" aria-label={`${novasNovidades} ${novasNovidades === 1 ? "novidade nova" : "novidades novas"}`} style={{ marginLeft: "auto", minWidth: 20, height: 20, padding: "0 6px", borderRadius: 10, background: "#FF5C5C", color: "#fff", fontSize: 12, lineHeight: "20px", textAlign: "center" }}>{novasNovidades > 9 ? "9+" : novasNovidades}</span>}
+          <Link key={i.href} href={i.href} className={`menu-atalho ${ativo(i.href) ? "menu-atalho-on" : ""}`} aria-current={ativo(i.href) ? "page" : undefined}>
+            <Icone nome={i.icone} tamanho={20} />
+            <span className="menu-atalho-nome">{i.rotulo}</span>
+            {i.href === "/novidades" && novasNovidades > 0 && <span className="num menu-atalho-num" aria-label={`${novasNovidades} ${novasNovidades === 1 ? "novidade nova" : "novidades novas"}`}>{novasNovidades > 9 ? "9+" : novasNovidades}</span>}
           </Link>
         ))}
       </nav>
