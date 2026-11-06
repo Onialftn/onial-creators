@@ -23,7 +23,7 @@ const ROTULO: Record<Situacao, { texto: string; cls: string }> = {
 
 function Chip({ ativo, onClick, children }: { ativo: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={ativo} style={{ minHeight: 38, padding: "0 14px", borderRadius: 8, fontSize: 14, fontWeight: 600, border: `1px solid ${ativo ? "#E8B014" : "var(--line)"}`, background: ativo ? "#E8B014" : "var(--panel)", color: ativo ? "#0A0A0A" : "var(--fg)" }}>
+    <button type="button" onClick={onClick} aria-pressed={ativo} style={{ minHeight: 38, padding: "0 14px", borderRadius: 8, fontSize: 14, fontWeight: 600, border: `1px solid ${ativo ? "var(--gold)" : "var(--line)"}`, background: ativo ? "var(--gold)" : "var(--panel)", color: ativo ? "#0A0A0A" : "var(--fg)" }}>
       {children}
     </button>
   );
@@ -47,7 +47,7 @@ function NovoPedido({ dia, aoTerminar }: { dia: string; aoTerminar: (msg: string
     });
   }
   return (
-    <div className="flex flex-col gap-3" style={{ ...caixa, borderColor: "#E8B014" }}>
+    <div className="flex flex-col gap-3" style={{ ...caixa, borderColor: "var(--gold)" }}>
       <b style={{ color: "var(--strong)" }}>Pedir ajuda para gravar</b>
       <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))" }}>
         <label className="flex flex-col gap-1"><span className="label">HORÁRIO</span>
@@ -164,7 +164,7 @@ function CartaoPedido({ p, ajudas, sugestoes, pessoas, eu, hoje, aviso }: { p: P
           <span style={{ fontSize: 13, color: "var(--fg)" }}>A gravação aconteceu? Marque quem ajudou de verdade: cada um ganha {formatarReais(BONUS_AJUDA_CENTAVOS)}.</span>
           {doPedido.map((a) => (
             <label key={a.ajudante_id} className="flex items-center gap-2" style={{ minHeight: 36 }}>
-              <input type="checkbox" checked={presentes.includes(a.ajudante_id)} onChange={(e) => setPresentes((l) => (e.target.checked ? [...l, a.ajudante_id] : l.filter((x) => x !== a.ajudante_id)))} style={{ width: 18, height: 18, accentColor: "#E8B014" }} />
+              <input type="checkbox" checked={presentes.includes(a.ajudante_id)} onChange={(e) => setPresentes((l) => (e.target.checked ? [...l, a.ajudante_id] : l.filter((x) => x !== a.ajudante_id)))} style={{ width: 18, height: 18, accentColor: "var(--gold)" }} />
               {pessoas.get(a.ajudante_id)?.nome ?? "?"}
             </label>
           ))}
@@ -270,11 +270,11 @@ export function GravarJuntos({ mes, hoje, diaInicial, eu, pedidos, ajudas, suges
               return (
                 <button key={d} type="button" onClick={() => { setDia(d); setCriando(false); setMsg({}); }} aria-pressed={sel} aria-label={`${nomeDia(d)}${doD.length ? `, ${doD.length} ${doD.length === 1 ? "pedido" : "pedidos"}` : ""}`}
                   className="flex flex-col items-center justify-start gap-1"
-                  style={{ minHeight: 58, padding: "6px 2px", borderRadius: 8, border: `1px solid ${sel ? "#E8B014" : d === hoje ? "var(--accent-text)" : "var(--line)"}`, background: sel ? "var(--tint)" : "var(--bg)", opacity: passado && !doD.length ? 0.45 : 1 }}>
+                  style={{ minHeight: 58, padding: "6px 2px", borderRadius: 8, border: `1px solid ${sel ? "var(--gold)" : d === hoje ? "var(--accent-text)" : "var(--line)"}`, background: sel ? "var(--tint)" : "var(--bg)", opacity: passado && !doD.length ? 0.45 : 1 }}>
                   <span className="num" style={{ fontSize: 16, color: d === hoje ? "var(--accent-text)" : "var(--strong)" }}>{Number(d.slice(8))}</span>
                   {doD.length > 0 && (
                     <span className="flex flex-wrap justify-center gap-0.5">
-                      {doD.slice(0, 3).map((p) => <span key={p.id} style={{ width: 7, height: 7, borderRadius: 4, background: p.status === "feito" ? "var(--ok)" : precisa ? "#E8B014" : "var(--muted)" }} />)}
+                      {doD.slice(0, 3).map((p) => <span key={p.id} style={{ width: 7, height: 7, borderRadius: 4, background: p.status === "feito" ? "var(--ok)" : precisa ? "var(--gold)" : "var(--muted)" }} />)}
                     </span>
                   )}
                 </button>
@@ -282,7 +282,7 @@ export function GravarJuntos({ mes, hoje, diaInicial, eu, pedidos, ajudas, suges
             })}
           </div>
           <div className="flex flex-wrap gap-3" style={{ fontSize: 12, color: "var(--muted)" }}>
-            <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, borderRadius: 4, background: "#E8B014" }} />Precisa de ajuda</span>
+            <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, borderRadius: 4, background: "var(--gold)" }} />Precisa de ajuda</span>
             <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, borderRadius: 4, background: "var(--muted)" }} />Equipe completa</span>
             <span className="flex items-center gap-1.5"><span style={{ width: 8, height: 8, borderRadius: 4, background: "var(--ok)" }} />Gravação feita</span>
           </div>

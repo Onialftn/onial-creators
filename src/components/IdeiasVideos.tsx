@@ -176,7 +176,7 @@ function Player({ id, titulo }: { id: string; titulo: string }) {
         title={titulo} allow="autoplay; encrypted-media; picture-in-picture" allowFullScreen style={{ width: "100%", height: "100%", border: 0 }} />
       {!som && (
         <button type="button" onClick={ligarSom} className="absolute flex items-center gap-2"
-          style={{ left: "50%", bottom: "16%", transform: "translateX(-50%)", padding: "10px 16px", borderRadius: 24, background: "#E8B014", color: "#0A0A0A", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 18px rgba(0,0,0,.5)", whiteSpace: "nowrap" }}>
+          style={{ left: "50%", bottom: "16%", transform: "translateX(-50%)", padding: "10px 16px", borderRadius: 24, background: "var(--gold)", color: "#0A0A0A", fontWeight: 700, fontSize: 15, boxShadow: "0 4px 18px rgba(0,0,0,.5)", whiteSpace: "nowrap" }}>
           🔊 Toque para ligar o som
         </button>
       )}
@@ -219,12 +219,12 @@ function CapaFileira({ v, abrir, largura = 150, destaque = false, posicao }: { v
     <div className="capa-grade" style={{ gridTemplateColumns: posicao ? `auto ${largura}px` : `${largura}px` }}>
       {posicao && <span className="rank-grande" aria-hidden="true">{posicao}</span>}
       <button type="button" onClick={abrir} className="capa-fileira relative overflow-hidden" aria-label={`Assistir ${v.titulo}`}
-        style={{ aspectRatio: "9/16", borderRadius: 10, background: "#111", border: `${destaque ? 2 : 1}px solid ${destaque ? "#E8B014" : "var(--line)"}`, boxShadow: destaque ? "0 0 24px rgba(232,176,20,.3)" : undefined }}>
+        style={{ aspectRatio: "9/16", borderRadius: 10, background: "#111", border: `${destaque ? 2 : 1}px solid ${destaque ? "var(--gold)" : "var(--line)"}`, boxShadow: destaque ? "0 0 24px color-mix(in srgb, var(--gold) 30%, transparent)" : undefined }}>
         <CapaVideo src={v.capa} alt="" />
         <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 55%,rgba(0,0,0,.88))" }} />
         <span className="absolute flex flex-col items-start" style={{ left: 8, bottom: 6, color: "#fff", lineHeight: 1.1 }}>
           <span className="num" style={{ fontSize: 20 }}>{n(v.views)}</span>
-          {v.porDia ? <span style={{ fontSize: 11, color: "#FFCC33", fontWeight: 600 }}>+{n(v.porDia)}/dia</span> : null}
+          {v.porDia ? <span style={{ fontSize: 11, color: "var(--accent-vivo)", fontWeight: 600 }}>+{n(v.porDia)}/dia</span> : null}
         </span>
         <span className="capa-assistir"><span><Icone nome="play" tamanho={16} />Assistir</span></span>
       </button>

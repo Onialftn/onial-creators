@@ -25,11 +25,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "radial-gradient(ellipse at 50% 0, var(--halo) 0, var(--bg) 60%)" }}>
-      <form onSubmit={entrar} className="card w-full flex flex-col gap-4" style={{ maxWidth: 380, borderRadius: 10, padding: "32px 28px", boxShadow: "0 0 60px rgba(232,176,20,.12)" }}>
+      <form onSubmit={entrar} className="card w-full flex flex-col gap-4" style={{ maxWidth: 380, borderRadius: 10, padding: "32px 28px", boxShadow: "0 0 60px color-mix(in srgb, var(--gold) 12%, transparent)" }}>
         <div className="flex flex-col items-center gap-2.5 text-center">
-          <Image src="/logo.png" alt="Logo Onial" width={84} height={84} className="rounded-2xl" style={{ boxShadow: "0 0 30px rgba(232,176,20,.35)" }} priority />
+          <Image src="/logo.png" alt="Logo Onial" width={84} height={84} className="rounded-2xl" style={{ boxShadow: "0 0 30px color-mix(in srgb, var(--gold) 35%, transparent)" }} priority />
           <h1 className="display" style={{ fontSize: 28, letterSpacing: 1.5, margin: 0 }}>ONIAL CREATORS</h1>
-          <span title="Site em desenvolvimento" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, padding: "2px 8px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A", marginTop: -4 }}>BETA</span>
+          <span title="Site em desenvolvimento" style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1.5, padding: "2px 8px", borderRadius: 4, background: "var(--gold)", color: "#0A0A0A", marginTop: -4 }}>BETA</span>
           <p style={{ color: "var(--muted)", margin: 0 }}>Entre com o login da sua equipe</p>
         </div>
         <label className="flex flex-col gap-1.5">

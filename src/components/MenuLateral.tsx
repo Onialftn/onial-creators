@@ -37,6 +37,7 @@ const GRUPOS: { titulo: string; icone: string; itens: Item[]; soGestor?: boolean
     itens: [
       { href: "/pagamentos", rotulo: "Pagamentos", icone: "wallet" },
       { href: "/redes", rotulo: "Minhas redes", icone: "zap" },
+      { href: "/configuracoes", rotulo: "Configurações", icone: "gear" },
     ],
   },
   { titulo: "Em breve", icone: "timer", itens: [{ href: "/coletiva", rotulo: "Meta coletiva", icone: "users", emBreve: true }] },
@@ -52,7 +53,13 @@ const EXTRAS: Item[] = [
 export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush = null, precisamAjuda = 0, novidades = [] }: { nome: string; papel: "criador" | "gestor"; foto?: string | null; avisos?: Notificacao[]; chavePush?: string | null; precisamAjuda?: number; novidades?: string[] }) {
   const rota = usePathname();
   const [claro, setClaro] = useState(false);
-  useEffect(() => setClaro(document.documentElement.getAttribute("data-mode") === "light"), []);
+  useEffect(() => {
+    const ler = () => setClaro(document.documentElement.getAttribute("data-mode") === "light");
+    ler();
+    // a aba Configurações também muda o modo
+    window.addEventListener("preferencias", ler);
+    return () => window.removeEventListener("preferencias", ler);
+  }, []);
   function alternarTema() {
     const novo = !claro;
     setClaro(novo);
@@ -96,7 +103,7 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
     <header className="topo-movel">
       <Link href="/" className="flex items-center gap-2" aria-label="Início">
         <Image src="/logo.png" alt="Logo Onial" width={34} height={34} className="rounded-lg" />
-        <span title="Site em desenvolvimento" style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, padding: "2px 6px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A" }}>BETA</span>
+        <span title="Site em desenvolvimento" style={{ fontSize: 9, fontWeight: 700, letterSpacing: 1.2, padding: "2px 6px", borderRadius: 4, background: "var(--gold)", color: "#0A0A0A" }}>BETA</span>
       </Link>
       <span className="display truncate" style={{ flex: 1, fontSize: 18, letterSpacing: 0.5, color: "var(--strong)", textAlign: "center" }}>{atual?.rotulo ?? "Onial Creators"}</span>
       <Sino itens={avisos} chavePublica={chavePush} compacto />
@@ -110,10 +117,10 @@ export function MenuLateral({ nome, papel, foto = null, avisos = [], chavePush =
     <aside id="menu-principal" className={`menu ${aberto ? "menu-aberto" : ""}`}>
       <button type="button" className="menu-fechar" onClick={() => setAberto(false)} aria-label="Fechar menu"><Icone nome="x" tamanho={18} /></button>
       <Link href="/" className="flex items-center gap-2.5 px-2">
-        <Image src="/logo.png" alt="Logo Onial" width={44} height={44} className="rounded-lg" style={{ boxShadow: "0 0 18px rgba(232,176,20,.35)" }} priority />
+        <Image src="/logo.png" alt="Logo Onial" width={44} height={44} className="rounded-lg" style={{ boxShadow: "0 0 18px color-mix(in srgb, var(--gold) 35%, transparent)" }} priority />
         <span className="menu-marca flex flex-col items-start" style={{ gap: 3 }}>
           <span className="display" style={{ fontSize: 18, letterSpacing: 1, whiteSpace: "nowrap", lineHeight: 1 }}>ONIAL CREATORS</span>
-          <span title="Site em desenvolvimento" style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, padding: "2px 7px", borderRadius: 4, background: "#E8B014", color: "#0A0A0A", lineHeight: 1.3 }}>BETA</span>
+          <span title="Site em desenvolvimento" style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1.5, padding: "2px 7px", borderRadius: 4, background: "var(--gold)", color: "#0A0A0A", lineHeight: 1.3 }}>BETA</span>
         </span>
       </Link>
       <nav className="menu-atalhos" aria-label="Notificações, novidades e sugestões">

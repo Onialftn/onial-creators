@@ -112,7 +112,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
                       {pct === null ? <span style={{ color: "var(--warn)" }}>Sem meta</span> : (
                         <>
                           <div style={{ fontSize: 13 }}>{pct}% de {formatarNumero(r.meta!)}</div>
-                          <div className="bar" style={{ height: 5, marginTop: 4 }}><span style={{ width: `${pct}%`, background: pct >= 100 ? "var(--ok)" : "#E8B014" }} /></div>
+                          <div className="bar" style={{ height: 5, marginTop: 4 }}><span style={{ width: `${pct}%`, background: pct >= 100 ? "var(--ok)" : "var(--gold)" }} /></div>
                         </>
                       )}
                     </td>

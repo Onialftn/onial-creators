@@ -40,7 +40,7 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
         <div className="relative flex-none" style={{ width: 180, height: 180 }}>
           <svg width="180" height="180" viewBox="0 0 180 180" aria-hidden="true">
             <circle cx="90" cy="90" r="70" fill="none" stroke="var(--track)" strokeWidth="14" />
-            <circle cx="90" cy="90" r="70" fill="none" stroke="#E8B014" strokeWidth="14" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct)} transform="rotate(-90 90 90)" />
+            <circle cx="90" cy="90" r="70" fill="none" stroke="var(--gold)" strokeWidth="14" strokeLinecap="round" strokeDasharray={C} strokeDashoffset={C * (1 - pct)} transform="rotate(-90 90 90)" />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <div className="num" style={{ fontSize: 40, color: "var(--strong)", lineHeight: 1 }}>{r.meta ? `${Math.round(pct * 100)}%` : "—"}</div>
@@ -104,12 +104,12 @@ export default async function Metas({ searchParams }: { searchParams: Promise<{ 
           <div className="overflow-x-auto">
             <div className="grid gap-3.5" style={{ gridTemplateColumns: "repeat(3,minmax(0,1fr))", minWidth: 600 }}>
               {viral.map((v, i) => (
-                <a key={v.id} href={v.url ?? undefined} target="_blank" rel="noreferrer" className="card flex min-w-0 flex-col gap-3" style={{ padding: 14, ...(i === 0 ? { borderColor: "#E8B014", boxShadow: "0 0 30px rgba(232,176,20,.25)" } : {}) }}>
+                <a key={v.id} href={v.url ?? undefined} target="_blank" rel="noreferrer" className="card flex min-w-0 flex-col gap-3" style={{ padding: 14, ...(i === 0 ? { borderColor: "var(--gold)", boxShadow: "0 0 30px color-mix(in srgb, var(--gold) 25%, transparent)" } : {}) }}>
                   <div className="relative overflow-hidden" style={{ aspectRatio: "4/5", borderRadius: 6, background: "linear-gradient(160deg,#2A2208,#0A0A0A 75%)" }}>
                     {v.capa && <CapaVideo src={v.capa} alt={`Capa de ${v.titulo || "vídeo"}`} />}
                     <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,rgba(0,0,0,.45) 0,transparent 28%,transparent 60%,rgba(0,0,0,.8) 100%)" }} />
                     {i === 0 ? (
-                      <span className="pill absolute" style={{ left: 10, top: 10, background: "#E8B014", color: "#0A0A0A", fontSize: 11 }}><Icone nome="crown" tamanho={12} />MAIS VIRAL DO MÊS</span>
+                      <span className="pill absolute" style={{ left: 10, top: 10, background: "var(--gold)", color: "#0A0A0A", fontSize: 11 }}><Icone nome="crown" tamanho={12} />MAIS VIRAL DO MÊS</span>
                     ) : (
                       <span className="pill absolute" style={{ left: 10, top: 10, background: "rgba(10,10,10,.75)", color: "#fff", fontSize: 11 }}>{i + 1}º MAIS VIRAL</span>
                     )}
@@ -188,7 +188,7 @@ function HistoricoAno({ ano, anoAtual, mesAtual, hist, todos }: { ano: number; a
                   {PLATAFORMAS.map((p) => <td key={p} className="num" style={{ fontSize: 16, color: m.por[p] ? "var(--text2)" : "var(--muted)" }}>{m.por[p] ? formatarNumero(m.por[p]) : "—"}</td>)}
                   <td style={{ minWidth: 170 }}>
                     <div className="num" style={{ fontSize: 17, color: "var(--strong)" }}>{m.total ? formatarNumero(m.total) : "—"}</div>
-                    <div className="bar" style={{ height: 5, marginTop: 4 }}><span style={{ width: `${(m.total / maior) * 100}%`, background: "#E8B014" }} /></div>
+                    <div className="bar" style={{ height: 5, marginTop: 4 }}><span style={{ width: `${(m.total / maior) * 100}%`, background: "var(--gold)" }} /></div>
                   </td>
                   <td className="num" style={{ fontSize: 16, color: "var(--muted)" }}>{m.meta ? formatarNumero(m.meta) : "—"}</td>
                   <td>{atual ? <span className="pill-tint">Em andamento</span> : m.meta === null ? <span style={{ color: "var(--muted)" }}>Sem meta</span> : bateu ? <span className="pill-ok"><Icone nome="check" tamanho={12} />Bateu</span> : <span className="pill-warn">Não bateu</span>}</td>

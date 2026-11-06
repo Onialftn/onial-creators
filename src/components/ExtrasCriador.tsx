@@ -24,7 +24,7 @@ function Linha({ x, e, hoje, i, comum, chave }: { x: ExtraCriador; e?: EntregaCr
   return (
     <details className="linha-extra" style={{ borderTop: i ? "1px solid var(--line)" : undefined }} open={j.fase === "hoje" && !e ? true : undefined}>
       <summary className="flex items-center gap-2.5" style={{ minHeight: 60, padding: "8px 0", cursor: "pointer", listStyle: "none" }}>
-        <span className="num flex flex-none items-center justify-center" style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(232,176,20,.12)", color: "var(--accent-text)", fontSize: 16 }}>{ordem ? `${ordem}º` : i + 1}</span>
+        <span className="num flex flex-none items-center justify-center" style={{ width: 38, height: 38, borderRadius: 10, background: "color-mix(in srgb, var(--gold) 12%, transparent)", color: "var(--accent-text)", fontSize: 16 }}>{ordem ? `${ordem}º` : i + 1}</span>
         <span className="min-w-0 flex-1">
           <span className="block truncate" style={{ color: "var(--strong)", fontWeight: 600, fontSize: 15 }}>{x.titulo}</span>
           <span className="block truncate" style={{ fontSize: 12, color: aprovado ? "var(--ok)" : e?.status === "recusado" || semChave ? "var(--warn)" : "var(--muted)" }}>{x.pix && <b style={{ color: "#3DDC97", marginRight: 6 }}>💸 PIX</b>}{situacao}</span>
@@ -34,7 +34,7 @@ function Linha({ x, e, hoje, i, comum, chave }: { x: ExtraCriador; e?: EntregaCr
           </span>
         </span>
         <span className="num flex-none" style={{ fontSize: 16, color: "var(--ok)" }}>+{valorCurto(x.valor_centavos)}</span>
-        <span className="flex flex-none items-center justify-center" style={{ width: 44, height: 44, borderRadius: 10, border: `1px solid ${aprovado ? "var(--ok)" : j.fase === "hoje" ? "#E8B014" : "var(--line2)"}`, background: j.fase === "hoje" && !aprovado ? "#E8B014" : "transparent", color: aprovado ? "var(--ok)" : j.fase === "hoje" ? "#0A0A0A" : "var(--muted)" }} aria-label={aprovado ? "Aprovado" : j.fase === "hoje" ? "Mandar link" : "Envio fechado até o dia"}>
+        <span className="flex flex-none items-center justify-center" style={{ width: 44, height: 44, borderRadius: 10, border: `1px solid ${aprovado ? "var(--ok)" : j.fase === "hoje" ? "var(--gold)" : "var(--line2)"}`, background: j.fase === "hoje" && !aprovado ? "var(--gold)" : "transparent", color: aprovado ? "var(--ok)" : j.fase === "hoje" ? "#0A0A0A" : "var(--muted)" }} aria-label={aprovado ? "Aprovado" : j.fase === "hoje" ? "Mandar link" : "Envio fechado até o dia"}>
           {aprovado ? <Icone nome="check" tamanho={18} /> : svg(j.fase === "hoje" ? ENVIAR : CADEADO)}
         </span>
       </summary>
@@ -71,7 +71,7 @@ function CabecaDia({ dia, hoje, extras }: { dia: string; hoje: string; extras: E
   const total = extras.reduce((a, x) => a + x.valor_centavos, 0);
   return (
     <span className="flex flex-1 flex-wrap items-center gap-2">
-      <span className="num" style={{ padding: "3px 10px", borderRadius: 8, fontSize: 15, background: ehHoje ? "var(--ok)" : "#E8B014", color: "#0A0A0A", letterSpacing: 0.5 }}>{diaCurto(dia).toUpperCase()}</span>
+      <span className="num" style={{ padding: "3px 10px", borderRadius: 8, fontSize: 15, background: ehHoje ? "var(--ok)" : "var(--gold)", color: "#0A0A0A", letterSpacing: 0.5 }}>{diaCurto(dia).toUpperCase()}</span>
       <span style={{ fontWeight: 700, fontSize: 14, whiteSpace: "nowrap", color: ehHoje ? "var(--ok)" : "var(--accent-text)" }}>{ehHoje ? "Hoje até 22:00" : quandoExtra(dia, hoje)} <span style={{ fontWeight: 500, color: "var(--muted)", fontSize: 13 }}>· 08h–22h</span></span>
       <span style={{ fontSize: 15, color: "var(--text2)", whiteSpace: "nowrap" }}>· até <b className="num" style={{ color: "var(--ok)", fontSize: 20 }}>{valorCurto(total)}</b></span>
     </span>
@@ -101,7 +101,7 @@ export function ExtrasCriador({ extras, entregas, hoje }: { extras: ExtraCriador
   const dias = extrasPorDia(extras, hoje);
   const [primeiro, ...outros] = dias;
   return (
-    <section id="extras" className="flex flex-col" style={{ borderRadius: 16, border: "1px solid rgba(232,176,20,.28)", background: "var(--panel)", padding: "16px 18px 14px" }}>
+    <section id="extras" className="flex flex-col" style={{ borderRadius: 16, border: "1px solid color-mix(in srgb, var(--gold) 28%, transparent)", background: "var(--panel)", padding: "16px 18px 14px" }}>
       <div className="flex items-center gap-3">
         <span style={{ color: "var(--accent-text)", display: "flex" }}><Icone nome="wallet" tamanho={22} /></span>
         <h2 className="h2 m-0 flex-1" style={{ fontSize: 18 }}>VÍDEOS EXTRAS</h2>

@@ -76,11 +76,11 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
         {virais.length === 0 ? <p style={{ margin: 0, color: "var(--muted)" }}>Ainda sem views de vídeos neste mês.</p> : (
           <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(240px,1fr))" }}>
             {virais.map((v, i) => (
-              <a key={v.id} href={v.url ?? "#"} target="_blank" rel="noreferrer" className="tile flex gap-3" style={{ alignItems: "flex-start", ...(i === 0 ? { borderColor: "#E8B014" } : {}) }}>
+              <a key={v.id} href={v.url ?? "#"} target="_blank" rel="noreferrer" className="tile flex gap-3" style={{ alignItems: "flex-start", ...(i === 0 ? { borderColor: "var(--gold)" } : {}) }}>
                 <span className="relative flex flex-none items-center justify-center" style={{ width: 72, height: 96, borderRadius: 6, overflow: "hidden", background: "var(--bg)" }}>
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   {(v.capa || (v.idExterno && capas[v.idExterno])) ? <img src={v.capa || capas[v.idExterno!]} referrerPolicy="no-referrer" alt="" width={72} height={96} style={{ width: 72, height: 96, objectFit: "cover" }} /> : <LogoPlataforma p={v.plataforma} tamanho={36} />}
-                  <span className="num absolute" style={{ left: 4, top: 4, padding: "0 6px", borderRadius: 4, fontSize: 13, background: i === 0 ? "#E8B014" : "rgba(10,10,10,.8)", color: i === 0 ? "#0A0A0A" : "#fff" }}>{i + 1}º</span>
+                  <span className="num absolute" style={{ left: 4, top: 4, padding: "0 6px", borderRadius: 4, fontSize: 13, background: i === 0 ? "var(--gold)" : "rgba(10,10,10,.8)", color: i === 0 ? "#0A0A0A" : "#fff" }}>{i + 1}º</span>
                 </span>
                 <div className="min-w-0 flex flex-col gap-1.5">
                   <div style={{ color: "var(--strong)", fontWeight: 600, fontSize: 14, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
