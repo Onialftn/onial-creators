@@ -92,6 +92,8 @@ a { color: inherit; text-decoration: none; }
 .menu-pasta-on { background: var(--chip); border-color: var(--line); color: var(--strong); }
 .menu-pasta-icone { display: flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 30px; border-radius: 7px; background: var(--tint); border: 1px solid var(--line2); color: var(--accent-text); }
 .menu-pasta-conta { flex: none; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 18px; text-align: center; }
+.menu-gestor { margin-bottom: 4px; }
+.menu-gestor.menu-pasta-on { border-color: var(--gold); box-shadow: 0 0 14px color-mix(in srgb, var(--gold) 30%, transparent); }
 .menu-seta { flex: none; color: var(--muted); transition: transform .18s ease; }
 .menu-seta-on { transform: rotate(90deg); color: var(--accent-text); }
 .menu-itens { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 4px 20px; padding-left: 10px; border-left: 1px solid var(--line2); }
