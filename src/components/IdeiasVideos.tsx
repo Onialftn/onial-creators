@@ -4,7 +4,6 @@ import type { VideoRef } from "@/lib/ideias";
 import { alternarCurtido } from "@/app/acoes/curtidos";
 import type { RoteiroIA } from "@/lib/ia/roteiro";
 import { CapaVideo } from "./CapaVideo";
-import { TituloCard } from "./Blocos";
 import { Icone } from "./Icone";
 
 /** Likes e comentários (o canal pode esconder os likes: aí não aparece). */
@@ -185,6 +184,58 @@ function Player({ id, titulo }: { id: string; titulo: string }) {
   );
 }
 
+/** Fileira de capas que desliza para o lado (estilo Netflix), com as setas ‹ › no título. */
+function Fileira({ titulo, direita, children }: { titulo: React.ReactNode; direita?: React.ReactNode; children: React.ReactNode }) {
+  const trilho = useRef<HTMLDivElement>(null);
+  const [pontas, setPontas] = useState({ inicio: true, fim: false });
+  const medir = () => {
+    const t = trilho.current;
+    if (t) setPontas({ inicio: t.scrollLeft <= 4, fim: t.scrollLeft + t.clientWidth >= t.scrollWidth - 4 });
+  };
+  useEffect(() => {
+    medir();
+    window.addEventListener("resize", medir);
+    return () => window.removeEventListener("resize", medir);
+  }, []);
+  const andar = (lado: number) => trilho.current?.scrollBy({ left: lado * trilho.current.clientWidth * 0.8, behavior: "smooth" });
+  return (
+    <section className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="h2 m-0" style={{ fontSize: 22 }}>{titulo}</h2>
+        <div className="flex items-center gap-3">
+          {direita && <span style={{ color: "var(--muted)", fontSize: 13 }}>{direita}</span>}
+          <button type="button" className="seta-fileira" onClick={() => andar(-1)} disabled={pontas.inicio} aria-label="Ver vídeos anteriores">‹</button>
+          <button type="button" className="seta-fileira" onClick={() => andar(1)} disabled={pontas.fim} aria-label="Ver mais vídeos">›</button>
+        </div>
+      </div>
+      <div ref={trilho} className="fileira" onScroll={medir}>{children}</div>
+    </section>
+  );
+}
+
+/** Capa de um vídeo na fileira: só abre o player (curtir e copiar o roteiro ficam no player, depois de assistir). */
+function CapaFileira({ v, abrir, largura = 150, destaque = false, posicao }: { v: VideoRef & { porDia?: number }; abrir: () => void; largura?: number; destaque?: boolean; /** número grande atrás da capa (Em alta) */ posicao?: number }) {
+  return (
+    <div className="capa-grade" style={{ gridTemplateColumns: posicao ? `auto ${largura}px` : `${largura}px` }}>
+      {posicao && <span className="rank-grande" aria-hidden="true">{posicao}</span>}
+      <button type="button" onClick={abrir} className="capa-fileira relative overflow-hidden" aria-label={`Assistir ${v.titulo}`}
+        style={{ aspectRatio: "9/16", borderRadius: 10, background: "#111", border: `${destaque ? 2 : 1}px solid ${destaque ? "#E8B014" : "var(--line)"}`, boxShadow: destaque ? "0 0 24px rgba(232,176,20,.3)" : undefined }}>
+        <CapaVideo src={v.capa} alt="" />
+        <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 55%,rgba(0,0,0,.88))" }} />
+        <span className="absolute flex flex-col items-start" style={{ left: 8, bottom: 6, color: "#fff", lineHeight: 1.1 }}>
+          <span className="num" style={{ fontSize: 20 }}>{n(v.views)}</span>
+          {v.porDia ? <span style={{ fontSize: 11, color: "#FFCC33", fontWeight: 600 }}>+{n(v.porDia)}/dia</span> : null}
+        </span>
+        <span className="capa-assistir"><span><Icone nome="play" tamanho={16} />Assistir</span></span>
+      </button>
+      <div className="min-w-0" style={{ gridColumn: posicao ? 2 : 1 }}>
+        <div style={{ color: "var(--strong)", fontWeight: 600, fontSize: 13, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
+        <div className="truncate" style={{ color: "var(--muted)", fontSize: 12, marginTop: 2 }}>{v.canal} · {ha(v.publicado)}</div>
+      </div>
+    </div>
+  );
+}
+
 export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automatico, traduzidos: iniciais, curtidos: curtidosIni = [], soCurtidos = false }: { mapa: string; tema: string; melhores: VideoRef[]; recentes: VideoRef[]; iaPronta: boolean; automatico: boolean; traduzidos: Record<string, Pronta>; curtidos?: VideoRef[]; soCurtidos?: boolean }) {
   // curtidos: a lista da aba Curtidos (mais novo primeiro); muda na hora e salva no servidor
   const [curtidos, setCurtidos] = useState<VideoRef[]>(curtidosIni);
@@ -214,7 +265,6 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
     return () => window.removeEventListener("keydown", f);
   });
   const [traduzir, setTraduzir] = useState<VideoRef | null>(null);
-  const [mostrar, setMostrar] = useState(10);
   const [traduzidos, setTraduzidos] = useState(iniciais);
   const [copiado, setCopiado] = useState<string | null>(null);
   const [gerando, setGerando] = useState<string | null>(null);
@@ -240,77 +290,37 @@ export function IdeiasVideos({ mapa, tema, melhores, recentes, iaPronta, automat
     finally { setGerando(null); }
   }
 
-  const Acoes = ({ v, lista }: { v: VideoRef; lista: VideoRef[] }) => (
-    <div className="flex gap-2">
-      <button className="btn-line flex-1" onClick={() => setAssistir(v, lista)} style={{ minHeight: 38 }}><Icone nome="play" tamanho={14} />Assistir</button>
-    </div>
-  );
-
   // lista fixa da aba Curtidos (descurtir não tira da tela na hora, para dar para curtir de novo)
   const [listaCurtidos] = useState(curtidosIni);
   return (
     <>
       {erroCurtir && <div role="alert" className="pill-warn" style={{ padding: "10px 14px" }}>{erroCurtir}</div>}
       {soCurtidos ? (
-        <section className="card flex flex-col gap-4">
-          <TituloCard icone="bulb" direita={`${curtidos.length} ${curtidos.length === 1 ? "vídeo" : "vídeos"}`}>❤️ Curtidos</TituloCard>
-          {listaCurtidos.length === 0 ? <p style={{ margin: 0, color: "var(--muted)" }}>Você ainda não curtiu nenhum vídeo. Toque no ♡ de um vídeo em Explorar para salvar aqui.</p> : (
-            <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))" }}>
-              {listaCurtidos.map((v) => (
-                <div key={v.id} className="flex min-w-0 flex-col gap-2" style={{ opacity: ehCurtido(v.id) ? 1 : 0.45 }}>
-                  <button onClick={() => setAssistir(v, listaCurtidos)} className="relative overflow-hidden" style={{ aspectRatio: "9/16", borderRadius: 6, background: "#111" }} aria-label={`Assistir ${v.titulo}`}>
-                    <CapaVideo src={v.capa} alt="" />
-                    <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 65%,rgba(0,0,0,.85))" }} />
-                    <span className="num absolute" style={{ left: 8, bottom: 6, fontSize: 17, color: "#fff" }}>{n(v.views)}</span>
-                  </button>
-                  <div style={{ color: "var(--strong)", fontSize: 13, fontWeight: 600, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
-                  <div style={{ color: "var(--muted)", fontSize: 12 }}>{v.canal}</div>
-                  <Acoes v={v} lista={listaCurtidos} />
-                </div>
-              ))}
-            </div>
-          )}
-        </section>
-      ) : <>
-      <section className="card flex flex-col gap-4">
-        <TituloCard icone="zap" direita="Últimos 7 dias · os que mais crescem (views por dia)">Melhores vídeos novos · {tema}</TituloCard>
-        {melhores.length === 0 ? <p style={{ margin: 0, color: "var(--muted)" }}>Nenhum Short novo nesses canais nos últimos 7 dias.</p> : (
-          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))" }}>
-            {melhores.map((v, i) => (
-              <div key={v.id} className="flex min-w-0 flex-col gap-2.5" style={{ padding: 10, borderRadius: 8, background: "var(--bg)", border: `1px solid ${i === 0 ? "#E8B014" : "var(--line)"}` }}>
-                <button onClick={() => setAssistir(v, melhores)} className="relative overflow-hidden" style={{ aspectRatio: "9/16", borderRadius: 6, background: "#111" }} aria-label={`Assistir ${v.titulo}`}>
-                  <CapaVideo src={v.capa} alt="" />
-                  <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 60%,rgba(0,0,0,.85))" }} />
-                  <span className="pill absolute" style={{ left: 8, top: 8, background: i === 0 ? "#E8B014" : "rgba(10,10,10,.75)", color: i === 0 ? "#0A0A0A" : "#fff", fontSize: 11 }}>#{i + 1}</span>
-                  <span className="absolute flex flex-col items-start" style={{ left: 8, bottom: 6, color: "#fff", lineHeight: 1.1 }}><span className="num" style={{ fontSize: 20 }}>{n(v.views)}</span>{v.porDia ? <span style={{ fontSize: 11, color: "#FFCC33", fontWeight: 600 }}>+{n(v.porDia)}/dia</span> : null}</span>
-                </button>
-                <div className="min-w-0"><div style={{ color: "var(--strong)", fontWeight: 600, fontSize: 14, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div><div style={{ color: "var(--muted)", fontSize: 12, marginTop: 2 }}>{v.canal} · {ha(v.publicado)}</div><div style={{ marginTop: 4 }}><Numeros v={v} /></div></div>
-                <Acoes v={v} lista={melhores} />
-              </div>
+        listaCurtidos.length === 0 ? (
+          <section className="card" style={{ color: "var(--muted)" }}>Você ainda não curtiu nenhum vídeo. Assista um vídeo em Explorar e toque no ♡ para salvar aqui.</section>
+        ) : (
+          <Fileira titulo="❤️ Seus curtidos" direita={`${curtidos.length} ${curtidos.length === 1 ? "vídeo" : "vídeos"}`}>
+            {listaCurtidos.map((v) => (
+              <div key={v.id} style={{ opacity: ehCurtido(v.id) ? 1 : 0.45 }}><CapaFileira v={v} abrir={() => setAssistir(v, listaCurtidos)} /></div>
             ))}
-          </div>
-        )}
-      </section>
-
-      <section className="card flex flex-col gap-4">
-        <TituloCard icone="cal" direita={`${Math.min(mostrar, recentes.length)} de ${recentes.length} vídeos`}>Recentes de todos os canais</TituloCard>
-        <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill,minmax(140px,1fr))" }}>
-          {recentes.slice(0, mostrar).map((v) => (
-            <div key={v.id} className="flex min-w-0 flex-col gap-2">
-              <button onClick={() => setAssistir(v, recentes)} className="relative overflow-hidden" style={{ aspectRatio: "9/16", borderRadius: 6, background: "#111" }} aria-label={`Assistir ${v.titulo}`}>
-                <CapaVideo src={v.capa} alt="" />
-                <span className="absolute inset-0" style={{ background: "linear-gradient(180deg,transparent 65%,rgba(0,0,0,.85))" }} />
-                <span className="num absolute" style={{ left: 8, bottom: 6, fontSize: 17, color: "#fff" }}>{n(v.views)}</span>
-              </button>
-              <div style={{ color: "var(--strong)", fontSize: 13, fontWeight: 600, lineHeight: 1.3, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{v.titulo}</div>
-              <div style={{ color: "var(--muted)", fontSize: 12 }}>{v.canal} · {ha(v.publicado)}</div>
-              <Numeros v={v} />
-              <Acoes v={v} lista={recentes} />
-            </div>
+          </Fileira>
+        )
+      ) : <>
+      {melhores.length === 0 ? (
+        <section className="card" style={{ color: "var(--muted)" }}>Nenhum Short novo nesses canais nos últimos 7 dias.</section>
+      ) : (
+        <Fileira titulo={`Em alta esta semana · ${tema}`} direita="os que mais crescem (views por dia)">
+          {melhores.map((v, i) => (
+            <CapaFileira key={v.id} v={v} abrir={() => setAssistir(v, melhores)} destaque={i === 0} largura={160} posicao={i + 1} />
           ))}
-        </div>
-        {mostrar < recentes.length && <button className="btn-line" onClick={() => setMostrar(mostrar + 10)} style={{ alignSelf: "center" }}>Carregar mais 10</button>}
-      </section>
+        </Fileira>
+      )}
+
+      {recentes.length > 0 && (
+        <Fileira titulo="Recentes de todos os canais" direita={`${recentes.length} vídeos`}>
+          {recentes.map((v) => <CapaFileira key={v.id} v={v} abrir={() => setAssistir(v, recentes)} largura={140} />)}
+        </Fileira>
+      )}
       </>}
 
       {assistir && (
