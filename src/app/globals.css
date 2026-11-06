@@ -68,11 +68,14 @@ a { color: inherit; text-decoration: none; }
 .menu { flex: 0 0 248px; position: sticky; top: 0; align-self: flex-start; min-height: 100vh; box-sizing: border-box; padding: 28px 18px; background: var(--side); border-right: 1px solid var(--line); display: flex; flex-direction: column; gap: 26px; }
 .menu-grupo { display: flex; flex-direction: column; gap: 4px; }
 .menu-pastas { display: flex; flex-direction: column; gap: 6px; }
-.menu-pasta { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 0 10px; border-radius: 4px; font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-align: left; }
-.menu-pasta:hover { background: var(--chip); color: var(--fg); }
-.menu-seta { flex: none; transition: transform .15s ease; }
-.menu-seta-on { transform: rotate(90deg); }
-.menu-itens { display: flex; flex-direction: column; gap: 4px; }
+.menu-pasta { display: flex; align-items: center; gap: 10px; width: 100%; min-height: 44px; padding: 0 10px 0 6px; border-radius: 8px; border: 1px solid transparent; font-size: 14px; font-weight: 600; letter-spacing: .3px; color: var(--text2); text-align: left; transition: background .15s, border-color .15s; }
+.menu-pasta:hover { background: var(--chip); color: var(--strong); }
+.menu-pasta-on { background: var(--chip); border-color: var(--line); color: var(--strong); }
+.menu-pasta-icone { display: flex; align-items: center; justify-content: center; flex: none; width: 30px; height: 30px; border-radius: 7px; background: var(--tint); border: 1px solid var(--line2); color: var(--accent-text); }
+.menu-pasta-conta { flex: none; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 18px; text-align: center; }
+.menu-seta { flex: none; color: var(--muted); transition: transform .18s ease; }
+.menu-seta-on { transform: rotate(90deg); color: var(--accent-text); }
+.menu-itens { display: flex; flex-direction: column; gap: 2px; margin: 4px 0 4px 20px; padding-left: 10px; border-left: 1px solid var(--line2); }
 .menu-itens[hidden] { display: none; }
 /* abinhas dentro de uma página comprida (componente Abas) */
 .abas { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--line); scrollbar-width: none; }
@@ -82,6 +85,15 @@ a { color: inherit; text-decoration: none; }
 .aba-on { color: var(--strong); border-bottom-color: var(--gold); }
 .aba-on svg { color: var(--accent-text); }
 [data-aba][hidden] { display: none; }
+/* gráfico do mês na Dashboard (componente GraficoMes), no estilo do YouTube Studio */
+.quadros-mes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.quadro-mes { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 104px; padding: 12px 8px; text-align: center; background: var(--chip); border-right: 1px solid var(--line); }
+.quadro-mes:last-child { border-right: 0; }
+.quadro-mes:hover { background: var(--tint); }
+.quadro-mes-on { background: var(--panel); box-shadow: inset 0 0 0 2px var(--gold); }
+.quadro-mes-on:hover { background: var(--panel); }
+.grafico-dica { position: absolute; transform: translateX(-50%); padding: 6px 10px; border-radius: 6px; background: var(--side); border: 1px solid var(--line2); box-shadow: 0 6px 18px rgba(0,0,0,.35); pointer-events: none; white-space: nowrap; text-align: center; }
+@media (max-width: 640px) { .quadros-mes { grid-template-columns: repeat(2, minmax(0, 1fr)); } .quadro-mes:nth-child(2) { border-right: 0; } .quadro-mes:nth-child(-n+2) { border-bottom: 1px solid var(--line); } }
 @media (max-width: 640px) { .aba { padding: 0 10px; font-size: 13px; gap: 6px; } }
 .menu-item { display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 4px; color: var(--text2); }
 .menu-item:hover { background: var(--chip); }
