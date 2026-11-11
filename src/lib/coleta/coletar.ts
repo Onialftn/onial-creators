@@ -2,7 +2,7 @@ import "server-only";
 import { hojeBrasil, intervalo, mesAnterior, mesDe, primeiroDia, somarDias } from "@/lib/datas";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { OUTROS_VIDEOS } from "@/lib/dados";
-import { refazerOutrosInstagram, viewsGanhas } from "./ganho";
+import { refazerOutrosInstagram, totalGuardado, viewsGanhas } from "./ganho";
 import { notificar } from "@/lib/notificacoes";
 import { REDE, type Rede, type Tokens } from "./redes";
 
@@ -126,7 +126,9 @@ export async function coletarConta(contaId: string, completo = false) {
           await admin.from("views_diarias").upsert({ video_id: reg.id, dia: ontem, criador_id: criador, plataforma: rede, views: (deOntem.get(reg.id) ?? 0) + ganho });
           linhas++;
         }
-        await admin.from("videos").update({ views_total: v.viewsTotal, views_total_em: new Date().toISOString(), titulo: v.titulo, url: v.url }).eq("id", reg.id);
+        // o total guardado nunca desce: em 08/11/2026 o TikTok devolveu 0 para vários vídeos antigos e,
+        // no dia seguinte, o total inteiro (636 mil views) foi contado de novo como ganho
+        await admin.from("videos").update({ views_total: totalGuardado(anterior, v.viewsTotal), views_total_em: new Date().toISOString(), titulo: v.titulo, url: v.url }).eq("id", reg.id);
       }
 
       if (rede === "instagram") {

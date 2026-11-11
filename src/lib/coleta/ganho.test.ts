@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { outrosInstagram, refazerOutrosInstagram, viewsGanhas } from "./ganho";
+import { outrosInstagram, refazerOutrosInstagram, totalGuardado, viewsGanhas } from "./ganho";
 
 describe("views ganhas no dia", () => {
   it("vídeo acompanhado: diferença entre os totais", () => {
@@ -56,5 +56,23 @@ describe("Instagram: outros conteúdos refeitos no mês inteiro", () => {
   it("nunca fica negativo", () => {
     const r = refazerOutrosInstagram(0, 50_000, [{ dia: "2026-11-02", views: 1_000 }]);
     expect(r.corrigir.every((c) => c.views >= 0)).toBe(true);
+  });
+});
+
+describe("total guardado do vídeo nunca desce", () => {
+  it("rede devolveu 0 num dia: guarda o total antigo e não conta nada", () => {
+    const guardado = totalGuardado(335_000, 0);
+    expect(guardado).toBe(335_000);
+    expect(viewsGanhas(335_000, 0, "2026-08-20", "2026-11-08")).toBe(0);
+  });
+  it("no dia seguinte o total volta: conta só o que cresceu, não o total inteiro (caso real de 09/11/2026)", () => {
+    const guardado = totalGuardado(335_000, 0);
+    expect(viewsGanhas(guardado, 335_300, "2026-08-20", "2026-11-09")).toBe(300);
+  });
+  it("total subiu normalmente: guarda o novo", () => {
+    expect(totalGuardado(10_000, 10_500)).toBe(10_500);
+  });
+  it("vídeo visto pela primeira vez: guarda o que veio", () => {
+    expect(totalGuardado(null, 4_200)).toBe(4_200);
   });
 });

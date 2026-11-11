@@ -13,6 +13,16 @@ export function viewsGanhas(totalAnterior: number | null, totalNovo: number, pos
 }
 
 /**
+ * Total de views a guardar no vídeo depois de uma coleta: nunca desce.
+ * Se a rede devolver um total menor (recontagem ou falha que manda 0), fica o maior já visto.
+ * Assim, quando o total volta ao normal, só o que passou do maior conta como ganho (e não o total inteiro de novo).
+ */
+export function totalGuardado(anterior: number | null, totalNovo: number): number {
+  const novo = Math.max(0, Math.floor(totalNovo));
+  return anterior === null ? novo : Math.max(anterior, novo);
+}
+
+/**
  * Instagram: views de "Outros conteúdos" a gravar no dia de ontem.
  *
  * Os reels são medidos pela diferença dos totais entre uma coleta e outra (06:00 → 06:00), e o total da conta
