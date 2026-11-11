@@ -27,3 +27,33 @@ export function viewsGanhas(totalAnterior: number | null, totalNovo: number, pos
 export function outrosInstagram(contaMes: number, reelsMes: number, outrosAntes: number): number {
   return Math.max(0, Math.floor(contaMes - reelsMes - outrosAntes));
 }
+
+/**
+ * Instagram: refaz "Outros conteúdos" do mês inteiro a cada coleta.
+ *
+ * O total da conta que o Instagram informa nos primeiros dias pode vir alto e ser corrigido para baixo depois.
+ * Antes, o que já estava gravado ficava travado e as views a mais nunca saíam (em 02/11/2026 isso somou 90 mil
+ * views a um criador). Agora o alvo do mês é sempre "total da conta no mês − reels do mês":
+ * - se o alvo subiu, a diferença vai para ontem;
+ * - se o alvo caiu, ontem fica 0 e o excesso sai dos dias anteriores, do mais recente para o mais antigo.
+ *
+ * - contaMes: total de views da conta do dia 1 do mês até ontem (sem stories)
+ * - reelsMes: views dos reels gravadas no mês até ontem
+ * - anteriores: "Outros conteúdos" já gravados no mês, antes de ontem
+ * Devolve o valor de ontem e os dias anteriores que precisam ser regravados (com o valor novo).
+ */
+export function refazerOutrosInstagram(contaMes: number, reelsMes: number, anteriores: { dia: string; views: number }[]): { ontem: number; corrigir: { dia: string; views: number }[] } {
+  const alvo = Math.max(0, Math.floor(contaMes - reelsMes));
+  const soma = anteriores.reduce((a, d) => a + d.views, 0);
+  if (alvo >= soma) return { ontem: alvo - soma, corrigir: [] };
+  let excesso = soma - alvo;
+  const corrigir: { dia: string; views: number }[] = [];
+  for (const d of [...anteriores].sort((a, b) => (a.dia < b.dia ? 1 : -1))) {
+    if (excesso <= 0) break;
+    const tira = Math.min(d.views, excesso);
+    if (tira <= 0) continue;
+    corrigir.push({ dia: d.dia, views: d.views - tira });
+    excesso -= tira;
+  }
+  return { ontem: 0, corrigir };
+}

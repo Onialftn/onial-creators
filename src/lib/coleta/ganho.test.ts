@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { outrosInstagram, viewsGanhas } from "./ganho";
+import { outrosInstagram, refazerOutrosInstagram, viewsGanhas } from "./ganho";
 
 describe("views ganhas no dia", () => {
   it("vídeo acompanhado: diferença entre os totais", () => {
@@ -31,5 +31,30 @@ describe("Instagram: outros conteúdos no mês acumulado", () => {
     expect(d1).toBe(0);
     expect(d2).toBe(10_000);
     expect(90_000 + d1 + d2).toBe(100_000);
+  });
+});
+
+describe("Instagram: outros conteúdos refeitos no mês inteiro", () => {
+  it("alvo subiu: a diferença vai para ontem", () => {
+    expect(refazerOutrosInstagram(100_000, 80_000, [{ dia: "2026-11-01", views: 5_000 }])).toEqual({ ontem: 15_000, corrigir: [] });
+  });
+  it("reels passaram do total: nada em outros", () => {
+    expect(refazerOutrosInstagram(100_000, 104_000, [])).toEqual({ ontem: 0, corrigir: [] });
+  });
+  it("Instagram corrigiu o total para baixo: as views a mais saem dos dias já gravados (caso real de 02/11/2026)", () => {
+    // em 03/11 a conta veio 90 mil acima dos reels; hoje os reels já passam do total da conta
+    const r = refazerOutrosInstagram(232_265, 236_795, [{ dia: "2026-11-02", views: 90_254 }, { dia: "2026-11-04", views: 67 }]);
+    expect(r.ontem).toBe(0);
+    expect(r.corrigir).toEqual([{ dia: "2026-11-04", views: 0 }, { dia: "2026-11-02", views: 0 }]);
+  });
+  it("corte parcial: tira do dia mais recente primeiro e o mês fecha no total da conta", () => {
+    const anteriores = [{ dia: "2026-11-02", views: 8_000 }, { dia: "2026-11-05", views: 3_000 }];
+    const r = refazerOutrosInstagram(100_000, 94_000, anteriores);
+    expect(r).toEqual({ ontem: 0, corrigir: [{ dia: "2026-11-05", views: 0 }, { dia: "2026-11-02", views: 6_000 }] });
+    expect(94_000 + 6_000).toBe(100_000);
+  });
+  it("nunca fica negativo", () => {
+    const r = refazerOutrosInstagram(0, 50_000, [{ dia: "2026-11-02", views: 1_000 }]);
+    expect(r.corrigir.every((c) => c.views >= 0)).toBe(true);
   });
 });

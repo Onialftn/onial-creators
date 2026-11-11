@@ -2,7 +2,7 @@ import "server-only";
 import { hojeBrasil, intervalo, mesAnterior, mesDe, primeiroDia, somarDias } from "@/lib/datas";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { OUTROS_VIDEOS } from "@/lib/dados";
-import { outrosInstagram, viewsGanhas } from "./ganho";
+import { refazerOutrosInstagram, viewsGanhas } from "./ganho";
 import { notificar } from "@/lib/notificacoes";
 import { REDE, type Rede, type Tokens } from "./redes";
 
@@ -155,13 +155,22 @@ export async function coletarConta(contaId: string, completo = false) {
         catch (e) { throw new Error(`Views da conta do Instagram: ${e instanceof Error ? e.message : String(e)}`); }
         const doMes = (gravados ?? []).filter((g) => String(g.dia) >= iniMes);
         const reelsMes = doMes.filter((g) => g.video_id !== idO).reduce((a, g) => a + Number(g.views), 0);
-        const outrosAntes = doMes.filter((g) => g.video_id === idO && String(g.dia) < ontem).reduce((a, g) => a + Number(g.views), 0)
-          + rows.filter((r) => r.dia >= iniMes).reduce((a, r) => a + r.views, 0);
-        const outrosOntem = outrosInstagram(contaMes, reelsMes, outrosAntes);
+        // "Outros conteúdos" já gravados no mês antes de ontem (inclui os dias que acabaram de ser preenchidos acima)
+        const antes = new Map<string, number>();
+        for (const g of doMes) if (g.video_id === idO && String(g.dia) < ontem) antes.set(String(g.dia), Number(g.views));
+        for (const r of rows) if (r.dia >= iniMes && r.dia < ontem) antes.set(r.dia, r.views);
+        const refeito = refazerOutrosInstagram(contaMes, reelsMes, [...antes.entries()].map(([dia, views]) => ({ dia, views })));
         const jaTinha = doMes.some((g) => g.video_id === idO && String(g.dia) === ontem);
-        if (outrosOntem > 0 || jaTinha) {
+        if (refeito.ontem > 0 || jaTinha || refeito.corrigir.length) {
           const id = await idOutros(inicio);
-          if (id) rows.push({ video_id: id, dia: ontem, criador_id: criador, plataforma: rede, views: outrosOntem });
+          if (id) {
+            if (refeito.ontem > 0 || jaTinha) rows.push({ video_id: id, dia: ontem, criador_id: criador, plataforma: rede, views: refeito.ontem });
+            for (const c of refeito.corrigir) {
+              const r = rows.find((x) => x.dia === c.dia);
+              if (r) r.views = c.views;
+              else rows.push({ video_id: id, dia: c.dia, criador_id: criador, plataforma: rede, views: c.views });
+            }
+          }
         }
         if (rows.length) await admin.from("views_diarias").upsert(rows);
         linhas += rows.length;
