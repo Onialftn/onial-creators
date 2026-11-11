@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Abas, Grupo } from "@/components/Abas";
 import { Avatar } from "@/components/Avatar";
+import { CapaVideo } from "@/components/CapaVideo";
 import { Cabecalho, Calendario, CardsGanho, TituloCard } from "@/components/Blocos";
 import { LogoPlataforma, NOME_PLATAFORMA } from "@/components/Icone";
 import { REDES } from "@/lib/coleta/redes";
@@ -78,8 +79,9 @@ export default async function CriadorGestor({ params, searchParams }: { params: 
             {virais.map((v, i) => (
               <a key={v.id} href={v.url ?? "#"} target="_blank" rel="noreferrer" className="tile flex gap-3" style={{ alignItems: "flex-start", ...(i === 0 ? { borderColor: "var(--ouro)" } : {}) }}>
                 <span className="relative flex flex-none items-center justify-center" style={{ width: 72, height: 96, borderRadius: 6, overflow: "hidden", background: "var(--bg)" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {(v.capa || (v.idExterno && capas[v.idExterno])) ? <img src={v.capa || capas[v.idExterno!]} referrerPolicy="no-referrer" alt="" width={72} height={96} style={{ width: 72, height: 96, objectFit: "cover" }} /> : <LogoPlataforma p={v.plataforma} tamanho={36} />}
+                  {/* o logo fica por baixo: aparece se a capa não carregar */}
+                  <LogoPlataforma p={v.plataforma} tamanho={36} />
+                  {(v.capa || (v.idExterno && capas[v.idExterno])) && <CapaVideo src={v.capa || capas[v.idExterno!]} alt={`Capa de ${v.titulo || "vídeo"}`} />}
                   <span className="num absolute" style={{ left: 4, top: 4, padding: "0 6px", borderRadius: 4, fontSize: 13, background: i === 0 ? "var(--ouro)" : "rgba(10,10,10,.8)", color: i === 0 ? "#0A0A0A" : "#fff" }}>{i + 1}º</span>
                 </span>
                 <div className="min-w-0 flex flex-col gap-1.5">

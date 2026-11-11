@@ -37,8 +37,17 @@ export async function coletarConta(contaId: string, completo = false) {
     const videos = await REDE[rede].videos(tokens);
 
     // vídeos que já temos
-    const { data: existentes } = await admin.from("videos").select("id, id_externo, views_total, views_total_em").eq("criador_id", criador).eq("plataforma", rede);
-    const porExterno = new Map((existentes ?? []).map((v) => [v.id_externo as string, v]));
+    const { data: existentes } = await admin.from("videos").select("id, id_externo, views_total, views_total_em, titulo").eq("criador_id", criador).eq("plataforma", rede);
+    const porExterno = new Map((existentes ?? []).map((v) => [v.id_externo as string, { id: v.id, id_externo: v.id_externo, views_total: v.views_total, views_total_em: v.views_total_em }]));
+    // YouTube: se o criador trocou o nome do vídeo depois de postar, atualiza (ex.: "Extra 2" → título de verdade).
+    // TikTok e Instagram já atualizam o nome junto com as views, mais abaixo.
+    if (rede === "youtube") {
+      const nomeAtual = new Map((existentes ?? []).map((v) => [v.id_externo as string, { id: v.id as string, titulo: v.titulo as string }]));
+      for (const v of videos) {
+        const reg = nomeAtual.get(v.idExterno);
+        if (reg && v.titulo && reg.titulo !== v.titulo) await admin.from("videos").update({ titulo: v.titulo }).eq("id", reg.id);
+      }
+    }
     const novos = videos.filter((v) => !porExterno.has(v.idExterno));
     if (novos.length) {
       const { data: inseridos } = await admin
