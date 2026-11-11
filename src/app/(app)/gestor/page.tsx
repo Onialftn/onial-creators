@@ -147,8 +147,8 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
         <TituloCard icone="users" direita={<span className="flex flex-wrap items-center gap-3" style={{ fontSize: 12 }}><span style={{ color: "var(--muted)" }}>barra cheia = meta batida</span><Link href="/gestor/config#cadastrar" style={{ color: "var(--accent-text)", fontSize: 14 }}>+ Cadastrar criador</Link></span>}>Criadores</TituloCard>
         {lista.length === 0 && <p style={{ margin: 0, color: "var(--muted)" }}>Nenhum criador ainda. <Link href="/gestor/config#cadastrar" style={{ color: "var(--accent-text)" }}>Cadastre o primeiro</Link>.</p>}
         <div className="flex flex-col">
-          {lista.map((cr, i) => {
-            const r = resumos[i];
+          {/* em ordem de ranking do mês: mais views primeiro */}
+          {lista.map((cr, i) => ({ cr, r: resumos[i] })).sort((a, b) => b.r.views - a.r.views).map(({ cr, r }) => {
             const bateu = r.meta !== null && r.views >= r.meta;
             return (
               <Link key={cr.id} href={`/gestor/criador/${cr.id}`} className="linha-criador" aria-label={`Abrir ${cr.nome}`}>
