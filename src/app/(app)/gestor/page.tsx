@@ -65,8 +65,6 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
     { nome: "Gravações", valor: somaPag((p) => p.bonusAjudaCentavos), cor: "var(--cat-4)" },
     { nome: "Vídeos extras", valor: somaPag((p) => p.bonusExtraCentavos), cor: "var(--cat-5)" },
   ];
-  // escala das barras dos criadores: a maior entre views e metas
-  const escala = Math.max(1, ...resumos.map((r) => Math.max(r.views, r.meta ?? 0)));
 
   // o que precisa da atenção do gestor
   const atencao: { texto: string; link: string; nivel: "warn" | "info" }[] = [];
@@ -145,7 +143,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
       </div>
 
       <section className="card flex flex-col gap-2">
-        <TituloCard icone="users" direita={<span className="flex flex-wrap items-center gap-3" style={{ fontSize: 12 }}><span style={{ color: "var(--muted)" }}>barra = views do mês · traço = meta</span><Link href="/gestor/config#cadastrar" style={{ color: "var(--accent-text)", fontSize: 14 }}>+ Cadastrar criador</Link></span>}>Criadores</TituloCard>
+        <TituloCard icone="users" direita={<span className="flex flex-wrap items-center gap-3" style={{ fontSize: 12 }}><span style={{ color: "var(--muted)" }}>barra cheia = meta batida</span><Link href="/gestor/config#cadastrar" style={{ color: "var(--accent-text)", fontSize: 14 }}>+ Cadastrar criador</Link></span>}>Criadores</TituloCard>
         {lista.length === 0 && <p style={{ margin: 0, color: "var(--muted)" }}>Nenhum criador ainda. <Link href="/gestor/config#cadastrar" style={{ color: "var(--accent-text)" }}>Cadastre o primeiro</Link>.</p>}
         <div className="flex flex-col">
           {lista.map((cr, i) => {
@@ -166,8 +164,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
                   </span>
                 </span>
                 <span className="trilho-meta" title={r.meta ? `${formatarNumero(r.views)} de ${formatarNumero(r.meta)} (${Math.round((r.views / r.meta) * 100)}%)` : "Sem meta"}>
-                  <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${(r.views / escala) * 100}%`, borderRadius: 4, background: bateu ? "var(--ok)" : "var(--gold)" }} />
-                  {r.meta ? <span style={{ position: "absolute", top: -4, bottom: -4, width: 2, left: `calc(${(r.meta / escala) * 100}% - 1px)`, background: "var(--strong)" }} /> : null}
+                  <span style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: `${r.meta ? Math.min(r.views / r.meta, 1) * 100 : 0}%`, borderRadius: 4, background: bateu ? "var(--ok)" : "var(--gold)" }} />
                 </span>
                 <span className="flex flex-col items-end">
                   <span className="num" style={{ fontSize: 17, color: "var(--strong)" }}>{formatarNumero(r.views)}</span>

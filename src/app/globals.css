@@ -160,7 +160,7 @@ a { color: inherit; text-decoration: none; }
 .capa-grade { display: grid; column-gap: 0; row-gap: 8px; align-items: end; align-content: start; }
 .capa-grade .capa-fileira { position: relative; z-index: 1; }
 @media (max-width: 640px) { .rank-grande { font-size: 96px; margin-right: -14px; } }
-/* Painel do gestor: criadores em barras (views e traço da meta) */
+/* Painel do gestor: criadores em barras (barra enche até a meta) */
 .linha-criador { display: grid; grid-template-columns: 180px minmax(0, 1fr) 100px 110px 120px; gap: 16px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); }
 .linha-criador:first-of-type { border-top: 0; }
 .trilho-meta { position: relative; display: block; height: 14px; border-radius: 4px; background: var(--track); }
