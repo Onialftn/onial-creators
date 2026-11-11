@@ -12,6 +12,8 @@
   /* partes de uma barra de dinheiro (Painel do gestor): paleta validada para daltonismo; não muda com o tema */
   --cat-1: #3987e5; --cat-2: #199e70; --cat-3: #c98500; --cat-4: #d55181; --cat-5: #9085e9;
   --ouro: #e8b014; --ouro-texto: #ffcc33; --ouro-vivo: #ffcc33; --prata: #9aa4b5; --prata-texto: #c3cad6; --bronze: #c26a3a; --bronze-texto: #e08a5a;
+  /* semana em bolinhas (pedido do dono): cores fixas, não mudam com o tema */
+  --falta: #ff5c5c; --falta-bg: #2e1010; --falta-line: #7a2626; --folga: #8a8a8a; --folga-bg: #1f1f1f; --folga-line: #3a3a3a; --postar-bg: #2a2208;
   --font-inter: "Inter"; --font-rajdhani: "Rajdhani";
   color-scheme: dark;
 }
@@ -20,6 +22,7 @@ html[data-mode="light"] {
   --fg: #1a1712; --strong: #0e0c08; --text2: #3d372a; --muted: #6b6450; --accent-text: #8a5e00; --tint: #fbefc8; --tint-text: #6e5000; --halo: #f7e3a6;
   --ok: #0b7a57; --ok-bg: #ddf5ec; --ok-line: #9ed9c3; --warn: #b0500c; --warn-bg: #fde7d6; --warn-line: #f0b88a;
   --ouro-texto: #8a5e00; --prata-texto: #5b6472; --bronze-texto: #9a4a1f;
+  --falta: #c62828; --falta-bg: #fde2e2; --falta-line: #efa3a3; --folga: #7a7a7a; --folga-bg: #ececec; --folga-line: #c9c9c9; --postar-bg: #fdf3d3;
   --cat-1: #2a78d6; --cat-2: #1baf7a; --cat-3: #eda100; --cat-4: #e87ba4; --cat-5: #6250d6;
   color-scheme: light;
 }
@@ -73,6 +76,11 @@ a { color: inherit; text-decoration: none; }
   .cal { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; min-width: 300px; }
   /* bolinhas da semana na Dashboard: vêm antes das cores do calendário (cal-ok, cal-folga...) para elas valerem */
   .bola { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; box-sizing: border-box; border-radius: 50%; border: 1px solid var(--line2); }
+  .bola-folga { background: var(--folga-bg); border: 1px solid var(--folga-line); color: var(--folga); }
+  .bola-postar { border: 2px solid var(--ouro); color: var(--ouro-texto); }
+  .bola-postar-hoje { border: 2px solid var(--ouro); background: var(--postar-bg); color: var(--ouro-texto); }
+  .bola-falta { background: var(--falta-bg); border: 2px solid var(--falta); color: var(--falta); }
+  .bola-ok { background: var(--ok-bg); border: 1px solid var(--ok-line); color: var(--ok); }
   .cal-c { min-height: 68px; border-radius: 6px; padding: 8px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid var(--line); background: var(--bg); }
   .cal-ok { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); }
   .cal-miss { background: var(--warn-bg); border-color: var(--warn-line); color: var(--warn); }

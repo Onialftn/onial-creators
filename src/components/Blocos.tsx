@@ -186,6 +186,11 @@ export function MetaCompacta({ r, restam }: { r: ResumoMes; restam: number }) {
 }
 
 /** Dashboard (modelo A): a semana em 7 bolinhas. */
+/** Semana em bolinhas (pedido do dono): cinza = folga, amarelo = dia de postar, vermelho com X = falta, verde = feito. Cores fixas. */
+const BOLA: Record<DiaCalendario["status"], string> = {
+  postado: "bola-ok", reposto: "bola-ok", nao_postado: "bola-falta", a_repor: "bola-falta", folga: "bola-folga", hoje: "bola-postar-hoje", a_postar: "bola-postar",
+};
+
 export function SemanaBolinhas({ dias, hoje }: { dias: DiaCalendario[]; hoje: string }) {
   const seg = inicioDaSemanaHoje(hoje);
   const semana = dias.filter((d) => d.data >= seg).slice(0, 7);
@@ -198,11 +203,14 @@ export function SemanaBolinhas({ dias, hoje }: { dias: DiaCalendario[]; hoje: st
         {semana.map((d) => (
           <div key={d.data} className="flex flex-col items-center gap-1.5" title={`${DIAS_CURTOS[diaDaSemana(d.data) - 1]} ${Number(d.data.slice(8))}: ${ROTULO[d.status]}`}>
             <span style={{ fontSize: 11, color: d.data === hoje ? "var(--accent-text)" : "var(--muted)", fontWeight: d.data === hoje ? 700 : 400 }}>{DIAS_CURTOS[diaDaSemana(d.data) - 1]}</span>
-            <span className={`bola ${CLASSE[d.status]}`} aria-label={ROTULO[d.status]}>{ICONE[d.status] && d.status !== "folga" && d.status !== "hoje" && <Icone nome={ICONE[d.status]!} tamanho={14} />}</span>
+            <span className={`bola ${BOLA[d.status]}`} aria-label={ROTULO[d.status]}>
+              {(d.status === "postado" || d.status === "reposto") && <Icone nome="check" tamanho={14} />}
+              {(d.status === "nao_postado" || d.status === "a_repor") && <Icone nome="x" tamanho={14} />}
+            </span>
           </div>
         ))}
       </div>
-      <span style={{ fontSize: 13, color: "var(--muted)" }}>{frase} · tracejado = folga · {semana.filter((d) => d.status === "postado" || d.status === "reposto").length} dias feitos</span>
+      <span style={{ fontSize: 13, color: "var(--muted)" }}>{frase} · cinza = folga · amarelo = postar · vermelho = falta · {semana.filter((d) => d.status === "postado" || d.status === "reposto").length} dias feitos</span>
     </section>
   );
 }
