@@ -184,3 +184,6 @@ a { color: inherit; text-decoration: none; }
 .mais-extras[open] .txt-mais { display: none; }
 .mais-extras[open] .txt-menos { display: inline; }
 .mais-extras[open] > summary .chev { transform: rotate(180deg); }
+/* ícone girando enquanto algo carrega (ex.: Coletar views agora) */
+.girando { animation: girar 1s linear infinite; }
+@keyframes girar { to { transform: rotate(360deg); } }

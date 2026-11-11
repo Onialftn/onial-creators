@@ -10,6 +10,7 @@ import { diasNoMes, hojeBrasil, mesAnterior, mesDe, nomeMes, quandoFoi } from "@
 import { inicioDoMes } from "@/lib/ia/uso";
 import { formatarNumero, formatarReais } from "@/lib/pagamento";
 import { coletarAgora } from "./acoes";
+import { BotaoColetar } from "@/components/BotaoColetar";
 import { AbasGestor, Retorno } from "./comum";
 
 export const maxDuration = 300;
@@ -90,7 +91,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
   return (
     <>
       <Cabecalho icone="crown" titulo="Painel do gestor" sub={`${nomeMes(mes)} · o mês fecha em ${restam} ${restam === 1 ? "dia" : "dias"} · ${lista.length} ${lista.length === 1 ? "criador" : "criadores"}${ultima.data ? ` · views atualizadas ${quandoFoi(String(ultima.data.ultima_coleta))}` : ""}`}
-        direita={<form action={coletarAgora}><button className="btn-line" type="submit"><Icone nome="reset" tamanho={16} />Coletar views agora</button></form>} />
+        direita={<form action={coletarAgora}><BotaoColetar /></form>} />
       <AbasGestor ativa="geral" />
       <Retorno ok={ok} erro={erro} />
 
