@@ -2,7 +2,7 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { cache } from "react";
 import { supabaseServidor } from "@/lib/supabase/server";
-import { BONUS_META_CENTAVOS_POR_MIL, aPartirDoInicio, calcularConstancia, calcularPagamento, sobraParaRepor, fimDaSemana as fimDaSemanaDe, inicioDaSemana as inicioDaSemanaDe, type DiaPostagem } from "@/lib/pagamento";
+import { BONUS_META_CENTAVOS_POR_MIL, REPOSICAO_MARCADA_DESDE, aPartirDoInicio, calcularConstancia, calcularPagamento, prazoParaRepor, situacaoDasFaltas, sobraParaRepor, fimDaSemana as fimDaSemanaDe, inicioDaSemana as inicioDaSemanaDe, type DiaPostagem, type Reposicao, type SituacaoFalta } from "@/lib/pagamento";
 import { postagensPorDia, type VideoPostado } from "@/lib/postagens";
 import { diaDaSemana, hojeBrasil, intervalo, mesDe, primeiroDia, ultimoDia } from "@/lib/datas";
 
@@ -34,6 +34,18 @@ export interface DiaCalendario {
   data: string;
   status: StatusDia;
   postagens: number;
+  /** dia marcado para postar o vídeo que repõe uma falta (regra nova) */
+  reposicao?: boolean;
+}
+
+/** Falta do mês na regra nova (reposição com data marcada). */
+export interface FaltaParaRepor {
+  falta: string;
+  /** último dia que dá para marcar/repor */
+  prazo: string;
+  situacao: SituacaoFalta;
+  /** dia marcado (se já marcou) */
+  dia: string | null;
 }
 
 export interface ResumoMes {
@@ -44,6 +56,8 @@ export interface ResumoMes {
   meta: number | null;
   faltas: number;
   aRepor: number;
+  /** faltas do mês na regra nova, com a situação de cada uma */
+  faltasParaRepor: FaltaParaRepor[];
   diasAgendados: number;
   /** quantos dias de postagem por semana o gestor definiu (3 a 5) */
   diasPorSemana: number;
@@ -68,7 +82,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
   const semIni = inicioDaSemanaDe(ini);
   const semFim = fimDaSemanaDe(fim);
 
-  const [views, meta, agenda, dias, videos, ontem, ajudas, extras, extrasNaSemana] = await Promise.all([
+  const [views, meta, agenda, dias, videos, ontem, ajudas, extras, extrasNaSemana, repos] = await Promise.all([
     // soma pronta no banco (a leitura direta de views_diarias corta em 1.000 linhas)
     sb.from("ranking_mensal").select("plataforma, views").eq("criador_id", criadorId).eq("mes", mes),
     sb.from("metas").select("meta_views").eq("criador_id", criadorId).eq("mes", mes).maybeSingle(),
@@ -83,7 +97,10 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     sb.from("entregas_extra").select("extras!inner(*)").eq("criador_id", criadorId).eq("status", "aprovado").eq("mes", mes),
     // vídeos extras postados (enviados ou aprovados) em cada dia: não contam como reposição de falta
     sb.from("entregas_extra").select("status, extras!inner(prazo)").eq("criador_id", criadorId).in("status", ["enviado", "aprovado"]).gte("extras.prazo", semIni).lte("extras.prazo", semFim),
+    // dias marcados para repor faltas (regra nova)
+    sb.from("reposicoes").select("falta, dia").eq("criador_id", criadorId).gte("falta", semIni).lte("falta", semFim),
   ]);
+  const reposicoes: Reposicao[] = (repos.data ?? []).map((r) => ({ falta: String(r.falta), dia: String(r.dia) }));
   const extrasPorDia = new Map<string, number>();
   for (const e of (extrasNaSemana.data ?? []) as unknown as { extras: { prazo: string } | { prazo: string }[] }[]) {
     for (const x of Array.isArray(e.extras) ? e.extras : [e.extras]) if (x?.prazo) extrasPorDia.set(x.prazo, (extrasPorDia.get(x.prazo) ?? 0) + 1);
@@ -110,11 +127,13 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     postagens: postagens.get(data) ?? 0,
     extras: Math.min(extrasPorDia.get(data) ?? 0, postagens.get(data) ?? 0),
   })));
-  const constancia = calcularConstancia(lista, hoje, mes);
+  const constancia = calcularConstancia(lista, hoje, mes, reposicoes);
+  const situacao = situacaoDasFaltas(lista, reposicoes, hoje);
+  const diaMarcado = new Map(reposicoes.map((r) => [r.falta, r.dia]));
 
-  // reposições: em cada semana, postagens extras cobrem os dias perdidos, do mais antigo ao mais novo
+  // regra antiga (antes de REPOSICAO_MARCADA_DESDE): em cada semana, postagens extras cobrem os dias perdidos, do mais antigo ao mais novo
   const extrasPorSemana = new Map<string, number>();
-  for (const d of lista) {
+  for (const d of lista.filter((x) => x.data < REPOSICAO_MARCADA_DESDE)) {
     const k = inicioDaSemanaDe(d.data);
     extrasPorSemana.set(k, (extrasPorSemana.get(k) ?? 0) + sobraParaRepor(d));
   }
@@ -125,7 +144,11 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     else if (d.postagens > 0) status = "postado";
     else if (d.data === hoje) status = "hoje";
     else if (d.data > hoje) status = "a_postar";
-    else {
+    else if (d.data >= REPOSICAO_MARCADA_DESDE) {
+      // regra nova: reposição com data marcada
+      const s = situacao.get(d.data);
+      status = s === "reposta" ? "reposto" : s === "perdida" ? "nao_postado" : "a_repor";
+    } else {
       const k = inicioDaSemanaDe(d.data);
       const extras = extrasPorSemana.get(k) ?? 0;
       if (extras > 0) {
@@ -139,7 +162,11 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     data,
     status: statusDe.get(data)!,
     postagens: postagens.get(data) ?? 0,
+    reposicao: reposicoes.some((r) => r.dia === data && situacao.get(r.falta) !== "perdida"),
   }));
+  const faltasParaRepor: FaltaParaRepor[] = [...situacao.entries()]
+    .filter(([f]) => f >= ini && f <= fim)
+    .map(([falta, s]) => ({ falta, prazo: prazoParaRepor(falta), situacao: s, dia: diaMarcado.get(falta) ?? null }));
 
   const doMes = lista.filter((d) => d.data >= ini && d.data <= fim && d.agendado);
   const diasCumpridos = doMes.filter((d) => { const st = statusDe.get(d.data); return st === "postado" || st === "reposto"; }).length;
@@ -163,6 +190,7 @@ export async function resumoDoMes(sb: SB, criadorId: string, mes: string): Promi
     meta: metaViews,
     faltas: constancia.faltas,
     aRepor: constancia.aRepor,
+    faltasParaRepor,
     diasAgendados: doMes.length,
     diasPorSemana: agendados.size,
     diasCumpridos,

@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   aPartirDoInicio,
+  diaValidoParaRepor,
+  prazoParaRepor,
+  situacaoDasFaltas,
+  type Reposicao,
   calcularConstancia,
   calcularPagamento,
   formatarReais,
@@ -196,5 +200,124 @@ describe("faltas zeradas: contagem começa num dia (pedido do gestor)", () => {
     const dias = mudar(outubroPerfeito(), "2026-10-30", 0); // sexta
     expect(calcularConstancia(aPartirDoInicio(dias, "2026-10-30"), FIM_DO_MES, "2026-10").faltas).toBe(1);
     expect(calcularConstancia(aPartirDoInicio(dias, "2026-10-31"), FIM_DO_MES, "2026-10").faltas).toBe(0);
+  });
+});
+
+// ───────────── Regra nova (a partir de 09/11/2026): reposição com data marcada ─────────────
+
+/** Novembro de 2026 com seg–sex agendados e todos postados (09/11 é segunda). Só a partir de 09/11 (regra nova). */
+function novembroPerfeito(): DiaPostagem[] {
+  const dias: DiaPostagem[] = [];
+  for (let d = 9; d <= 30; d++) {
+    const data = `2026-11-${String(d).padStart(2, "0")}`;
+    const semana = new Date(Date.UTC(2026, 10, d)).getUTCDay();
+    const agendado = semana >= 1 && semana <= 5;
+    dias.push({ data, agendado, postagens: agendado ? 1 : 0 });
+  }
+  return dias;
+}
+const DEPOIS_DO_MES = "2026-12-02";
+const NOV = "2026-11";
+
+describe("reposição com data marcada", () => {
+  it("prazo: 7 dias depois da falta", () => {
+    expect(prazoParaRepor("2026-11-10")).toBe("2026-11-17");
+  });
+  it("prazo: não passa do fim do mês (o mês fecha com o que tiver)", () => {
+    expect(prazoParaRepor("2026-11-27")).toBe("2026-11-30");
+  });
+  it("dia válido: depois da falta, a partir de hoje e até o prazo", () => {
+    expect(diaValidoParaRepor("2026-11-10", "2026-11-14", "2026-11-12")).toBe(true);
+    expect(diaValidoParaRepor("2026-11-10", "2026-11-18", "2026-11-12")).toBe(false); // passou dos 7 dias
+    expect(diaValidoParaRepor("2026-11-10", "2026-11-11", "2026-11-12")).toBe(false); // dia que já passou
+    expect(diaValidoParaRepor("2026-11-10", "2026-11-10", "2026-11-10")).toBe(false); // o próprio dia da falta
+  });
+
+  it("mês perfeito: 0 faltas, 10%", () => {
+    expect(calcularConstancia(novembroPerfeito(), DEPOIS_DO_MES, NOV, [])).toEqual({ faltas: 0, aRepor: 0, percentual: 0.1 });
+  });
+
+  it("falta reposta no dia marcado (vídeo na folga): continua 10%", () => {
+    let dias = mudar(novembroPerfeito(), "2026-11-10", 0); // terça perdida
+    dias = mudar(dias, "2026-11-14", 1); // sábado (folga), dia marcado
+    const r: Reposicao[] = [{ falta: "2026-11-10", dia: "2026-11-14" }];
+    expect(calcularConstancia(dias, DEPOIS_DO_MES, NOV, r)).toEqual({ faltas: 0, aRepor: 0, percentual: 0.1 });
+  });
+
+  it("reposição na semana seguinte vale (dentro dos 7 dias)", () => {
+    let dias = mudar(novembroPerfeito(), "2026-11-13", 0); // sexta perdida
+    dias = mudar(dias, "2026-11-17", 2); // terça seguinte: 2 vídeos (1 obrigatório + 1 que repõe)
+    const r: Reposicao[] = [{ falta: "2026-11-13", dia: "2026-11-17" }];
+    expect(calcularConstancia(dias, DEPOIS_DO_MES, NOV, r).faltas).toBe(0);
+  });
+
+  it("marcou e não postou no dia: perde na hora (1 falta, 5%)", () => {
+    const dias = mudar(novembroPerfeito(), "2026-11-10", 0);
+    const r: Reposicao[] = [{ falta: "2026-11-10", dia: "2026-11-14" }];
+    expect(situacaoDasFaltas(dias, r, "2026-11-15").get("2026-11-10")).toBe("perdida");
+    expect(calcularConstancia(dias, DEPOIS_DO_MES, NOV, r)).toEqual({ faltas: 1, aRepor: 0, percentual: 0.05 });
+  });
+
+  it("postou a mais sem marcar a data: não repõe", () => {
+    let dias = mudar(novembroPerfeito(), "2026-11-10", 0);
+    dias = mudar(dias, "2026-11-14", 1);
+    expect(calcularConstancia(dias, DEPOIS_DO_MES, NOV, []).faltas).toBe(1);
+  });
+
+  it("vídeo extra (pago à parte) no dia marcado não repõe", () => {
+    let dias = mudar(novembroPerfeito(), "2026-11-10", 0);
+    dias = dias.map((d) => (d.data === "2026-11-14" ? { ...d, postagens: 1, extras: 1 } : d));
+    const r: Reposicao[] = [{ falta: "2026-11-10", dia: "2026-11-14" }];
+    expect(calcularConstancia(dias, DEPOIS_DO_MES, NOV, r).faltas).toBe(1);
+  });
+
+  it("2 faltas sem repor: 0%", () => {
+    let dias = mudar(novembroPerfeito(), "2026-11-10", 0);
+    dias = mudar(dias, "2026-11-19", 0);
+    expect(calcularConstancia(dias, DEPOIS_DO_MES, NOV, [])).toEqual({ faltas: 2, aRepor: 0, percentual: 0 });
+  });
+
+  it("duas faltas no mesmo dia marcado: precisa de um vídeo a mais para cada", () => {
+    let dias = mudar(novembroPerfeito(), "2026-11-10", 0);
+    dias = mudar(dias, "2026-11-11", 0);
+    dias = mudar(dias, "2026-11-14", 1); // só 1 vídeo no sábado
+    const r: Reposicao[] = [{ falta: "2026-11-10", dia: "2026-11-14" }, { falta: "2026-11-11", dia: "2026-11-14" }];
+    expect(calcularConstancia(dias, DEPOIS_DO_MES, NOV, r).faltas).toBe(1);
+  });
+
+  it("durante o prazo: ainda dá para marcar (não é falta ainda)", () => {
+    const dias = mudar(novembroPerfeito(), "2026-11-10", 0);
+    expect(situacaoDasFaltas(dias, [], "2026-11-12").get("2026-11-10")).toBe("pode_marcar");
+    expect(calcularConstancia(dias, "2026-11-12", NOV, [])).toEqual({ faltas: 0, aRepor: 1, percentual: 0.1 });
+  });
+
+  it("dia marcado ainda não chegou: fica marcada (não é falta ainda)", () => {
+    const dias = mudar(novembroPerfeito(), "2026-11-10", 0);
+    const r: Reposicao[] = [{ falta: "2026-11-10", dia: "2026-11-14" }];
+    expect(situacaoDasFaltas(dias, r, "2026-11-12").get("2026-11-10")).toBe("marcada");
+  });
+
+  it("acabou o prazo sem marcar: vira falta", () => {
+    const dias = mudar(novembroPerfeito(), "2026-11-10", 0);
+    expect(situacaoDasFaltas(dias, [], "2026-11-18").get("2026-11-10")).toBe("perdida");
+  });
+
+  it("falta no fim do mês: fecha no último dia do mês", () => {
+    const dias = mudar(novembroPerfeito(), "2026-11-27", 0);
+    expect(situacaoDasFaltas(dias, [], "2026-11-30").get("2026-11-27")).toBe("pode_marcar");
+    expect(situacaoDasFaltas(dias, [], "2026-12-01").get("2026-11-27")).toBe("perdida");
+  });
+
+  it("meta batida e não batida continuam iguais com a regra nova", () => {
+    const comMeta = calcularPagamento(120_000, 100_000, 0);
+    const semMeta = calcularPagamento(80_000, 100_000, 0);
+    expect(comMeta.bonusMetaCentavos).toBe(10_000);
+    expect(semMeta.bonusMetaCentavos).toBe(0);
+  });
+
+  it("faltas antes de 09/11 seguem a regra antiga (repor até domingo, sem marcar)", () => {
+    let dias = mudar(outubroPerfeito(), "2026-10-08", 0);
+    dias = mudar(dias, "2026-10-10", 1);
+    expect(calcularConstancia(dias, FIM_DO_MES, "2026-10", []).faltas).toBe(0);
   });
 });

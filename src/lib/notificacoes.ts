@@ -91,7 +91,7 @@ export async function gerarNotificacoes() {
       }
       // 2. constância: dia para repor e faltas
       if (r.aRepor > 0)
-        await avisar({ tipo: "constancia", titulo: `${r.aRepor} ${r.aRepor === 1 ? "dia" : "dias"} para repor ⚠️`, texto: "Reponha até domingo e mantenha o bônus.", link: "/dias", chave: `repor:${hoje}` });
+        await avisar({ tipo: "constancia", titulo: `${r.aRepor} ${r.aRepor === 1 ? "falta" : "faltas"} para repor ⚠️`, texto: "Marque o dia da reposição (até 7 dias depois da falta) e mantenha o bônus.", link: "/dias", chave: `repor:${hoje}` });
       if (r.faltas > 0)
         await avisar({ tipo: "constancia", titulo: r.faltas === 1 ? "1 falta no mês" : `${r.faltas} faltas no mês`, texto: r.faltas === 1 ? "Constância caiu para 5%." : "Constância do mês zerou.", link: "/dias", chave: `faltas:${mes}:${r.faltas}` });
 

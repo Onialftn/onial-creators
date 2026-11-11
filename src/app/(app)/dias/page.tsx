@@ -1,4 +1,5 @@
 import { Cabecalho, Calendario, TituloCard } from "@/components/Blocos";
+import { ReporFaltas } from "@/components/ReporFaltas";
 import { ExtrasCriador, type EntregaCriador, type ExtraCriador } from "@/components/ExtrasCriador";
 import { resumoDoMes, usuarioAtual } from "@/lib/dados";
 import { hojeBrasil, mesDe, nomeMes, somarDias } from "@/lib/datas";
@@ -8,11 +9,12 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
   const { sb, perfil } = await usuarioAtual();
   const mes = mesDe(hojeBrasil());
   const hoje = hojeBrasil();
-  const [r, { data: extras }, { data: minhas }, { data: mapasDia }] = await Promise.all([
+  const [r, { data: extras }, { data: minhas }, { data: mapasDia }, { data: agenda }] = await Promise.all([
     resumoDoMes(sb, perfil.id, mes),
     sb.from("extras").select("*").eq("ativo", true).gte("prazo", somarDias(hoje, -14)).order("prazo"),
     sb.from("entregas_extra").select("*").eq("criador_id", perfil.id).order("enviado_em", { ascending: false }),
     sb.from("mapa_dia").select("dia_semana, mapa").eq("criador_id", perfil.id),
+    sb.from("agenda_postagem").select("dia_semana").eq("criador_id", perfil.id),
   ]);
   // extras de hoje em diante + extras no Pix que ainda esperam a chave ou a aprovação
   const pendentePix = new Set((minhas ?? []).filter((e) => e.status !== "aprovado" && e.status !== "recusado").map((e) => e.extra_id as string));
@@ -33,6 +35,8 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
       {ok && <div role="status" className="pill-ok" style={{ padding: "10px 14px", fontSize: 14 }}>{ok}</div>}
       {erro && <div role="alert" className="pill-warn" style={{ padding: "10px 14px", fontSize: 14 }}>{erro}</div>}
 
+      <ReporFaltas faltas={r.faltasParaRepor} hoje={hoje} diasDePostagem={(agenda ?? []).map((a) => a.dia_semana as number)} />
+
       <ExtrasCriador extras={extrasVisiveis as ExtraCriador[]} entregas={(minhas ?? []) as EntregaCriador[]} hoje={hoje} />
 
 
@@ -49,10 +53,10 @@ export default async function DiasDePostagem({ searchParams }: { searchParams: P
         </div>
         <Calendario dias={r.calendario} mapas={mapas} />
         <div className="flex flex-wrap gap-x-5 gap-y-2" style={{ color: "var(--muted)", fontSize: 12 }}>
-          <span>Verde: postado ou reposto</span><span>Laranja: não postado</span><span>Tracejado laranja: repor até domingo</span><span>Dourado: hoje</span><span>⭐ Onial 1v1 · 🎯 Mapa de treino: mapa a gravar</span><span>🎬 mín. 1 vídeo por dia de postagem (um 2º vídeo repõe uma falta; vídeo extra não conta)</span><span>Tracejado: folga</span>
+          <span>Verde: postado ou reposto</span><span>Laranja: não postado</span><span>Tracejado laranja: falta que ainda dá para repor</span><span>🔁 dia marcado para repor</span><span>Dourado: hoje</span><span>⭐ Onial 1v1 · 🎯 Mapa de treino: mapa a gravar</span><span>🎬 mín. 1 vídeo por dia de postagem (para repor uma falta, marque o dia em Repor faltas; vídeo extra não conta)</span><span>Tracejado: folga</span>
         </div>
         <p style={{ margin: 0, fontSize: 13, color: r.faltas ? "var(--warn)" : "var(--muted)" }}>
-          {r.faltas === 0 ? "Perdeu um dia? Poste em outro dia até domingo e ele conta como reposto." : r.faltas === 1 ? "1 falta no mês: o bônus de constância caiu para 5%. Mais uma e ele zera." : `${r.faltas} faltas no mês: sem bônus de constância.`}
+          {r.faltas === 0 ? "Perdeu um dia? Marque em Repor faltas um dia até 7 dias depois e poste 1 vídeo a mais nele." : r.faltas === 1 ? "1 falta no mês: o bônus de constância caiu para 5%. Mais uma e ele zera." : `${r.faltas} faltas no mês: sem bônus de constância.`}
         </p>
       </section>
     </>

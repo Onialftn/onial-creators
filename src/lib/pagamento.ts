@@ -91,25 +91,105 @@ export function percentualPorFaltas(faltas: number): number {
 }
 
 /**
- * Constância do mês.
- * Um dia agendado sem postagem pode ser reposto com uma postagem extra
- * (em dia de folga, ou um segundo vídeo em qualquer dia) até domingo da mesma semana.
- * Vídeo extra (pago à parte) não conta como reposição.
- * Só vira falta depois que a semana termina sem reposição.
- *
- * @param dias   dias do mês (podem incluir dias da semana vizinha, para contar reposições)
- * @param hoje   data de hoje, AAAA-MM-DD
- * @param mes    mês do fechamento, AAAA-MM (faltas contam no mês do dia perdido)
+ * Reposição com data marcada (pedido do gestor em 11/11/2026), vale para faltas a partir desta segunda-feira.
+ * Antes dela fica a regra antiga (repor até domingo da mesma semana com um vídeo a mais, sem marcar data).
  */
-export function calcularConstancia(dias: DiaPostagem[], hoje: string, mes: string): ResultadoConstancia {
+export const REPOSICAO_MARCADA_DESDE = "2026-11-09";
+/** A reposição pode ser marcada até 7 dias depois da falta (sem passar do fim do mês). */
+export const DIAS_PARA_REPOR = 7;
+
+/** Dia marcado pelo criador para postar o vídeo que repõe uma falta. */
+export interface Reposicao {
+  /** dia da falta, AAAA-MM-DD */
+  falta: string;
+  /** dia marcado para repor, AAAA-MM-DD */
+  dia: string;
+}
+
+/**
+ * Situação de uma falta na regra nova:
+ * - reposta: postou o vídeo a mais no dia marcado
+ * - pode_marcar: ainda não marcou e está no prazo
+ * - marcada: marcou um dia que ainda não passou (ou é hoje e ainda não postou)
+ * - perdida: passou o dia marcado sem postar, ou acabou o prazo sem marcar (vira falta de vez)
+ */
+export type SituacaoFalta = "reposta" | "pode_marcar" | "marcada" | "perdida";
+
+function somarDiasData(data: string, n: number): string {
+  return new Date(paraUtc(data) + n * DIA_MS).toISOString().slice(0, 10);
+}
+function ultimoDiaDoMes(data: string): string {
+  const [a, m] = data.split("-").map(Number);
+  return new Date(Date.UTC(a, m, 0)).toISOString().slice(0, 10);
+}
+
+/** Último dia em que dá para repor a falta: 7 dias depois, sem passar do último dia do mês (o mês fecha com o que tiver). */
+export function prazoParaRepor(falta: string): string {
+  const sete = somarDiasData(falta, DIAS_PARA_REPOR);
+  const fimMes = ultimoDiaDoMes(falta);
+  return sete < fimMes ? sete : fimMes;
+}
+
+/** O dia escolhido vale para repor esta falta? (depois da falta, a partir de hoje, até o prazo) */
+export function diaValidoParaRepor(falta: string, dia: string, hoje: string): boolean {
+  return dia > falta && dia >= hoje && dia <= prazoParaRepor(falta);
+}
+
+/**
+ * Regra nova: situação de cada falta (dia agendado sem postagem que já passou) a partir de REPOSICAO_MARCADA_DESDE.
+ * No dia marcado é preciso postar um vídeo a mais (o que passou do obrigatório do dia, sem contar vídeo extra).
+ * Se duas faltas marcarem o mesmo dia, precisa de um vídeo a mais para cada uma.
+ */
+export function situacaoDasFaltas(dias: DiaPostagem[], reposicoes: Reposicao[], hoje: string, desde = REPOSICAO_MARCADA_DESDE): Map<string, SituacaoFalta> {
+  const sobra = new Map(dias.map((d) => [d.data, sobraParaRepor(d)]));
+  const marcada = new Map(reposicoes.map((r) => [r.falta, r.dia]));
+  const out = new Map<string, SituacaoFalta>();
+  const faltas = dias.filter((d) => d.data >= desde && d.agendado && d.postagens === 0 && d.data < hoje).map((d) => d.data).sort();
+  for (const f of faltas) {
+    const dia = marcada.get(f);
+    const valida = dia !== undefined && dia > f && dia <= prazoParaRepor(f);
+    if (!valida) {
+      out.set(f, hoje <= prazoParaRepor(f) ? "pode_marcar" : "perdida");
+      continue;
+    }
+    // o vídeo a mais só conta quando o dia marcado chega (hoje já vale, se já postou)
+    const cabe = dia <= hoje && (sobra.get(dia) ?? 0) > 0;
+    if (cabe) {
+      sobra.set(dia, sobra.get(dia)! - 1);
+      out.set(f, "reposta");
+    } else out.set(f, dia < hoje ? "perdida" : "marcada");
+  }
+  return out;
+}
+
+/**
+ * Constância do mês.
+ * - Faltas a partir de REPOSICAO_MARCADA_DESDE: o criador marca um dia (até 7 dias depois, sem passar do fim do mês)
+ *   e posta um vídeo a mais nele. Não postou no dia marcado ou não marcou no prazo: vira falta (situacaoDasFaltas).
+ * - Faltas antes disso (regra antiga): repostas com uma postagem a mais até domingo da mesma semana, sem marcar data.
+ * Vídeo extra (pago à parte) nunca conta como reposição.
+ *
+ * @param dias       dias do mês (podem incluir dias da semana vizinha, para contar reposições)
+ * @param hoje       data de hoje, AAAA-MM-DD
+ * @param mes        mês do fechamento, AAAA-MM (faltas contam no mês do dia perdido)
+ * @param reposicoes dias marcados para repor (regra nova)
+ */
+export function calcularConstancia(dias: DiaPostagem[], hoje: string, mes: string, reposicoes: Reposicao[] = []): ResultadoConstancia {
+  // regra nova
+  let faltas = 0;
+  let aRepor = 0;
+  for (const [f, s] of situacaoDasFaltas(dias, reposicoes, hoje)) {
+    if (!f.startsWith(mes)) continue;
+    if (s === "perdida") faltas++;
+    else if (s !== "reposta") aRepor++;
+  }
+  // regra antiga (semanas antes de REPOSICAO_MARCADA_DESDE)
   const semanas = new Map<string, DiaPostagem[]>();
-  for (const d of dias) {
+  for (const d of dias.filter((x) => x.data < REPOSICAO_MARCADA_DESDE)) {
     const k = inicioDaSemana(d.data);
     if (!semanas.has(k)) semanas.set(k, []);
     semanas.get(k)!.push(d);
   }
-  let faltas = 0;
-  let aRepor = 0;
   for (const [, ds] of semanas) {
     const domingo = fimDaSemana(ds[0].data);
     const encerrada = domingo < hoje;

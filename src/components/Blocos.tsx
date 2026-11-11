@@ -35,7 +35,7 @@ export function TituloCard({ icone, children, direita }: { icone: string; childr
 /** gestor = quem está vendo é o gestor: o total aparece em dourado (para o criador, em verde). */
 export function CardsGanho({ r, gestor = false }: { r: ResumoMes; gestor?: boolean }) {
   const p = r.pagamento;
-  const constTxt = r.faltas === 0 ? (r.aRepor > 0 ? `${r.aRepor} dia para repor até domingo` : "Em dia: continue postando certinho") : r.faltas === 1 ? "1 falta no mês: caiu para 5%" : `${r.faltas} faltas no mês: sem bônus`;
+  const constTxt = r.faltas === 0 ? (r.aRepor > 0 ? `${r.aRepor} ${r.aRepor === 1 ? "falta" : "faltas"} para repor: marque o dia em Dias de postagem` : "Em dia: continue postando certinho") : r.faltas === 1 ? "1 falta no mês: caiu para 5%" : `${r.faltas} faltas no mês: sem bônus`;
   return (
     <section className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))" }}>
       <div className="card" style={{ padding: 22 }}>
@@ -91,7 +91,7 @@ export function CardsGanho({ r, gestor = false }: { r: ResumoMes; gestor?: boole
 
 
 const ROTULO: Record<DiaCalendario["status"], string> = {
-  postado: "Postado", reposto: "Reposto", nao_postado: "Não postado", a_repor: "Repor até domingo", folga: "Folga", hoje: "Postar hoje", a_postar: "Postar",
+  postado: "Postado", reposto: "Reposto", nao_postado: "Não postado", a_repor: "Falta: dá para repor", folga: "Folga", hoje: "Postar hoje", a_postar: "Postar",
 };
 const CLASSE: Record<DiaCalendario["status"], string> = {
   postado: "cal-ok", reposto: "cal-ok", nao_postado: "cal-miss", a_repor: "cal-repor", folga: "cal-folga", hoje: "cal-hoje", a_postar: "cal-next",
@@ -110,7 +110,8 @@ function Dia({ d, comRotulo = true, mapa }: { d: DiaCalendario; comRotulo?: bool
         {ICONE[d.status] && <Icone nome={ICONE[d.status]!} tamanho={14} />}
         {comRotulo && <span className="cal-l">{ROTULO[d.status]}</span>}
       </span>
-      {["hoje", "a_postar", "a_repor"].includes(d.status) && <span className="truncate" title="Mínimo de 1 vídeo neste dia. Um 2º vídeo repõe uma falta da semana (vídeo extra não conta)." style={{ fontSize: 11, color: d.status === "hoje" ? "var(--accent-text)" : "var(--muted)" }}>🎬 mín. 1<span className="cal-l"> vídeo</span></span>}
+      {d.reposicao && <span className="truncate" title="Dia marcado para repor uma falta: poste 1 vídeo a mais neste dia." style={{ fontSize: 11, fontWeight: 700, color: "var(--ouro-texto)" }}>🔁<span className="cal-l"> repor</span></span>}
+      {["hoje", "a_postar"].includes(d.status) && <span className="truncate" title="Mínimo de 1 vídeo neste dia. Para repor uma falta, marque o dia em Repor faltas (vídeo extra não conta)." style={{ fontSize: 11, color: d.status === "hoje" ? "var(--accent-text)" : "var(--muted)" }}>🎬 mín. 1<span className="cal-l"> vídeo</span></span>}
       {m && <span className="flex items-center gap-1 truncate" title={`Mapa: ${m.nome}`} style={{ fontSize: 11, fontWeight: 700, color: d.status === "hoje" ? "var(--accent-text)" : "var(--text2)" }}>{m.emoji}<span className="cal-l truncate">{m.nome}</span></span>}
     </div>
   );
@@ -211,6 +212,7 @@ export function SemanaBolinhas({ dias, hoje }: { dias: DiaCalendario[]; hoje: st
         ))}
       </div>
       <span style={{ fontSize: 13, color: "var(--muted)" }}>{frase} · cinza = folga · amarelo = postar · vermelho = falta · {semana.filter((d) => d.status === "postado" || d.status === "reposto").length} dias feitos</span>
+      {dias.some((d) => d.status === "a_repor") && <Link href="/dias#repor" style={{ fontSize: 13, color: "var(--falta)", fontWeight: 600 }}>Você tem falta para repor: marcar o dia →</Link>}
     </section>
   );
 }

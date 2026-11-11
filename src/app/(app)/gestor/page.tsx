@@ -75,7 +75,7 @@ export default async function PainelGestor({ searchParams }: { searchParams: Pro
     for (const rede of REDES) if (contaDe(cr.id, rede)?.erro) atencao.push({ texto: `${primeiro}: ${NOME_PLATAFORMA[rede]} com problema na coleta`, link: `/gestor/criador/${cr.id}`, nivel: "warn" });
     if (!r.meta) atencao.push({ texto: `${primeiro} está sem meta em ${nomeMes(mes).split(" ")[0].toLowerCase()}`, link: `/gestor/criador/${cr.id}#meta`, nivel: "warn" });
     if (!(mapas ?? []).some((m) => m.criador_id === cr.id)) atencao.push({ texto: `${primeiro} está sem mapa dos dias`, link: `/gestor/criador/${cr.id}#mapa`, nivel: "info" });
-    if (r.aRepor > 0) atencao.push({ texto: `${primeiro} tem ${r.aRepor} ${r.aRepor === 1 ? "dia" : "dias"} para repor até domingo`, link: `/gestor/criador/${cr.id}#calendario`, nivel: "info" });
+    if (r.aRepor > 0) atencao.push({ texto: `${primeiro} tem ${r.aRepor} ${r.aRepor === 1 ? "falta" : "faltas"} que ainda dá para repor`, link: `/gestor/criador/${cr.id}#calendario`, nivel: "info" });
     if (!REDES.some((rede) => contaDe(cr.id, rede))) atencao.push({ texto: `${primeiro} ainda não conectou nenhuma rede`, link: `/gestor/criador/${cr.id}`, nivel: "info" });
   });
   if (extrasEsperando) atencao.unshift({ texto: `${extrasEsperando} ${extrasEsperando === 1 ? "vídeo extra" : "vídeos extras"} para aprovar`, link: "/gestor/extras", nivel: "warn" });
