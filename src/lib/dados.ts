@@ -224,7 +224,7 @@ export async function topVideos(sb: SB, criadorId: string, mes: string, limite =
   for (let de = 0; ; de += 1000) {
     const { data: pagina } = await sb
       .from("views_diarias")
-      .select("video_id, views, videos(titulo, url, plataforma, postado_em, id_externo)")
+      .select("video_id, views, videos!views_diarias_video_id_fkey(titulo, url, plataforma, postado_em, id_externo)") // nome da ligação: desde a trava da migração 0025 há duas ligações com videos
       .eq("criador_id", criadorId)
       .gte("dia", primeiroDia(mes))
       .lte("dia", ultimoDia(mes))
